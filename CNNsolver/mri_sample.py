@@ -22,8 +22,11 @@ class MRI:
         self.size = self.vol_data.shape[0]
 
     # Add and preprocess segmentation annotation
-    def add_segmentation(self, segmentation):
-        seg_data = segmentation.get_data()
+    def add_segmentation(self, segmentation, nifti=True):
+        if nifti:
+            seg_data = segmentation.get_data()
+        else:
+            seg_data = segmentation
         self.seg_data = numpy.reshape(seg_data, seg_data.shape + (1,))
 
     #-----------------------------------#
