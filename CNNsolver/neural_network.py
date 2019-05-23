@@ -28,7 +28,7 @@ class NeuralNetwork:
     def __init__(self):
         model = Unet(backbone_name='resnet34', encoder_weights=None,
                     input_shape=image_shape, classes=3)
-        model.compile('Adam', 'binary_crossentropy', ['binary_accuracy'])
+        model.compile('Adam', 'categorical_crossentropy', ['accuracy'])
         self.model = model
 
     # Train the Neural Network model on the provided case ids
@@ -98,4 +98,4 @@ class NeuralNetwork:
         # Load weights into new model
         self.model.load_weights("model.h5")
         # Compile model
-        self.model.compile('Adam', 'binary_crossentropy', ['binary_accuracy'])
+        self.model.compile('Adam', 'categorical_crossentropy', ['accuracy'])

@@ -2,6 +2,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 import numpy
+from keras.utils import to_categorical
 
 #-----------------------------------------------------#
 #           Magnetic Resonance Image - class          #
@@ -44,8 +45,10 @@ class MRI:
                                 (window_length,) + self.vol_data[slice].shape)
                 seg = numpy.reshape(self.seg_data[window_start:window_end],
                                 (window_length,) + self.seg_data[slice].shape)
+                # Transform digit classes into categorical
+                seg_categorical = to_categorical(seg, num_classes=3)
                 # Return batch
-                yield(vol, seg)
+                yield(vol, seg_categorical)
 
     # MRI Data Generator for predicting (WITHOUT segmentation)
     def generator_predict(self, batch_size, steps):

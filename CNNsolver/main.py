@@ -51,16 +51,31 @@ path_data = args.args_input
 #                    Runner code                      #
 #-----------------------------------------------------#
 # Create the Convolutional Neural Network
-cnn_model = CNNsolver_NN.NeuralNetwork()
+#cnn_model = CNNsolver_NN.NeuralNetwork()
 
 # Train the model
-cnn_model.train(list(range(0,3)), path_data)
+#cnn_model.train(list(range(4,5)), path_data)
 # Dump model
-cnn_model.dump("model")
+#cnn_model.dump("model")
 
 # Load model
 #cnn_model.load("model")
 
 # Evaluate model
 #res = cnn_model.predict(list(range(4,5)), path_data)
-#print(res)
+
+import pickle
+#pickle_out = open("dict.pickle","wb")
+#pickle.dump(res, pickle_out)
+#pickle_out.close()
+
+pickle_in = open("dict.pickle","rb")
+res = pickle.load(pickle_in)
+
+import numpy
+import scipy.misc
+
+res = numpy.asarray(res)
+for i in range(0, len(res[0])):
+    fpath = "bild" + str(i) + ".png"
+    scipy.misc.imsave(str(fpath), res[0][i])
