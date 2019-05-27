@@ -13,7 +13,8 @@ import inputreader as CNNsolver_IR
 #                    Fixed Parameter                  #
 #-----------------------------------------------------#
 image_shape = (512, 512, 1)
-batch_size = 10
+batch_size = 30
+max_queue_size = 10
 epochs = 1
 
 
@@ -44,7 +45,7 @@ class NeuralNetwork:
             steps = math.ceil(mri.size / batch_size)
             # Fit current MRI to the CNN model
             self.model.fit_generator(mri.generator_train(batch_size, steps),
-                steps_per_epoch=steps, epochs=epochs, max_queue_size=3)
+                steps_per_epoch=steps, epochs=epochs, max_queue_size=max_queue_size)
 
     # Predict with the Neural Network model on the provided case ids
     def predict(self, ids, data_path):
@@ -54,13 +55,13 @@ class NeuralNetwork:
         # Iterate over each case
         for i in ids:
             # Load the MRI of the case
-            mri = reader.case_loader(i, False)
+            mri = reader.case_loader(i, True)
             # Calculate the number of steps for the fitting
             steps = math.ceil(mri.size / batch_size)
             # Fit current MRI to the CNN model
             pred = self.model.predict_generator(
                 mri.generator_predict(batch_size, steps),
-                steps=steps, max_queue_size=3)
+                steps=steps, max_queue_size=max_queue_size)
             # Transform probabilities to classes
             pred_seg = numpy.argmax(pred, axis=-1)
             # Add segmentation prediction to the MRI case object
@@ -83,8 +84,8 @@ class NeuralNetwork:
             # Fit current MRI to the CNN model
             score1, score2 = self.model.evaluate_generator(
                 mri.generator_train(batch_size, steps),
-                steps=steps, max_queue_size=3)
-            print(str(score1) + "\t" + str(score2))
+                steps=steps, max_queue_size=max_queue_size)
+            print(str(i) + "\t" + str(score1) + "\t" + str(score2))
 
     # Dump model to file
     def dump(self, path):

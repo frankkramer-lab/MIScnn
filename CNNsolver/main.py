@@ -55,15 +55,19 @@ path_data = args.args_input
 cnn_model = CNNsolver_NN.NeuralNetwork()
 
 # Train the model
-cnn_model.train(list(range(4,5)), path_data)
+cnn_model.train(list(range(0,5)), path_data)
 # Dump model
 cnn_model.dump("model")
 
 # Load model
 cnn_model.load("model")
 # Predict segmentation with CNN model
-res = cnn_model.predict(list(range(4,5)), path_data)
+res = cnn_model.predict(list(range(3,4)), path_data)
 
 # Evaluate model
-print(res)
-#CNNsolver_EV.visual_evaluation()
+#print(res)
+CNNsolver_EV.visual_evaluation(res)
+cnn_model.evaluate(list(range(3,4)), path_data)
+
+
+#print(cnn_model.model.metrics_names)

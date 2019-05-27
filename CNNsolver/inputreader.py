@@ -84,6 +84,6 @@ class InputReader:
         # IF needed read the provided segmentation for current MRI sample
         if load_seg:
             segmentation = self.load_segmentation_nii(case_id)
-            mri.add_segmentation(segmentation)
+            mri.add_segmentation(segmentation, True)
         # Return MRI sample object
         return mri

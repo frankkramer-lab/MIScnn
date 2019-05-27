@@ -11,6 +11,7 @@ class MRI:
     # Initialize class variable
     vol_data = None
     seg_data = None
+    pred_data = None
     size = None
 
     # Create a MRI Sample object
@@ -22,12 +23,16 @@ class MRI:
         self.size = self.vol_data.shape[0]
 
     # Add and preprocess segmentation annotation
-    def add_segmentation(self, segmentation, nifti=True):
-        if nifti:
+    def add_segmentation(self, segmentation, truth=True):
+        # Segmentation is the truth from training
+        if truth:
             seg_data = segmentation.get_data()
+            self.seg_data = numpy.reshape(seg_data, seg_data.shape + (1,))
+        # Segmentation is a prediction from the model
         else:
-            seg_data = segmentation
-        self.seg_data = numpy.reshape(seg_data, seg_data.shape + (1,))
+            pred_data = segmentation
+            self.pred_data = numpy.reshape(pred_data, pred_data.shape + (1,))
+        
 
     #-----------------------------------#
     #     MRI Data Generator (Keras)    #
