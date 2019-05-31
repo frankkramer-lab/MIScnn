@@ -55,8 +55,8 @@ class MRI:
     #     MRI Data Generator (Keras)    #
     #-----------------------------------#
     ## Returns 3D slices of the MRI for each call
-    # MRI Data Generator for training (WITH segmentation)
-    def generator_train(self, batch_size, steps):
+    # MRI Data Generator for training and predicting (WITH-/OUT segmentation)
+    def data_generator(self, batch_size, steps, training=False):
         # Calculate number of steps for the complete patches
         patches_complete = len(self.patches_vol) - self.frag_patches
         steps_complete = math.ceil(float(patches_complete) / batch_size)
@@ -68,13 +68,20 @@ class MRI:
                 end = start + batch_size
                 if end > len(self.patches_vol):
                     end = len(self.patches_vol)
-                # Concatenate volume and segmentation patches into Batches
+                # Concatenate volume patches into Batches
                 batch_vol = concat_3Dmatrices(self.patches_vol[start:end])
-                batch_seg = concat_3Dmatrices(self.patches_seg[start:end])
-                # Transform digit segmentation classes into categorical
-                batch_seg = to_categorical(batch_seg, num_classes=3)
-                # Return batch
-                yield(batch_vol, batch_seg)
+                # IF batch is for training -> return next vol & seg batch
+                if training:
+                    # Concatenate segmentation patches into Batches
+                    batch_seg = concat_3Dmatrices(self.patches_seg[start:end])
+                    # Transform digit segmentation classes into categorical
+                    batch_seg = to_categorical(batch_seg, num_classes=3)
+                    # Return volume and segmentation batch
+                    yield(batch_vol, batch_seg)
+                # IF batch is for predicting -> return next vol batch
+                else:
+                    yield(batch_vol)
+
 
     # MRI Data Generator for predicting (WITHOUT segmentation)
     def generator_predict(self, batch_size, steps):

@@ -56,8 +56,9 @@ class NeuralNetwork:
             steps = math.ceil(patches_complete / config["batch_size"]) + \
                     math.ceil(patches_fragments / config["batch_size"])
             # Fit current MRI to the CNN model
-            self.model.fit_generator(mri.generator_train(config["batch_size"],
-                                                         steps),
+            self.model.fit_generator(mri.data_generator(config["batch_size"],
+                                                        steps=steps,
+                                                        training=True),
                                      steps_per_epoch=steps,
                                      epochs=config["epochs"],
                                      max_queue_size=config["max_queue_size"])
@@ -65,18 +66,27 @@ class NeuralNetwork:
     # Predict with the Neural Network model on the provided case ids
     def predict(self, ids, data_path):
         results = []
-        # Create a Input Reader
+        # Create a Input Reader instance
         reader = CNNsolver_IR.InputReader(data_path)
         # Iterate over each case
         for i in ids:
             # Load the MRI of the case
             mri = reader.case_loader(i, True)
-            # Calculate the number of steps for the fitting
-            steps = math.ceil(mri.size / config["batch_size"])
+            # Slice volume into patches
+            mri.slice_volume(config["window"])
+            # Calculate the number of steps for the prediction
+            patches_complete = float(len(mri.patches_vol) - mri.frag_patches)
+            patches_fragments = float(mri.frag_patches)
+            steps = math.ceil(patches_complete / config["batch_size"]) + \
+                    math.ceil(patches_fragments / config["batch_size"])
             # Fit current MRI to the CNN model
             pred = self.model.predict_generator(
-                mri.generator_predict(config["batch_size"], steps),
-                steps=steps, max_queue_size=config["max_queue_size"])
+                                    mri.data_generator(
+                                                config["batch_size"],
+                                                steps,
+                                                training=False),
+                                    steps=steps,
+                                    max_queue_size=config["max_queue_size"])
             # Transform probabilities to classes
             pred_seg = numpy.argmax(pred, axis=-1)
             # Add segmentation prediction to the MRI case object
@@ -86,21 +96,21 @@ class NeuralNetwork:
         # Return final results
         return results
 
-    # Evaluate the Neural Network model on the provided case ids
-    def evaluate(self, ids, data_path):
-        # Create a Input Reader
-        reader = CNNsolver_IR.InputReader(data_path)
-        # Iterate over each case
-        for i in ids:
-            # Load the MRI of the case
-            mri = reader.case_loader(i)
-            # Calculate the number of steps for the fitting
-            steps = math.ceil(mri.size / batch_size)
-            # Fit current MRI to the CNN model
-            score1, score2 = self.model.evaluate_generator(
-                mri.generator_train(batch_size, steps),
-                steps=steps, max_queue_size=max_queue_size)
-            print(str(i) + "\t" + str(score1) + "\t" + str(score2))
+    # # Evaluate the Neural Network model on the provided case ids
+    # def evaluate(self, ids, data_path):
+    #     # Create a Input Reader
+    #     reader = CNNsolver_IR.InputReader(data_path)
+    #     # Iterate over each case
+    #     for i in ids:
+    #         # Load the MRI of the case
+    #         mri = reader.case_loader(i)
+    #         # Calculate the number of steps for the fitting
+    #         steps = math.ceil(mri.size / batch_size)
+    #         # Fit current MRI to the CNN model
+    #         score1, score2 = self.model.evaluate_generator(
+    #             mri.generator_train(batch_size, steps),
+    #             steps=steps, max_queue_size=max_queue_size)
+    #         print(str(i) + "\t" + str(score1) + "\t" + str(score2))
 
     # Dump model to file
     def dump(self, path):

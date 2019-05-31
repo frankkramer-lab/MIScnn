@@ -1,6 +1,6 @@
-# Kidney Tumor Segmentation Challenge 2019 - CNNsolver
+# KITS Challenge 2019 - CNNsolver
 
-A Convolutional Neural Network for the 2019 MICCAI Kidney Tumor Segmentation (KiTS) Challenge.
+A Convolutional Neural Network for the 2019 MICCAI Kidney Tumor Segmentation (KiTS) Challenge.\
 Description blah.
 
 ## Prerequisites
@@ -37,5 +37,5 @@ Bavaria, Germany
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License.\
 See the LICENSE.md file for license rights and limitations.
