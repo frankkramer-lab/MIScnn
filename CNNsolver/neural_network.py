@@ -14,10 +14,11 @@ from models.unet import Unet
 #                    Fixed Parameter                  #
 #-----------------------------------------------------#
 config = dict()
-config["image_shape"] = (None, 512, 512, 1)
+#config["image_shape"] = (None, 512, 512, 1)
+config["input_shape"] = (None, 16, 16, 1)
 config["classes"] = 3
-config["batch_size"] = 5
-config["window"] = (64, 64, 64)
+config["batch_size"] = 20
+config["window"] = (16, 16, 16)
 config["max_queue_size"] = 3
 config["epochs"] = 1
 
@@ -31,7 +32,7 @@ class NeuralNetwork:
 
     # Create a Convolutional Neural Network with Keras
     def __init__(self):
-        model = Unet(input_shape=config["image_shape"],
+        model = Unet(input_shape=config["input_shape"],
                      n_labels=config["classes"],
                      activation_name="sigmoid")
                      #activation="softmax"
@@ -46,24 +47,20 @@ class NeuralNetwork:
         for i in ids:
             # Load the MRI of the case
             mri = reader.case_loader(i)
-            # Slice volume into patches
+            # Slice volume and segmentation into patches
             mri.slice_volume(config["window"])
+            mri.slice_segmentation(config["window"])
             # Calculate the number of steps for the fitting
-            patches_complete = len(mri.patches) - mri.frag_patches
-            patches_fragments = mri.frag_patches
-            steps = math.ceil(float(patches_complete) / config["batch_size"]) +\
-                    math.ceil(float(patches_fragments) / config["batch_size"])
-            #test
-            for i in range(0, steps):
-                a,b = mri.generator_train(config["batch_size"], steps)
-                print(a.shape)
-            # # Fit current MRI to the CNN model
-            # self.model.fit_generator(mri.generator_train(config["batch_size"],
-            #                                              steps),
-            #                          steps_per_epoch=steps,
-            #                          epochs=config["epochs"],
-            #                          max_queue_size=config["max_queue_size"])
-            break
+            patches_complete = float(len(mri.patches_vol) - mri.frag_patches)
+            patches_fragments = float(mri.frag_patches)
+            steps = math.ceil(patches_complete / config["batch_size"]) + \
+                    math.ceil(patches_fragments / config["batch_size"])
+            # Fit current MRI to the CNN model
+            self.model.fit_generator(mri.generator_train(config["batch_size"],
+                                                         steps),
+                                     steps_per_epoch=steps,
+                                     epochs=config["epochs"],
+                                     max_queue_size=config["max_queue_size"])
 
     # Predict with the Neural Network model on the provided case ids
     def predict(self, ids, data_path):
