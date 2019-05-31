@@ -55,7 +55,7 @@ path_data = args.args_input
 cnn_model = CNNsolver_NN.NeuralNetwork()
 
 # Train the model
-cnn_model.train(list(range(4,5)), path_data)
+cnn_model.train(list(range(0,0)), path_data)
 # Dump model
 #cnn_model.dump("model")
 

@@ -2,7 +2,8 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 #External libraries
-import os.path
+import os
+from re import match
 import nibabel as nib
 import pickle
 #Internal libraries/scripts
@@ -100,12 +101,21 @@ class InputReader:
     #-----------------------------------#
     # Backup a MRI object to a pickle for fast access later
     def mri_pickle_backup(self, case_id, mri):
-        pickle_out = open("model/mri_tmp." + str(case_id) + ".pickle","wb")
+        pickle_out = open("model/MRI.case" + str(case_id) + ".pickle","wb")
         pickle.dump(mri, pickle_out)
         pickle_out.close()
 
     # Load a MRI object from a pickle for fast access
     def mri_pickle_load(self, case_id):
-        pickle_in = open("model/mri_tmp." + str(case_id) + ".pickle","rb")
+        pickle_in = open("model/MRI.case" + str(case_id) + ".pickle","rb")
         mri = pickle.load(pickle_in)
         return mri
+
+    # Clean up all temporary pickles
+    def mri_pickle_cleanup(self):
+        # Iterate over each file in the model directory
+        directory = os.listdir("model")
+        for file in directory:
+            # IF file matches temporary MRI pickle name pattern -> delete it
+            if match("MRI\.case[0-9]+\.pickle", file) is not None:
+                os.remove(os.path.join("model", file))

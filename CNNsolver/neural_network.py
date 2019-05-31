@@ -64,6 +64,8 @@ class NeuralNetwork:
                                      steps_per_epoch=steps,
                                      epochs=config["epochs"],
                                      max_queue_size=config["max_queue_size"])
+        # Clean up temporary MRI pickles for training
+        reader.mri_pickle_cleanup()
 
     # Predict with the Neural Network model on the provided case ids
     def predict(self, ids, data_path):
