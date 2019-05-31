@@ -81,21 +81,3 @@ class MRI:
                 # IF batch is for predicting -> return next vol batch
                 else:
                     yield(batch_vol)
-
-
-    # MRI Data Generator for predicting (WITHOUT segmentation)
-    def generator_predict(self, batch_size, steps):
-        while True:
-            for slice in range(0, steps):
-                # Calculate window/batch
-                window_start = slice * batch_size
-                window_end = slice * batch_size + batch_size
-                if window_end >= self.size:
-                    window_start = self.size - batch_size
-                    window_end = self.size
-                window_length = window_end - window_start
-                # Cut window/batch out of MRI slices
-                vol = numpy.reshape(self.vol_data[window_start:window_end],
-                                    (1, window_length, 512, 512, 1))
-                # Return batch
-                yield(vol)
