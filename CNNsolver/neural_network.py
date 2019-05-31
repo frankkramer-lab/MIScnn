@@ -2,20 +2,24 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 #External libraries
-from segmentation_models import Unet
 from keras.models import model_from_json
 import numpy
 import math
 #Internal libraries/scripts
 import inputreader as CNNsolver_IR
+from models.unet import Unet
+
 
 #-----------------------------------------------------#
 #                    Fixed Parameter                  #
 #-----------------------------------------------------#
-image_shape = (512, 512, 1)
-batch_size = 30
-max_queue_size = 10
-epochs = 1
+config = dict()
+config["image_shape"] = (None, 512, 512, 1)
+config["classes"] = 3
+config["batch_size"] = 5
+config["window"] = (64, 64, 64)
+config["max_queue_size"] = 3
+config["epochs"] = 1
 
 
 #-----------------------------------------------------#
@@ -27,25 +31,39 @@ class NeuralNetwork:
 
     # Create a Convolutional Neural Network with Keras
     def __init__(self):
-        model = Unet(backbone_name='resnet34', encoder_weights=None,
-                    input_shape=image_shape, classes=3, activation='softmax')
-        model.compile('Adam', 'categorical_crossentropy',
-                    ['categorical_accuracy'])
+        model = Unet(input_shape=config["image_shape"],
+                     n_labels=config["classes"],
+                     activation_name="sigmoid")
+                     #activation="softmax"
+        #TODO: compile extract from model
         self.model = model
 
     # Train the Neural Network model on the provided case ids
     def train(self, ids, data_path):
-        # Create a Input Reader
+        # Create a Input Reader instance
         reader = CNNsolver_IR.InputReader(data_path)
         # Iterate over each case
         for i in ids:
             # Load the MRI of the case
             mri = reader.case_loader(i)
+            # Slice volume into patches
+            mri.slice_volume(config["window"])
             # Calculate the number of steps for the fitting
-            steps = math.ceil(mri.size / batch_size)
-            # Fit current MRI to the CNN model
-            self.model.fit_generator(mri.generator_train(batch_size, steps),
-                steps_per_epoch=steps, epochs=epochs, max_queue_size=max_queue_size)
+            patches_complete = len(mri.patches) - mri.frag_patches
+            patches_fragments = mri.frag_patches
+            steps = math.ceil(float(patches_complete) / config["batch_size"]) +\
+                    math.ceil(float(patches_fragments) / config["batch_size"])
+            #test
+            for i in range(0, steps):
+                a,b = mri.generator_train(config["batch_size"], steps)
+                print(a.shape)
+            # # Fit current MRI to the CNN model
+            # self.model.fit_generator(mri.generator_train(config["batch_size"],
+            #                                              steps),
+            #                          steps_per_epoch=steps,
+            #                          epochs=config["epochs"],
+            #                          max_queue_size=config["max_queue_size"])
+            break
 
     # Predict with the Neural Network model on the provided case ids
     def predict(self, ids, data_path):
@@ -57,11 +75,11 @@ class NeuralNetwork:
             # Load the MRI of the case
             mri = reader.case_loader(i, True)
             # Calculate the number of steps for the fitting
-            steps = math.ceil(mri.size / batch_size)
+            steps = math.ceil(mri.size / config["batch_size"])
             # Fit current MRI to the CNN model
             pred = self.model.predict_generator(
-                mri.generator_predict(batch_size, steps),
-                steps=steps, max_queue_size=max_queue_size)
+                mri.generator_predict(config["batch_size"], steps),
+                steps=steps, max_queue_size=config["max_queue_size"])
             # Transform probabilities to classes
             pred_seg = numpy.argmax(pred, axis=-1)
             # Add segmentation prediction to the MRI case object
@@ -106,4 +124,4 @@ class NeuralNetwork:
         # Load weights into new model
         self.model.load_weights("model/weights.h5")
         # Compile model
-        self.model.compile('Adam', 'categorical_crossentropy', ['accuracy'])
+        #self.model.compile('Adam', 'categorical_crossentropy', ['accuracy'])
