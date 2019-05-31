@@ -46,10 +46,12 @@ class NeuralNetwork:
         # Iterate over each case
         for i in ids:
             # Load the MRI of the case
-            mri = reader.case_loader(i)
+            mri = reader.case_loader(i, pickle=True)
             # Slice volume and segmentation into patches
             mri.slice_volume(config["window"])
             mri.slice_segmentation(config["window"])
+            # Backup MRI to pickle for faster access in later epochs
+            reader.mri_pickle_backup(i, mri)
             # Calculate the number of steps for the fitting
             patches_complete = float(len(mri.patches_vol) - mri.frag_patches)
             patches_fragments = float(mri.frag_patches)

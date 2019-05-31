@@ -4,6 +4,7 @@
 #External libraries
 import os.path
 import nibabel as nib
+import pickle
 #Internal libraries/scripts
 import mri_sample as CNNsolver_MRI
 
@@ -76,7 +77,13 @@ class InputReader:
     #            Case Loader            #
     #-----------------------------------#
     # Load a MRI in NIFTI format and creates a MRI sample object
-    def case_loader(self, case_id, load_seg=True):
+    def case_loader(self, case_id, load_seg=True, pickle=False):
+        # IF pickle modus is True and MRI pickle file exist
+        if pickle and os.path.exists("model/mri_tmp." + str(case_id) + \
+                                     ".pickle"):
+            # Load MRI object from pickle and return MRI
+            mri = self.mri_pickle_load(case_id)
+            return mri
         # Read volume NIFTI file
         volume = self.load_volume_nii(case_id)
         # Create and return a MRI_Sample object
@@ -86,4 +93,19 @@ class InputReader:
             segmentation = self.load_segmentation_nii(case_id)
             mri.add_segmentation(segmentation, True)
         # Return MRI sample object
+        return mri
+
+    #-----------------------------------#
+    #          MRI Fast Access          #
+    #-----------------------------------#
+    # Backup a MRI object to a pickle for fast access later
+    def mri_pickle_backup(self, case_id, mri):
+        pickle_out = open("model/mri_tmp." + str(case_id) + ".pickle","wb")
+        pickle.dump(mri, pickle_out)
+        pickle_out.close()
+
+    # Load a MRI object from a pickle for fast access
+    def mri_pickle_load(self, case_id):
+        pickle_in = open("model/mri_tmp." + str(case_id) + ".pickle","rb")
+        mri = pickle.load(pickle_in)
         return mri
