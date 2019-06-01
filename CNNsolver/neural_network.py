@@ -17,10 +17,11 @@ config = dict()
 #config["image_shape"] = (None, 512, 512, 1)
 config["input_shape"] = (None, 128, 128, 1)
 config["classes"] = 3
-config["batch_size"] = 5
-config["window"] = (32, 128, 128)
+config["batch_size"] = 10
+config["patch_size"] = (32, 128, 128)
+config["overlap"] = 4
 config["max_queue_size"] = 3
-config["epochs"] = 10
+config["epochs"] = 1
 
 
 #-----------------------------------------------------#
@@ -48,15 +49,12 @@ class NeuralNetwork:
             # Load the MRI of the case
             mri = reader.case_loader(i, pickle=True)
             # Slice volume and segmentation into patches
-            mri.slice_volume(config["window"])
-            mri.slice_segmentation(config["window"])
+            mri.create_patches("vol", config["patch_size"], config["overlap"])
+            mri.create_patches("seg", config["patch_size"], config["overlap"])
             # Backup MRI to pickle for faster access in later epochs
             reader.mri_pickle_backup(i, mri)
             # Calculate the number of steps for the fitting
-            patches_complete = float(len(mri.patches_vol) - mri.frag_patches)
-            patches_fragments = float(mri.frag_patches)
-            steps = math.ceil(patches_complete / config["batch_size"]) + \
-                    math.ceil(patches_fragments / config["batch_size"])
+            steps = math.ceil(len(mri.patches_vol) / config["batch_size"])
             # Fit current MRI to the CNN model
             self.model.fit_generator(mri.data_generator(config["batch_size"],
                                                         steps=steps,
@@ -77,13 +75,10 @@ class NeuralNetwork:
             # Load the MRI of the case
             mri = reader.case_loader(i, True)
             # Slice volume into patches
-            mri.slice_volume(config["window"])
+            mri.create_patches("vol", config["patch_size"], config["overlap"])
             # Calculate the number of steps for the prediction
-            patches_complete = float(len(mri.patches_vol) - mri.frag_patches)
-            patches_fragments = float(mri.frag_patches)
-            steps = math.ceil(patches_complete / config["batch_size"]) + \
-                    math.ceil(patches_fragments / config["batch_size"])
-            # Fit current MRI to the CNN model
+            steps = math.ceil(len(mri.patches_vol) / config["batch_size"])
+            # # Fit current MRI to the CNN model
             pred = self.model.predict_generator(
                                     mri.data_generator(
                                                 config["batch_size"],

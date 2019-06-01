@@ -18,8 +18,8 @@ class MRI:
     pred_data = None
     patches_vol = None
     patches_seg = None
-    frag_patches = None
     window = None
+    overlap = None
 
     # Create a MRI Sample object
     def __init__(self, volume):
@@ -38,18 +38,18 @@ class MRI:
             pred_data = segmentation
             self.pred_data = numpy.reshape(pred_data, pred_data.shape + (1,))
 
-    # Slice the volume into patches with a provided window size
-    def slice_volume(self, window):
-        if self.patches_vol == None or window != self.window:
+    # Create patches from a 3D matrix for later batching
+    def create_patches(self, matrix, window, overlap):
+        # Slice the volume into patches with a provided window size
+        if matrix=="vol" and self.patches_vol == None:
             self.window = window
-            self.patches_vol, self.frag_patches = slice_3Dmatrix(self.vol_data,
-                                                                 window)
-    # Slice the segmentation into patches with a provided window size
-    def slice_segmentation(self, window):
-        if self.patches_seg == None or window != self.window:
+            self.overlap = overlap
+            self.patches_vol = slice_3Dmatrix(self.vol_data, window, overlap)
+        # Slice the segmentation into patches with a provided window size
+        elif matrix=="seg" and self.patches_seg == None:
             self.window = window
-            self.patches_seg, self.frag_patches = slice_3Dmatrix(self.seg_data,
-                                                                 window)
+            self.overlap = overlap
+            self.patches_seg = slice_3Dmatrix(self.seg_data, window, overlap)
 
     #-----------------------------------#
     #     MRI Data Generator (Keras)    #
@@ -57,25 +57,15 @@ class MRI:
     ## Returns 3D slices of the MRI for each call
     # MRI Data Generator for training and predicting (WITH-/OUT segmentation)
     def data_generator(self, batch_size, steps, training=False):
-        # Calculate number of steps for the complete patches
-        patches_complete = len(self.patches_vol) - self.frag_patches
-        steps_complete = math.ceil(float(patches_complete) / batch_size)
         # Start while loop (Keras specific requirement)
         while True:
             for i in range(0, steps):
-                # Assign complete patches as a batch
-                if i < steps_complete:
-                    start = i * batch_size
-                    end = start + batch_size
-                    if end > patches_complete:
-                        end = patches_complete
-                # Assign fragmented patches as a batch
-                else:
-                    start = patches_complete + (i-steps_complete) * batch_size
-                    end = start + batch_size
-                    if end > len(self.patches_vol):
-                        end = len(self.patches_vol)
-                # Concatenate volume patches into Batches
+                # Assign patches to the next batch
+                start = i * batch_size
+                end = start + batch_size
+                if end > len(self.patches_vol):
+                    end = len(self.patches_vol)
+                # Concatenate volume patches into the batch
                 batch_vol = concat_3Dmatrices(self.patches_vol[start:end])
                 # IF batch is for training -> return next vol & seg batch
                 if training:
