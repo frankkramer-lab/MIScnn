@@ -15,12 +15,12 @@ from models.unet import Unet
 #-----------------------------------------------------#
 config = dict()
 #config["image_shape"] = (None, 512, 512, 1)
-config["input_shape"] = (None, 16, 16, 1)
+config["input_shape"] = (None, 128, 128, 1)
 config["classes"] = 3
-config["batch_size"] = 20
-config["window"] = (16, 16, 16)
+config["batch_size"] = 5
+config["window"] = (32, 128, 128)
 config["max_queue_size"] = 3
-config["epochs"] = 1
+config["epochs"] = 10
 
 
 #-----------------------------------------------------#

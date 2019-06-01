@@ -63,11 +63,18 @@ class MRI:
         # Start while loop (Keras specific requirement)
         while True:
             for i in range(0, steps):
-                # Assign multiple patches for the next batch
-                start = i * batch_size
-                end = start + batch_size
-                if end > len(self.patches_vol):
-                    end = len(self.patches_vol)
+                # Assign complete patches as a batch
+                if i < steps_complete:
+                    start = i * batch_size
+                    end = start + batch_size
+                    if end > patches_complete:
+                        end = patches_complete
+                # Assign fragmented patches as a batch
+                else:
+                    start = patches_complete + (i-steps_complete) * batch_size
+                    end = start + batch_size
+                    if end > len(self.patches_vol):
+                        end = len(self.patches_vol)
                 # Concatenate volume patches into Batches
                 batch_vol = concat_3Dmatrices(self.patches_vol[start:end])
                 # IF batch is for training -> return next vol & seg batch
