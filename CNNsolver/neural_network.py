@@ -88,6 +88,8 @@ class NeuralNetwork:
                                     max_queue_size=config["max_queue_size"])
             # Transform probabilities to classes
             pred_seg = numpy.argmax(pred, axis=-1)
+            # Concatenate patches into a single 3D matrix back
+            #TODO!!!!!!!!!!!!!!!!!!!!
             # Add segmentation prediction to the MRI case object
             mri.add_segmentation(pred_seg, False)
             # Add the MRI to the results list

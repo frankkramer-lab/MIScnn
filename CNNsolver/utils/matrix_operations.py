@@ -44,3 +44,70 @@ def slice_3Dmatrix(array, window, overlap):
 def concat_3Dmatrices(matrix_list, axis=0):
     result_matrix = np.concatenate(matrix_list, axis=axis)
     return result_matrix
+
+
+def combine_3Dmatrices(patches, image_size, window, overlap):
+    # Calculate steps
+    steps_x = int(math.ceil(image_size[0] / float(window[0] - overlap)))
+    steps_y = int(math.ceil(image_size[1] / float(window[1])))
+    steps_z = int(math.ceil(image_size[2] / float(window[2])))
+
+    # Iterate over it x,y,z
+    matrix_x = None
+    matrix_y = None
+    matrix_z = None
+    pointer = 0
+    for x in range(0, steps_x):
+        for y in range(0, steps_y):
+            for z in range(0, steps_z):
+                # Calculate pointer from 3D steps to 1D list of patches
+                pointer = z + y*steps_z + x*steps_y*steps_z
+                # Connect current patch to temporary Matrix Z
+                if z == 0:
+                    matrix_z = patches[pointer]
+                else:
+                    matrix_z = np.concatenate((matrix_z, patches[pointer]),
+                                              axis=2)
+            # Connect current tmp Matrix Z to tmp Matrix Y
+            if y == 0:
+                matrix_y = matrix_z
+            else:
+                matrix_y = np.concatenate((matrix_y, matrix_z), axis=1)
+        # Connect current tmp Matrix Y to final Matrix X
+        if x == 0:
+            matrix_x = matrix_y
+        else:
+            # Overlap: IF last x-layer -> handle special overlap size
+            if x == steps_x-1:
+                last_overlap = window[0] - (image_size[0] % window[0])
+                matrix_x, matrix_y = handle_overlap(matrix_x, matrix_y,
+                                                    last_overlap)
+            # Overlap: Else -> handle default overlap size
+            else:
+                matrix_x, matrix_y = handle_overlap(matrix_x, matrix_y,
+                                                    overlap)
+            matrix_x = np.concatenate((matrix_x, matrix_y), axis=0)
+    # Return final combined matrix
+    return(matrix_x)
+
+def handle_overlap(matrixA, matrixB, overlap, axis=0):
+    # Update the overlapping values in Matrix A
+    for i in range(0, overlap):
+        sliceA = matrixA[len(matrixA) - overlap + i]
+        sliceB = matrixB[i]
+        # Edge on matrix B -> keep value from matrix A
+        if i == 0:
+            sliceA = sliceA
+        # Edge on matrix A -> keep value from matrix B
+        elif i == overlap-1:
+            sliceA = sliceB
+        # Center value -> Order = Background < Kidney < Tumor
+        else:
+            for x in range(0, sliceA.shape[0]):
+                for y in range(0, sliceA.shape[1]):
+                    sliceA[x][y] = np.max((sliceA[x][y], sliceB[x][y]))
+        matrixA[len(matrixA) - overlap + i] = sliceA
+    # Remove overlap from Matrix B
+    matrixB = np.delete(matrixB, [range(0,overlap)], axis=axis)
+    # Return processed matrices
+    return matrixA, matrixB
