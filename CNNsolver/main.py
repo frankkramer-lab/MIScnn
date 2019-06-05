@@ -8,7 +8,6 @@
 import sys
 import argparse
 # Internal libraries/scripts
-import inputreader as CNNsolver_IR
 import neural_network as CNNsolver_NN
 import evaluation as CNNsolver_EV
 
@@ -43,26 +42,36 @@ optional_group.add_argument('-h', '--help', action="help",
 args = parser.parse_args()
 
 #-----------------------------------------------------#
-#                     Parameters                      #
+#                   Configurations                    #
 #-----------------------------------------------------#
-# Path to the kits19 data
-path_data = args.args_input
+# Define range of cases for the model training
+cases = list(range(2,3))
+# Configurations
+config = dict()
+config["data_path"] = args.args_input           # Path to the kits19 data dir
+config["input_shape"] = (None, 128, 128, 1)     # Neural Network input shape
+config["classes"] = 3                           # Number of output classes
+config["batch_size"] = 10                       # Number of patches in on step
+config["patch_size"] = (32, 128, 128)           # Patch shape/size
+config["overlap"] = 4                           # Overlap in x-axis
+config["max_queue_size"] = 3                    # Number of preprocessed batches
+config["epochs"] = 1                            # Number of epochs for training
 
 #-----------------------------------------------------#
 #                    Runner code                      #
 #-----------------------------------------------------#
 # Create the Convolutional Neural Network
-cnn_model = CNNsolver_NN.NeuralNetwork()
+cnn_model = CNNsolver_NN.NeuralNetwork(config)
 
 # Train the model
-#cnn_model.train(list(range(0,1)), path_data)
+cnn_model.train(cases)
 # Dump model
 #cnn_model.dump("model")
 
 # Load model
-cnn_model.load("model")
+#cnn_model.load("model")
 # Predict segmentation with CNN model
-res = cnn_model.predict(list(range(2,3)), path_data)
+#res = cnn_model.predict(list(range(2,3)), path_data)
 
 # Evaluate model
 #res = []

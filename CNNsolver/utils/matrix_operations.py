@@ -40,13 +40,8 @@ def slice_3Dmatrix(array, window, overlap):
                 patches.append(window_slice)
     return patches
 
-# Concatenate two or more matrices in a list together to a numpy array/matrix
-def concat_3Dmatrices(matrix_list, axis=0):
-    result_matrix = np.concatenate(matrix_list, axis=axis)
-    return result_matrix
-
-
-def combine_3Dmatrices(patches, image_size, window, overlap):
+# Concatenate a list of patches together to a numpy matrix
+def concat_3Dmatrices(patches, image_size, window, overlap):
     # Calculate steps
     steps_x = int(math.ceil(image_size[0] / float(window[0] - overlap)))
     steps_y = int(math.ceil(image_size[1] / float(window[1])))
@@ -90,6 +85,7 @@ def combine_3Dmatrices(patches, image_size, window, overlap):
     # Return final combined matrix
     return(matrix_x)
 
+# Handle the overlap of two overlapping matrices
 def handle_overlap(matrixA, matrixB, overlap, axis=0):
     # Update the overlapping values in Matrix A
     for i in range(0, overlap):

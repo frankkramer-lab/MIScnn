@@ -7,22 +7,9 @@ import numpy
 import math
 #Internal libraries/scripts
 import inputreader as CNNsolver_IR
+from preprocessing import preprocessing_MRIs, data_generator
+from utils.matrix_operations import concat_3Dmatrices
 from models.unet import Unet
-
-
-#-----------------------------------------------------#
-#                    Fixed Parameter                  #
-#-----------------------------------------------------#
-config = dict()
-#config["image_shape"] = (None, 512, 512, 1)
-config["input_shape"] = (None, 128, 128, 1)
-config["classes"] = 3
-config["batch_size"] = 10
-config["patch_size"] = (32, 128, 128)
-config["overlap"] = 4
-config["max_queue_size"] = 3
-config["epochs"] = 1
-
 
 #-----------------------------------------------------#
 #                Neural Network - Class               #
@@ -30,72 +17,87 @@ config["epochs"] = 1
 class NeuralNetwork:
     # Initialize class variables
     model = None
+    config = None
 
     # Create a Convolutional Neural Network with Keras
-    def __init__(self):
+    def __init__(self, config):
         model = Unet(input_shape=config["input_shape"],
                      n_labels=config["classes"],
                      activation_name="sigmoid")
                      #activation="softmax"
         #TODO: compile extract from model
         self.model = model
+        self.config = config
 
     # Train the Neural Network model on the provided case ids
-    def train(self, ids, data_path):
-        # Create a Input Reader instance
-        reader = CNNsolver_IR.InputReader(data_path)
-        # Iterate over each case
-        for i in ids:
-            # Load the MRI of the case
-            mri = reader.case_loader(i, pickle=True)
-            # Slice volume and segmentation into patches
-            mri.create_patches("vol", config["patch_size"], config["overlap"])
-            mri.create_patches("seg", config["patch_size"], config["overlap"])
-            # Backup MRI to pickle for faster access in later epochs
-            reader.mri_pickle_backup(i, mri)
-            # Calculate the number of steps for the fitting
-            steps = math.ceil(len(mri.patches_vol) / config["batch_size"])
-            # Fit current MRI to the CNN model
-            self.model.fit_generator(mri.data_generator(config["batch_size"],
-                                                        steps=steps,
-                                                        training=True),
-                                     steps_per_epoch=steps,
-                                     epochs=config["epochs"],
-                                     max_queue_size=config["max_queue_size"])
+    def train(self, cases):
+        # Preprocess Magnetc Resonance Images
+        casePointer = preprocessing_MRIs(cases, self.config, training=True)
+        # Run training process with the Keras fit_generator
+        self.model.fit_generator(data_generator(casePointer,
+                                                self.config["data_path"],
+                                                training=True),
+                                 steps_per_epoch=len(casePointer),
+                                 epochs=self.config["epochs"],
+                                 max_queue_size=self.config["max_queue_size"])
         # Clean up temporary MRI pickles for training
-        reader.mri_pickle_cleanup()
+        CNNsolver_IR.mri_pickle_cleanup()
 
-    # Predict with the Neural Network model on the provided case ids
-    def predict(self, ids, data_path):
-        results = []
-        # Create a Input Reader instance
-        reader = CNNsolver_IR.InputReader(data_path)
-        # Iterate over each case
-        for i in ids:
-            # Load the MRI of the case
-            mri = reader.case_loader(i, True)
-            # Slice volume into patches
-            mri.create_patches("vol", config["patch_size"], config["overlap"])
-            # Calculate the number of steps for the prediction
-            steps = math.ceil(len(mri.patches_vol) / config["batch_size"])
-            # # Fit current MRI to the CNN model
-            pred = self.model.predict_generator(
-                                    mri.data_generator(
-                                                config["batch_size"],
-                                                steps,
-                                                training=False),
-                                    steps=steps,
-                                    max_queue_size=config["max_queue_size"])
-            # Transform probabilities to classes
-            pred_seg = numpy.argmax(pred, axis=-1)
-            # Concatenate patches into a single 3D matrix back
-            #TODO!!!!!!!!!!!!!!!!!!!!
-            # Add segmentation prediction to the MRI case object
-            mri.add_segmentation(pred_seg, False)
-            # Add the MRI to the results list
-            results.append(mri)
-        # Return final results
-        return results
+
+# WORK IN PROGRESS!!!
+    # # Predict with the Neural Network model on the provided case ids
+    # def predict(self, cases):
+    #     # Iterate over each case
+    #     for id in cases:
+    #         # Preprocess Magnetc Resonance Images
+    #         casePointer = preprocessing_MRIs([id], self.config, training=False)
+    #         # Run prediction process with the Keras predict_generator
+    #         pred = self.model.predict_generator(
+    #                             data_generator(casePointer,
+    #                                            self.config["data_path"],
+    #                                            training=False),
+    #                             steps=len(casePointer),
+    #                             max_queue_size=self.config["max_queue_size"])
+    #         # Transform probabilities to classes
+    #         pred_seg = numpy.argmax(pred, axis=-1)
+    #         # Concatenate patches into a single 3D matrix back
+    #         pred_seg = concat_3Dmatrices(pred_seg,
+    #
+    #                                      self.config["
+    #                                      image_size, window, overlap)
+    #
+    #                                      patches, image_size, window, overlap
+    #         # Add segmentation prediction to the MRI case object
+    #         mri.add_segmentation(pred_seg, truth=False)
+    #         # Add the MRI to the results list
+    #
+    #     # Create a Input Reader instance
+    #     reader = CNNsolver_IR.InputReader(data_path)
+    #     # Iterate over each case
+    #     for i in ids:
+    #         # Load the MRI of the case
+    #         mri = reader.case_loader(i, load_seg=False, pickle=True)
+    #         # Slice volume into patches
+    #         mri.create_patches("vol", config["patch_size"], config["overlap"])
+    #         # Calculate the number of steps for the prediction
+    #         steps = math.ceil(len(mri.patches_vol) / config["batch_size"])
+    #         # # Fit current MRI to the CNN model
+    #         pred = self.model.predict_generator(
+    #                                 mri.data_generator(
+    #                                             config["batch_size"],
+    #                                             steps,
+    #                                             training=False),
+    #                                 steps=steps,
+    #                                 max_queue_size=config["max_queue_size"])
+    #         # Transform probabilities to classes
+    #         pred_seg = numpy.argmax(pred, axis=-1)
+    #         # Concatenate patches into a single 3D matrix back
+    #         # Add segmentation prediction to the MRI case object
+    #         mri.add_segmentation(pred_seg, truth=False)
+    #         # Add the MRI to the results list
+    #         results.append(mri)
+    #     # Return final results
+    #     return results
 
     # # Evaluate the Neural Network model on the provided case ids
     # def evaluate(self, ids, data_path):

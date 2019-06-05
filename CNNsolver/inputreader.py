@@ -80,7 +80,7 @@ class InputReader:
     # Load a MRI in NIFTI format and creates a MRI sample object
     def case_loader(self, case_id, load_seg=True, pickle=False):
         # IF pickle modus is True and MRI pickle file exist
-        if pickle and os.path.exists("model/mri_tmp." + str(case_id) + \
+        if pickle and os.path.exists("model/MRI.case" + str(case_id) + \
                                      ".pickle"):
             # Load MRI object from pickle and return MRI
             mri = self.mri_pickle_load(case_id)
@@ -111,11 +111,12 @@ class InputReader:
         mri = pickle.load(pickle_in)
         return mri
 
-    # Clean up all temporary pickles
-    def mri_pickle_cleanup(self):
-        # Iterate over each file in the model directory
-        directory = os.listdir("model")
-        for file in directory:
-            # IF file matches temporary MRI pickle name pattern -> delete it
-            if match("MRI\.case[0-9]+\.pickle", file) is not None:
-                os.remove(os.path.join("model", file))
+# Clean up all temporary pickles
+### Note: Global function -> no class function!
+def mri_pickle_cleanup():
+    # Iterate over each file in the model directory
+    directory = os.listdir("model")
+    for file in directory:
+        # IF file matches temporary MRI pickle name pattern -> delete it
+        if match("MRI\.case[0-9]+\.pickle", file) is not None:
+            os.remove(os.path.join("model", file))
