@@ -36,6 +36,7 @@ class NeuralNetwork:
         # Run training process with the Keras fit_generator
         self.model.fit_generator(data_generator(casePointer,
                                                 self.config["data_path"],
+                                                self.config["classes"],
                                                 training=True),
                                  steps_per_epoch=len(casePointer),
                                  epochs=self.config["epochs"],
@@ -55,6 +56,7 @@ class NeuralNetwork:
     #         pred = self.model.predict_generator(
     #                             data_generator(casePointer,
     #                                            self.config["data_path"],
+    #                                            self.config["classes"],
     #                                            training=False),
     #                             steps=len(casePointer),
     #                             max_queue_size=self.config["max_queue_size"])

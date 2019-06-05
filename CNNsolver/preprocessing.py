@@ -42,7 +42,7 @@ def preprocessing_MRIs(cases, config, training=False):
             batches_seg = create_batches(patches_seg,
                                          config["batch_size"],
                                          steps)
-            mri.add_batches(batches_vol, vol=False)
+            mri.add_batches(batches_seg, vol=False)
         # Backup MRI to pickle for faster access in later usages
         reader.mri_pickle_backup(i, mri)
         # Save the number of steps in the casePointer list
@@ -53,7 +53,6 @@ def preprocessing_MRIs(cases, config, training=False):
 # Create batches from a list of patches
 def create_batches(patches, batch_size, steps):
     # Initialize result list
-    #batches = np.array([])
     batches = []
     # Create a batch in each step
     for i in range(0, steps):
@@ -65,7 +64,6 @@ def create_batches(patches, batch_size, steps):
         # Concatenate volume patches into the batch
         batch = np.concatenate(patches[start:end], axis=0)
         # Append batch to result batches list
-        #batches = np.append(batches, batch, axis=0)
         batches.append(batch)
     # Return resulting batches list
     return batches
@@ -75,7 +73,7 @@ def create_batches(patches, batch_size, steps):
 #-----------------------------------------------------#
 # MRI Data Generator for training and predicting (WITH-/OUT segmentation)
 ## Returns a batch containing multiple patches for each call
-def data_generator(casePointer, data_path, training=False):
+def data_generator(casePointer, data_path, classes, training=False):
     # Initialize a counter for MRI internal batch pointer and current Case MRI
     batch_pointer = None
     current_case = -1
@@ -99,7 +97,7 @@ def data_generator(casePointer, data_path, training=False):
                 # Load next segmentation batch
                 batch_seg = current_mri.batches_seg[batch_pointer]
                 # Transform digit segmentation classes into categorical
-                #batch_seg = to_categorical(batch_seg, num_classes=3)
+                batch_seg = to_categorical(batch_seg, num_classes=classes)
                 # Update batch_pointer
                 batch_pointer += 1
                 # Return volume and segmentation batch
