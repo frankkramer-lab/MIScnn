@@ -1,4 +1,14 @@
 #-----------------------------------------------------#
+#               Source Code is based on:              #
+# https://github.com/mrkolarik/3D-brain-segmentation  #
+#                                                     #
+#                     Reference:                      #
+#Kolařík, M., Burget, R., Uher, V., Říha, K., & Dutta,#
+#                    M. K. (2019).                    #
+#  Optimized High Resolution 3D Dense-U-Net Network   #
+#          for Brain and Spine Segmentation.          #
+#        Applied Sciences, 9(3), vol. 9, no. 3.       #
+#-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
 from keras.models import Model
