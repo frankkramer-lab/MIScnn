@@ -13,7 +13,7 @@ from utils.matrix_operations import slice_3Dmatrix
 #          Patches and Batches Preprocessing          #
 #-----------------------------------------------------#
 # Load and preprocess all MRI's to batches for later training or prediction
-def preprocessing_MRIs(cases, config, training=False):
+def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
     print("Preprocessing of the Magnetic Resonance Images")
     # Parameter initialization
     casePointer = []
@@ -27,6 +27,14 @@ def preprocessing_MRIs(cases, config, training=False):
         patches_vol = slice_3Dmatrix(mri.vol_data,
                                      config["patch_size"],
                                      config["overlap"])
+        # IF training: Slice segmentation into patches
+        if training:
+            patches_seg = slice_3Dmatrix(mri.seg_data,
+                                         config["patch_size"],
+                                         config["overlap"])
+        # IF skip blank patches: remove all blank patches from the list
+        if skip_blanks and training:
+            patches_vol, patches_seg = remove_blanks(patches_vol, patches_seg)
         # Calculate the number of batches for this MRI
         steps = math.ceil(len(patches_vol) / config["batch_size"])
         # Create batches from the volume patches
@@ -34,14 +42,15 @@ def preprocessing_MRIs(cases, config, training=False):
                                      config["batch_size"],
                                      steps)
         mri.add_batches(batches_vol, vol=True)
-        # IF training: Slice segmentation into patches and create batches
+        # IF training: Create batches from the segmentation batches
         if training:
-            patches_seg = slice_3Dmatrix(mri.seg_data,
-                                         config["patch_size"],
-                                         config["overlap"])
             batches_seg = create_batches(patches_seg,
                                          config["batch_size"],
                                          steps)
+            # Transform digit segmentation classes into categorical
+            for b, batch in enumerate(batches_seg):
+                batches_seg[b] = to_categorical(batch,
+                                                num_classes=config["classes"])
             mri.add_batches(batches_seg, vol=False)
         # Backup MRI to pickle for faster access in later usages
         reader.mri_pickle_backup(i, mri)
@@ -68,12 +77,23 @@ def create_batches(patches, batch_size, steps):
     # Return resulting batches list
     return batches
 
+# Remove all blank patches (with only background)
+def remove_blanks(patches_vol, patches_seg, background_class=0):
+    # Iterate over each patch
+    for i in reversed(range(0, len(patches_seg))):
+        # IF patch DON'T contain any non background class -> remove it
+        if not np.any(patches_seg[i] != background_class):
+            del patches_vol[i]
+            del patches_seg[i]
+    # Return all non blank patches
+    return patches_vol, patches_seg
+
 #-----------------------------------------------------#
 #              MRI Data Generator (Keras)             #
 #-----------------------------------------------------#
 # MRI Data Generator for training and predicting (WITH-/OUT segmentation)
 ## Returns a batch containing multiple patches for each call
-def data_generator(casePointer, data_path, classes, training=False):
+def data_generator(casePointer, data_path, training=False):
     # Initialize a counter for MRI internal batch pointer and current Case MRI
     batch_pointer = None
     current_case = -1
@@ -83,6 +103,9 @@ def data_generator(casePointer, data_path, classes, training=False):
     # Start while loop (Keras specific requirement)
     while True:
         for i in range(0, len(casePointer)):
+            # Reset batch_pointer at the end of an epoch
+            if i == 0:
+                batch_pointer = 0
             # Load the next pickled MRI object if necessary
             if current_case != casePointer[i]:
                 batch_pointer = 0
@@ -96,18 +119,16 @@ def data_generator(casePointer, data_path, classes, training=False):
             if training:
                 # Load next segmentation batch
                 batch_seg = current_mri.batches_seg[batch_pointer]
-                # Transform digit segmentation classes into categorical
-                batch_seg = to_categorical(batch_seg, num_classes=classes)
                 # Update batch_pointer
                 batch_pointer += 1
                 # Return volume and segmentation batch
-                yield(batch_vol, batch_seg)
+                yield batch_vol, batch_seg
             # IF batch is for predicting -> return next vol batch
             else:
                 # Update batch_pointer
                 batch_pointer += 1
                 # Return volume batch
-                yield(batch_vol)
+                yield batch_vol
 
 #-----------------------------------------------------#
 #            Other preprocessing functions            #
