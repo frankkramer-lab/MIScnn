@@ -10,7 +10,7 @@ import math
 import inputreader as CNNsolver_IR
 from preprocessing import preprocessing_MRIs, data_generator
 from utils.matrix_operations import concat_3Dmatrices
-from models.unet_mudomini import Unet
+from models.unet_muellerdo import Unet
 from models.metrics import dice_coefficient, dice_classwise, tversky_loss
 
 #-----------------------------------------------------#
