@@ -49,20 +49,23 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 #                   Configurations                    #
 #-----------------------------------------------------#
-# Define range of cases for the model training
-cases = list(range(2,3))
-# Configurations
 config = dict()
+# Dataset
+config["cases"] = list(range(2,3))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
+# Neural Network Architecture
 config["input_shape"] = (16, 16, 16, 1)         # Neural Network input shape
-config["classes"] = 3                           # Number of output classes
-config["batch_size"] = 3                        # Number of patches in on step
 config["patch_size"] = (16, 16, 16)             # Patch shape/size
-config["overlap"] = 0                           # Overlap in x-axis
-config["max_queue_size"] = 3                    # Number of preprocessed batches
+config["classes"] = 3                           # Number of output classes
+# Training
+config["batch_size"] = 3                        # Number of patches in on step
 config["epochs"] = 1                            # Number of epochs for training
-config["skip_blanks"] = True                    # Skip patches with only background
+config["max_queue_size"] = 3                    # Number of preprocessed batches
 config["learninig_rate"] = 0.00001              # Learninig rate for the training
+# Data Augmentation
+config["overlap"] = 0                           # Overlap in x-axis
+config["skip_blanks"] = True                    # Skip patches with only background
+config["scale_input_values"] = True             # Scale volume values to [0,1]
 
 #-----------------------------------------------------#
 #                    Runner code                      #
@@ -71,7 +74,7 @@ config["learninig_rate"] = 0.00001              # Learninig rate for the trainin
 cnn_model = CNNsolver_NN.NeuralNetwork(config)
 
 # Train the model
-cnn_model.train(cases)
+cnn_model.train(config["cases"])
 # Dump model
 #cnn_model.dump("model")
 

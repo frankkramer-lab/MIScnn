@@ -10,8 +10,8 @@ import math
 import inputreader as CNNsolver_IR
 from preprocessing import preprocessing_MRIs, data_generator
 from utils.matrix_operations import concat_3Dmatrices
-from models.unet_mrkolarik_standard import Unet
-from utils.metrics import dice_coefficient, dice_classwise, tversky_loss
+from models.unet_mudomini import Unet
+from models.metrics import dice_coefficient, dice_classwise, tversky_loss
 
 #-----------------------------------------------------#
 #                Neural Network - Class               #
@@ -27,8 +27,8 @@ class NeuralNetwork:
     # Create a Convolutional Neural Network with Keras
     def __init__(self, config):
         model = Unet(input_shape=config["input_shape"],
-                     n_labels=config["classes"])
-                     #activation="softmax"
+                     n_labels=config["classes"],
+                     activation="softmax")
         model.compile(optimizer=Adam(lr=config["learninig_rate"]),
                       loss=tversky_loss,
                       metrics=self.metrics)

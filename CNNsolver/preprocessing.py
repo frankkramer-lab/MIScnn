@@ -23,6 +23,9 @@ def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
     for i in cases:
         # Load the MRI of the current case
         mri = reader.case_loader(i, load_seg=training, pickle=False)
+        # IF scaling: Scale each volume value to [0,1]
+        if config["scale_input_values"]:
+            mri.vol_data = scale_volume_values(mri.vol_data)
         # Slice volume into patches
         patches_vol = slice_3Dmatrix(mri.vol_data,
                                      config["patch_size"],
@@ -77,17 +80,6 @@ def create_batches(patches, batch_size, steps):
     # Return resulting batches list
     return batches
 
-# Remove all blank patches (with only background)
-def remove_blanks(patches_vol, patches_seg, background_class=0):
-    # Iterate over each patch
-    for i in reversed(range(0, len(patches_seg))):
-        # IF patch DON'T contain any non background class -> remove it
-        if not np.any(patches_seg[i] != background_class):
-            del patches_vol[i]
-            del patches_seg[i]
-    # Return all non blank patches
-    return patches_vol, patches_seg
-
 #-----------------------------------------------------#
 #              MRI Data Generator (Keras)             #
 #-----------------------------------------------------#
@@ -133,20 +125,23 @@ def data_generator(casePointer, data_path, training=False):
 #-----------------------------------------------------#
 #            Other preprocessing functions            #
 #-----------------------------------------------------#
-#NOT USED
-def convert_to_grayscale(volume):
-    hu_min = -512
-    hu_max = 512
-    # Clip at max and min values if specified
-    if hu_min is not None or hu_max is not None:
-        volume = np.clip(volume, hu_min, hu_max)
+# Remove all blank patches (with only background)
+def remove_blanks(patches_vol, patches_seg, background_class=0):
+    # Iterate over each patch
+    for i in reversed(range(0, len(patches_seg))):
+        # IF patch DON'T contain any non background class -> remove it
+        if not np.any(patches_seg[i] != background_class):
+            del patches_vol[i]
+            del patches_seg[i]
+    # Return all non blank patches
+    return patches_vol, patches_seg
 
-    # Scale to values between 0 and 1
-    mxval = np.max(volume)
-    mnval = np.min(volume)
-    im_volume = (volume - mnval)/max(mxval - mnval, 1e-3)
-
-    # Return values scaled to 0-255 range, but *not cast to uint8*
-    # Repeat three times to make compatible with color overlay
-    im_volume = 255*im_volume
-    return np.stack((im_volume, im_volume, im_volume), axis=-1)
+# Scale the input volume voxel values between [0,1]
+def scale_volume_values(volume):
+    # Identify minimum and maximum
+    max_value = np.max(volume)
+    min_value = np.min(volume)
+    # Scaling
+    volume_normalized = (volume - min_value) / (max_value - min_value)
+    # Return scaled volume
+    return volume_normalized
