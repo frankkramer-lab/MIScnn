@@ -1,12 +1,21 @@
+#-----------------------------------------------------#
+#                   Library imports                   #
+#-----------------------------------------------------#
 import numpy as np
 import math
 
+#-----------------------------------------------------#
+#          Slice and Concatenate 3D Matrices          #
+#-----------------------------------------------------#
 # Slice a 3D matrix
 def slice_3Dmatrix(array, window, overlap):
     # Calculate steps
     steps_x = int(math.ceil(len(array) / float(window[0] - overlap)))
     steps_y = int(math.ceil(len(array[0]) / float(window[1])))
     steps_z = int(math.ceil(len(array[0][0]) / float(window[2])))
+    # Adjust steps x according to existent overlap
+    if steps_x != 1 and overlap != 0:
+        steps_x -= 1
 
     # Iterate over it x,y,z
     patches = []
@@ -26,6 +35,9 @@ def slice_3Dmatrix(array, window, overlap):
                     # to ensure the fixed patch/window sizes
                     x_start = len(array) - window[0]
                     x_end = len(array)
+                    # Fix for MRIs which are smaller than patch size
+                    if x_start < 0:
+                        x_start = 0
                 if(y_end > len(array[0])):
                     y_start = len(array[0])
                     y_end = len(array[0])
@@ -46,6 +58,9 @@ def concat_3Dmatrices(patches, image_size, window, overlap):
     steps_x = int(math.ceil(image_size[0] / float(window[0] - overlap)))
     steps_y = int(math.ceil(image_size[1] / float(window[1])))
     steps_z = int(math.ceil(image_size[2] / float(window[2])))
+    # Adjust steps x according to existent overlap
+    if steps_x != 1 and overlap != 0:
+        steps_x -= 1
 
     # Iterate over it x,y,z
     matrix_x = None
