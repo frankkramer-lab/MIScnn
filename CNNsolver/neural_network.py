@@ -67,13 +67,13 @@ class NeuralNetwork:
                                 max_queue_size=self.config["max_queue_size"])
             # Reload pickled MRI object from disk to cache
             mri = reader.case_loader(id, load_seg=False, pickle=True)
-            # Transform probabilities to classes
-            pred_seg = numpy.argmax(pred_seg, axis=-1)
             # Concatenate patches into a single 3D matrix back
             pred_seg = concat_3Dmatrices(patches=pred_seg,
                                          image_size=mri.vol_data.shape,
                                          window=self.config["patch_size"],
                                          overlap=self.config["overlap"])
+            # Transform probabilities to classes
+            pred_seg = numpy.argmax(pred_seg, axis=-1)
             # Add segmentation prediction to the MRI case object
             mri.add_segmentation(pred_seg, truth=False)
             # Backup MRI to pickle
@@ -105,13 +105,13 @@ class NeuralNetwork:
                                 max_queue_size=self.config["max_queue_size"])
             # Reload pickled MRI object from disk to cache
             mri = reader.case_loader(id, load_seg=True, pickle=True)
-            # Transform probabilities to classes
-            pred_seg = numpy.argmax(pred_seg, axis=-1)
             # Concatenate patches into a single 3D matrix back
             pred_seg = concat_3Dmatrices(patches=pred_seg,
                                          image_size=mri.vol_data.shape,
                                          window=self.config["patch_size"],
                                          overlap=self.config["overlap"])
+            # Transform probabilities to classes
+            pred_seg = numpy.argmax(pred_seg, axis=-1)
             # Add segmentation prediction to the MRI case object
             mri.add_segmentation(pred_seg, truth=False)
             # Backup MRI to pickle
@@ -138,4 +138,4 @@ class NeuralNetwork:
         # Compile model
         self.model.compile(optimizer=Adam(lr=self.config["learninig_rate"]),
                            loss=tversky_loss,
-                           metrics=metrics)
+                           metrics=self.metrics)
