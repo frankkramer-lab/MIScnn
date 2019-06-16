@@ -81,48 +81,6 @@ def create_batches(patches, batch_size, steps):
     return batches
 
 #-----------------------------------------------------#
-#              MRI Data Generator (Keras)             #
-#-----------------------------------------------------#
-# MRI Data Generator for training and predicting (WITH-/OUT segmentation)
-## Returns a batch containing multiple patches for each call
-def data_generator(casePointer, data_path, training=False):
-    # Initialize a counter for MRI internal batch pointer and current Case MRI
-    batch_pointer = None
-    current_case = -1
-    current_mri = None
-    # Create a Input Reader instance
-    reader = CNNsolver_IR.InputReader(data_path)
-    # Start while loop (Keras specific requirement)
-    while True:
-        for i in range(0, len(casePointer)):
-            # Reset batch_pointer at the end of an epoch
-            if i == 0:
-                batch_pointer = 0
-            # Load the next pickled MRI object if necessary
-            if current_case != casePointer[i]:
-                batch_pointer = 0
-                current_case = casePointer[i]
-                current_mri = reader.case_loader(current_case,
-                                                 load_seg=training,
-                                                 pickle=True)
-            # Load next volume batch
-            batch_vol = current_mri.batches_vol[batch_pointer]
-            # IF batch is for training -> return next vol & seg batch
-            if training:
-                # Load next segmentation batch
-                batch_seg = current_mri.batches_seg[batch_pointer]
-                # Update batch_pointer
-                batch_pointer += 1
-                # Return volume and segmentation batch
-                yield batch_vol, batch_seg
-            # IF batch is for predicting -> return next vol batch
-            else:
-                # Update batch_pointer
-                batch_pointer += 1
-                # Return volume batch
-                yield batch_vol
-
-#-----------------------------------------------------#
 #            Other preprocessing functions            #
 #-----------------------------------------------------#
 # Remove all blank patches (with only background)

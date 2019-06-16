@@ -8,7 +8,8 @@ import numpy
 import math
 #Internal libraries/scripts
 import inputreader as CNNsolver_IR
-from preprocessing import preprocessing_MRIs, data_generator
+from preprocessing import preprocessing_MRIs
+from data_generator import DataGenerator
 from utils.matrix_operations import concat_3Dmatrices
 from models.unet_muellerdo import Unet
 from models.metrics import dice_coefficient, dice_classwise, tversky_loss
@@ -40,11 +41,13 @@ class NeuralNetwork:
         # Preprocess Magnetc Resonance Images
         casePointer = preprocessing_MRIs(cases, self.config, training=True,
                                          skip_blanks=self.config["skip_blanks"])
+        # Initialize Data Generator
+        dataGen = DataGenerator(casePointer,
+                                data_path=self.config["data_path"],
+                                training=True,
+                                shuffle=self.config["shuffle"])
         # Run training process with the Keras fit_generator
-        self.model.fit_generator(data_generator(casePointer,
-                                                self.config["data_path"],
-                                                training=True),
-                                 steps_per_epoch=len(casePointer),
+        self.model.fit_generator(generator=dataGen,
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
         # Clean up temporary MRI pickles for training
@@ -58,12 +61,14 @@ class NeuralNetwork:
         for id in cases:
             # Preprocess Magnetc Resonance Images
             casePointer = preprocessing_MRIs([id], self.config, training=False)
+            # Initialize Data generator
+            dataGen = DataGenerator(casePointer,
+                                    data_path=self.config["data_path"],
+                                    training=False,
+                                    shuffle=False)
             # Run prediction process with the Keras predict_generator
             pred_seg = self.model.predict_generator(
-                                data_generator(casePointer,
-                                               self.config["data_path"],
-                                               training=False),
-                                steps=len(casePointer),
+                                generator=dataGen,
                                 max_queue_size=self.config["max_queue_size"])
             # Reload pickled MRI object from disk to cache
             mri = reader.case_loader(id, load_seg=False, pickle=True)
@@ -87,21 +92,25 @@ class NeuralNetwork:
         for id in cases:
             # Preprocess Magnetc Resonance Images
             casePointer = preprocessing_MRIs([id], self.config, training=True)
+            # Initialize Data generator for evaluation
+            dataGen = DataGenerator(casePointer,
+                                    data_path=self.config["data_path"],
+                                    training=True,
+                                    shuffle=False)
             # Run Evaluation process with the Keras predict_generator
             result = self.model.evaluate_generator(
-                                data_generator(casePointer,
-                                               self.config["data_path"],
-                                               training=True),
-                                steps=len(casePointer),
+                                generator=dataGen,
                                 max_queue_size=self.config["max_queue_size"])
             # Output evaluation result
             print(str(id) + "\t" + str(result))
+            # Initialize Data generator for prediction
+            dataGen = DataGenerator(casePointer,
+                                    data_path=self.config["data_path"],
+                                    training=False,
+                                    shuffle=False)
             # Run prediction process with the Keras predict_generator
             pred_seg = self.model.predict_generator(
-                                data_generator(casePointer,
-                                               self.config["data_path"],
-                                               training=False),
-                                steps=len(casePointer),
+                                generator=dataGen,
                                 max_queue_size=self.config["max_queue_size"])
             # Reload pickled MRI object from disk to cache
             mri = reader.case_loader(id, load_seg=True, pickle=True)

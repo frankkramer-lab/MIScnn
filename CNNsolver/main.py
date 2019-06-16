@@ -51,17 +51,18 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 config = dict()
 # Dataset
-config["cases"] = list(range(2,3))
+config["cases"] = list(range(3,4))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
 # Neural Network Architecture
 config["input_shape"] = (None, 16, 16, 1)       # Neural Network input shape
 config["patch_size"] = (16, 16, 16)             # Patch shape/size
 config["classes"] = 3                           # Number of output classes
-# Training
 config["batch_size"] = 3                        # Number of patches in on step
-config["epochs"] = 1                            # Number of epochs for training
+# Training
+config["epochs"] = 2                            # Number of epochs for training
 config["max_queue_size"] = 3                    # Number of preprocessed batches
 config["learninig_rate"] = 0.00001              # Learninig rate for the training
+config["shuffle"] = True                        # Shuffle batches for training
 # Data Augmentation
 config["overlap"] = (0,0,0)                     # Overlap in (x,y,z)-axis
 config["skip_blanks"] = True                    # Skip patches with only background
@@ -74,17 +75,17 @@ config["scale_input_values"] = False            # Scale volume values to [0,1]
 cnn_model = CNNsolver_NN.NeuralNetwork(config)
 
 # Train the model
-cnn_model.train(config["cases"])
+#cnn_model.train(config["cases"])
 # Dump model
 #cnn_model.dump("model")
 
 # Load model
-#cnn_model.load("model")
+cnn_model.load("model")
 # Predict segmentation with CNN model
-#cnn_model.evaluate(list(range(3,4)))
+cnn_model.evaluate(list(range(3,4)))
 
 # Evaluate model
-#CNNsolver_EV.visual_evaluation(list(range(2,3)), config["data_path"])
+CNNsolver_EV.visual_evaluation(list(range(3,4)), config["data_path"])
 #cnn_model.evaluate(list(range(3,4)), path_data)
 
 
