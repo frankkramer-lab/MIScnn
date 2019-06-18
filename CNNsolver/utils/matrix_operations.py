@@ -80,6 +80,7 @@ def concat_3Dmatrices(patches, image_size, window, overlap):
                     # Handle z-axis overlap
                     slice_overlap = calculate_overlap(z, steps_z, overlap,
                                                       image_size, window, 2)
+                    print(str(x) + "\t" + str(y) + "\t" + str(z) + "\t" + str(steps_z) + "\t" + str(slice_overlap))
                     matrix_z, matrix_p = handle_overlap(matrix_z, matrix_p,
                                                         slice_overlap,
                                                         axis=2)
@@ -116,9 +117,8 @@ def concat_3Dmatrices(patches, image_size, window, overlap):
 # Calculate the overlap of the current matrix slice
 def calculate_overlap(pointer, steps, overlap, image_size, window, axis):
             # Overlap: IF last axis-layer -> use special overlap size
-            if pointer == steps-1 and not (overlap[axis] == 0 and
-                                          (image_size[axis]-overlap[axis])
-                                           % window[axis] == 0):
+            if pointer == steps-1 and not (image_size[axis]-overlap[axis]) \
+                                            % (window[axis]-overlap[axis]) == 0:
                 current_overlap = window[axis] - \
                                   (image_size[axis] - overlap[axis]) % \
                                   (window[axis] - overlap[axis])
