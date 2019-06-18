@@ -11,7 +11,7 @@ import os
 import tensorflow as tf
 # Internal libraries/scripts
 import neural_network as CNNsolver_NN
-import evaluation as CNNsolver_EV
+import evaluation as CNNsolver_CV
 
 #-----------------------------------------------------#
 #                  Parse command line                 #
@@ -51,7 +51,7 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 config = dict()
 # Dataset
-config["cases"] = list(range(3,4))
+config["cases"] = list(range(0,20))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
 config["output_path"] = "predictions"           # Path to predictions directory
 # Neural Network Architecture
@@ -68,6 +68,8 @@ config["shuffle"] = True                        # Shuffle batches for training
 config["overlap"] = (0,0,0)                     # Overlap in (x,y,z)-axis
 config["skip_blanks"] = True                    # Skip patches with only background
 config["scale_input_values"] = False            # Scale volume values to [0,1]
+# Evaluation
+config["n_folds"] = 5                           # Number of cross-validation folds
 
 #-----------------------------------------------------#
 #                    Runner code                      #
@@ -84,15 +86,13 @@ cnn_model = CNNsolver_NN.NeuralNetwork(config)
 #cnn_model.dump("model")
 
 # Load model
-cnn_model.load("model")
+#cnn_model.load("model")
 
 # Predict segmentation with CNN model
-cnn_model.predict(list(range(3,4)))
+#cnn_model.predict(list(range(3,4)))
 
 # Evaluate model
-#cnn_model.evaluate(list(range(3,4)))
-#CNNsolver_EV.visual_evaluation(list(range(3,4)), config["data_path"])
-#cnn_model.evaluate(list(range(3,4)), path_data)
+CNNsolver_CV.cross_validation(cnn_model, config)
 
 
 #print(cnn_model.model.metrics_names)
