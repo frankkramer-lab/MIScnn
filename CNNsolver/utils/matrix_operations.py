@@ -80,7 +80,6 @@ def concat_3Dmatrices(patches, image_size, window, overlap):
                     # Handle z-axis overlap
                     slice_overlap = calculate_overlap(z, steps_z, overlap,
                                                       image_size, window, 2)
-                    print(str(x) + "\t" + str(y) + "\t" + str(z) + "\t" + str(steps_z) + "\t" + str(slice_overlap))
                     matrix_z, matrix_p = handle_overlap(matrix_z, matrix_p,
                                                         slice_overlap,
                                                         axis=2)

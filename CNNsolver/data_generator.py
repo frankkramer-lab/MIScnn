@@ -4,7 +4,7 @@
 #External libraries
 import keras
 #Internal libraries/scripts
-import inputreader as CNNsolver_IR
+from data_io import case_loader
 
 #-----------------------------------------------------#
 #              MRI Data Generator (Keras)             #
@@ -25,8 +25,6 @@ class DataGenerator(keras.utils.Sequence):
         self.batch_pointer = None
         self.current_case = -1
         self.current_mri = None
-        # Create a Input Reader instance
-        self.reader = CNNsolver_IR.InputReader(data_path)
         # Trigger epoch end once in the beginning
         self.on_epoch_end()
 
@@ -38,9 +36,10 @@ class DataGenerator(keras.utils.Sequence):
         if self.current_case != self.casePointer[self.idx]:
             self.batch_pointer = 0
             self.current_case = self.casePointer[self.idx]
-            self.current_mri = self.reader.case_loader(self.current_case,
-                                                       load_seg=self.training,
-                                                       pickle=True)
+            self.current_mri = case_loader(self.current_case,
+                                           self.data_path,
+                                           load_seg=self.training,
+                                           pickle=True)
         # Load next volume batch
         batch_vol = self.current_mri.batches_vol[self.batch_pointer]
         # IF batch is for training -> return next vol & seg batch

@@ -6,7 +6,7 @@ import numpy as np
 import math
 from keras.utils import to_categorical
 #Internal libraries/scripts
-import inputreader as CNNsolver_IR
+from data_io import case_loader, mri_pickle_backup
 from utils.matrix_operations import slice_3Dmatrix
 
 #-----------------------------------------------------#
@@ -14,15 +14,14 @@ from utils.matrix_operations import slice_3Dmatrix
 #-----------------------------------------------------#
 # Load and preprocess all MRI's to batches for later training or prediction
 def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
-    print("Preprocessing of the Magnetic Resonance Images")
     # Parameter initialization
     casePointer = []
-    # Create a Input Reader instance
-    reader = CNNsolver_IR.InputReader(config["data_path"])
     # Iterate over each case
     for i in cases:
         # Load the MRI of the current case
-        mri = reader.case_loader(i, load_seg=training, pickle=False)
+        mri = case_loader(i, config["data_path"],
+                          load_seg=training,
+                          pickle=False)
         # IF scaling: Scale each volume value to [0,1]
         if config["scale_input_values"]:
             mri.vol_data = scale_volume_values(mri.vol_data)
@@ -56,7 +55,7 @@ def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
                                                 num_classes=config["classes"])
             mri.add_batches(batches_seg, vol=False)
         # Backup MRI to pickle for faster access in later usages
-        reader.mri_pickle_backup(i, mri)
+        mri_pickle_backup(i, mri)
         # Save the number of steps in the casePointer list
         casePointer.extend([i] * steps)
     # Return the casePointer list for the data generator usage later
