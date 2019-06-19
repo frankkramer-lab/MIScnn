@@ -12,7 +12,6 @@ class MRI:
     # Initialize class variable
     vol_data = None
     seg_data = None
-    pred_data = None
     batches_vol = None
     batches_seg = None
 
@@ -23,15 +22,9 @@ class MRI:
         self.vol_data = numpy.reshape(vol_data, vol_data.shape + (1,))
 
     # Add and preprocess segmentation annotation
-    def add_segmentation(self, segmentation, truth=True):
-        # Segmentation is the truth from training
-        if truth:
-            seg_data = segmentation.get_data()
-            self.seg_data = numpy.reshape(seg_data, seg_data.shape + (1,))
-        # Segmentation is a prediction from the model
-        else:
-            pred_data = segmentation
-            self.pred_data = numpy.reshape(pred_data, pred_data.shape + (1,))
+    def add_segmentation(self, segmentation):
+        seg_data = segmentation.get_data()
+        self.seg_data = numpy.reshape(seg_data, seg_data.shape + (1,))
 
     # Create patches from a 3D matrix for later batching
     def add_batches(self, batches, vol):
