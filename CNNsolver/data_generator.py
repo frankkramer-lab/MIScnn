@@ -3,6 +3,7 @@
 #-----------------------------------------------------#
 #External libraries
 import keras
+import numpy as np
 #Internal libraries/scripts
 from data_io import case_loader
 
@@ -67,5 +68,16 @@ class DataGenerator(keras.utils.Sequence):
         self.idx = -1
         self.batch_pointer = 0
         # Shuffle casePointer array
-        # if self.shuffle == True:
-        #     np.random.shuffle(self.indexes)
+        if self.shuffle == True:
+            # Create a unique indices map
+            cp_unique, cp_counts = np.unique(self.casePointer,
+                                             return_counts=True)
+            cp_indices = np.arange(len(cp_unique))
+            # Shuffle the indices map
+            np.random.shuffle(cp_indices)
+            # Add the casePointers accordingly to the shuffled indices map
+            cp_shuffled = []
+            for i in cp_indices:
+                cp_shuffled.extend([cp_unique[i]] * cp_counts[i])
+            # Update the shuffled casePointer array
+            self.casePointer = cp_shuffled
