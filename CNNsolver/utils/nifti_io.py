@@ -18,7 +18,7 @@ def load_volume_nii(cid, data_path):
         raise IOError(
             "Data path, {}, could not be resolved".format(str(data_path))
         )
-    # Get case_id from provided cid)
+    # Get case_id from provided cid
     try:
         cid = int(cid)
         case_id = "case_{:05d}".format(cid)
@@ -41,7 +41,7 @@ def load_segmentation_nii(cid, data_path):
         raise IOError(
             "Data path, {}, could not be resolved".format(str(data_path))
         )
-    # Get case_id from provided cid)
+    # Get case_id from provided cid
     try:
         cid = int(cid)
         case_id = "case_{:05d}".format(cid)
@@ -56,6 +56,27 @@ def load_segmentation_nii(cid, data_path):
     # Load segmentation from NIFTI file
     seg = nib.load(os.path.join(case_path, "segmentation.nii.gz"))
     return seg
+
+
+# Read a prediction NIFTI file from the prediction directory
+def load_prediction_nii(pid, data_path):
+    # Resolve location where data should be living
+    if not os.path.exists(data_path):
+        raise IOError(
+            "Data path, {}, could not be resolved".format(str(data_path))
+        )
+    # Parse the prediction name for the provided pid
+    pid = int(pid)
+    pred_file = "prediction_{:05d}".format(pid) + ".nii.gz"
+    # Make sure that pred_id exists under the data_path
+    pred_path = os.path.join(data_path, pred_file)
+    if not os.path.exists(pred_path):
+        raise ValueError(
+            "Prediction could not be found \"{}\"".format(pred_path.name)
+        )
+    # Load prediction from NIFTI file
+    pred = nib.load(pred_path)
+    return pred
 
 #-----------------------------------------------------#
 #                    NIFTI Writer                     #
@@ -72,4 +93,4 @@ def save_segmentation(seg, cid, output_path):
     nifti.get_data_dtype() == seg.dtype
     # Save segmentation to disk
     nib.save(nifti, os.path.join(output_path,
-                                 "prediction_" + str(cid) + ".nii.gz"))
+                                 "prediction_" + str(cid).zfill(5) + ".nii.gz"))

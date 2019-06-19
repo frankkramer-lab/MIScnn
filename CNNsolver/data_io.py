@@ -27,7 +27,7 @@ def case_loader(case_id, data_path, load_seg=True, pickle=False):
     # IF needed read the provided segmentation for current MRI sample
     if load_seg:
         segmentation = load_segmentation_nii(case_id, data_path)
-        mri.add_segmentation(segmentation, True)
+        mri.add_segmentation(segmentation)
     # Return MRI sample object
     return mri
 

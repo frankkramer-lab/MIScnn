@@ -26,19 +26,13 @@ def visualize_training(history, fold):
     plt.legend(['train', 'test'], loc='upper left')
     plt.savefig("tversky_loss." + str(fold) + ".png")
 
-
-
-# import numpy
-# import scipy.misc
-# import pickle
-#
-# def visualize(batch, prefix, highlight=False):
-#     if highlight:
-#         batch = numpy.argmax(batch, axis=-1)
-#         batch = batch*100
-#     else:
-#         batch = numpy.squeeze(batch, axis=-1)
-#     for i in range(0, len(batch)):
-#         for j in range(0, len(batch[i])):
-#             fpath = "visualization/" + str(prefix) + "." + str(i) + "-" + str(j) + ".png"
-#             scipy.misc.imsave(str(fpath), batch[i][j])
+def visualize_evaluation(truth, pred):
+    # Iterate over each slice
+    for i in range(len(truth)):
+        fig, axeslist = plt.subplots(ncols=2, nrows=1)
+        axeslist.ravel()[0].imshow(truth[i], cmap='gray')
+        axeslist.ravel()[0].set_title("Ground Truth")
+        axeslist.ravel()[1].imshow(pred[i], cmap='gray')
+        axeslist.ravel()[1].set_title("Prediction")
+        plt.savefig("visualization/slice_" + str(i) + ".png")
+        plt.close()

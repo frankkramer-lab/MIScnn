@@ -51,7 +51,7 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 config = dict()
 # Dataset
-config["cases"] = list(range(0,20))
+config["cases"] = list(range(0,2))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
 config["output_path"] = "predictions"           # Path to predictions directory
 # Neural Network Architecture
@@ -70,6 +70,9 @@ config["skip_blanks"] = True                    # Skip patches with only backgro
 config["scale_input_values"] = False            # Scale volume values to [0,1]
 # Evaluation
 config["n_folds"] = 5                           # Number of cross-validation folds
+config["n_loo"] = 5                             # Number of cycles for leave-one-out
+config["visualize"] = True                      # Print out images for visual evaluation
+config["class_freq"] = False                    # Calculate the class frequencies for each slice
 
 #-----------------------------------------------------#
 #                    Runner code                      #
@@ -78,21 +81,21 @@ config["n_folds"] = 5                           # Number of cross-validation fol
 print(config)
 
 # Create the Convolutional Neural Network
-cnn_model = CNNsolver_NN.NeuralNetwork(config)
+#cnn_model = CNNsolver_NN.NeuralNetwork(config)
 
-# Train the model
+# Train the Convolutional Neural Network model
 #cnn_model.train(config["cases"])
-# Dump model
+# Dump the model
 #cnn_model.dump("model")
 
-# Load model
+# Load a model
 #cnn_model.load("model")
 
-# Predict segmentation with CNN model
+# Predict a segmentation with the Convolutional Neural Network model
 #cnn_model.predict(list(range(3,4)))
 
-# Evaluate model
-CNNsolver_CV.cross_validation(cnn_model, config)
+# Evaluate the Convolutional Neural Network
+#CNNsolver_CV.cross_validation(config)
+#CNNsolver_CV.leave_one_out(config)
 
-
-#print(cnn_model.model.metrics_names)
+CNNsolver_CV.detailed_validation(None, [3], config)
