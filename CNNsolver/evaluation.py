@@ -3,10 +3,12 @@
 #-----------------------------------------------------#
 # External libraries
 import numpy as np
+import math
 # Internal libraries/scripts
 import neural_network as CNNsolver_NN
 from utils.visualizer import visualize_training, visualize_evaluation
 from utils.nifti_io import load_segmentation_nii, load_prediction_nii
+from data_io import save_evaluation
 
 #-----------------------------------------------------#
 #                   Cross-Validation                  #
@@ -28,12 +30,34 @@ def cross_validation(config):
         # Run training & validation
         history = model.evaluate(training, validation)
         # Draw plots for the training & validation
-        print(history)
-        visualize_training(history)
+        print(history.history)
+        visualize_training(history, "fold_" + str(i), config["evaluation_path"])
         # Make a detailed validation of the current cv-fold
-        detailed_validation(model, validation, config,
-                            config["visualize"],
-                            config["class_freq"])
+        detailed_validation(model, validation, config)
+
+#-----------------------------------------------------#
+#                 %-Split Validation                  #
+#-----------------------------------------------------#
+def split_validation(config):
+    # Create a copy of the caseList
+    cases = config["cases"]
+    # Calculate the number of samples in the testing set
+    test_size = int(math.ceil(float(len(cases) * config["per_split"])))
+    # Randomly pick samples until %-split percentage
+    testing = []
+    for i in range(test_size):
+        test_sample = cases.pop(np.random.choice(len(cases)))
+        testing.append(test_sample)
+    # Rename the remaining cases as training
+    training = cases
+    # Create a Convolutional Neural Network model
+    model = CNNsolver_NN.NeuralNetwork(config)
+    # Run training & validation
+    history = model.evaluate(training, testing)
+    # Draw plots for the training & validation
+    visualize_training(history, "split_validation", config["evaluation_path"])
+    # Make a detailed validation of the current cv-fold
+    detailed_validation(model, testing, config)
 
 #-----------------------------------------------------#
 #                    Leave-one-out                    #
@@ -50,14 +74,17 @@ def leave_one_out(config):
         # Train the model with the remaining cases
         model.train(cases)
         # Make a detailed validation on the LOO sample
-        detailed_validation(model, [loo], config,
-                            config["visualize"],
-                            config["class_freq"])
+        detailed_validation(model, [loo], config)
 
 #-----------------------------------------------------#
 #                 Detailed Validation                 #
 #-----------------------------------------------------#
 def detailed_validation(model, cases, config):
+    # Initialize kits19 scoring file
+    save_evaluation(["case_id", "score_KidneyTumor", "score_Tumor"],
+                    config["evaluation_path"],
+                    "kits19_scoring.tsv",
+                    start=True)
     # Predict the cases with the provided model
     model.predict(cases)
     # Iterate over each case
@@ -68,7 +95,10 @@ def detailed_validation(model, cases, config):
         pred = load_prediction_nii(id, config["output_path"]).get_data()
         # Calculate kits19 score
         score_kidney, score_tumor = kits19_score(truth, pred)
-        print(str(id) + "\t" + str(score_kidney) + "\t" + str(score_tumor))
+        # Save kits19 score to file
+        save_evaluation([id, score_kidney, score_tumor],
+                        config["evaluation_path"],
+                        "kits19_scoring.tsv")
         # Calculate class frequency per slice
         if config["class_freq"]:
             class_freq = calc_ClassFrequency(truth, pred)
@@ -76,7 +106,7 @@ def detailed_validation(model, cases, config):
                 print(str(id) + "\t" + str(i) + "\t" + str(class_freq[i]))
         # Visualize the truth and prediction segmentation
         if config["visualize"]:
-            visualize_evaluation(truth, pred)
+            visualize_evaluation(id, truth, pred, config["evaluation_path"])
 
 #-----------------------------------------------------#
 #              Other evaluation functions             #
