@@ -51,9 +51,10 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 config = dict()
 # Dataset
-config["cases"] = list(range(0,2))
+config["cases"] = list(range(0,20))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
-config["output_path"] = "predictions"           # Path to predictions directory
+config["output_path"] = "predictions"           # Path to the predictions directory
+config["evaluation_path"] = "evaluation"        # Path to the evaluation directory
 # Neural Network Architecture
 config["input_shape"] = (None, 32, 32, 1)       # Neural Network input shape
 config["patch_size"] = (16, 32, 32)             # Patch shape/size
@@ -72,7 +73,8 @@ config["rotation"] = False                      # Rotate patches in 90/180/270°
 config["flipping"] = True                       # Reflect/Flip patches
 config["flip_axis"] = (3)                       # Define the flipping axes (x,y,z <-> 1,2,3)
 # Evaluation
-config["n_folds"] = 5                           # Number of cross-validation folds
+config["n_folds"] = 5                           # Number of folds for cross-validation
+config["per_split"] = 0.20                      # Percentage of Testing Set for split-validation
 config["n_loo"] = 5                             # Number of cycles for leave-one-out
 config["visualize"] = True                      # Print out slice images for visual evaluation
 config["class_freq"] = False                    # Calculate the class frequencies for each slice
@@ -84,10 +86,10 @@ config["class_freq"] = False                    # Calculate the class frequencie
 print(config)
 
 # Create the Convolutional Neural Network
-cnn_model = CNNsolver_NN.NeuralNetwork(config)
+#cnn_model = CNNsolver_NN.NeuralNetwork(config)
 
 # Train the Convolutional Neural Network model
-cnn_model.train(config["cases"])
+#cnn_model.train(config["cases"])
 # Dump the model
 #cnn_model.dump("model")
 
@@ -100,5 +102,6 @@ cnn_model.train(config["cases"])
 # Evaluate the Convolutional Neural Network
 #CNNsolver_CV.cross_validation(config)
 #CNNsolver_CV.leave_one_out(config)
+CNNsolver_CV.split_validation(config)
 
 #CNNsolver_CV.detailed_validation(None, [3], config)

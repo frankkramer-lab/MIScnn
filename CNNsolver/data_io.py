@@ -65,3 +65,23 @@ def mri_pickle_cleanup():
         # IF file matches temporary MRI pickle name pattern -> delete it
         if match("MRI\.case[0-9]+\.pickle", file) is not None:
             os.remove(os.path.join("model", file))
+
+#-----------------------------------------------------#
+#               Evaluation Data Backup                #
+#-----------------------------------------------------#
+# Backup evaluation as TSV (Tab Separated File)
+def save_evaluation(data, directory, file, start=False):
+    # Set up the evaluation directory
+    if start and not os.path.exists(directory):
+        os.mkdir(directory)
+    # Define the writing type
+    if start:
+        writer_type = "w"
+    else:
+        writer_type = "a"
+    # Opening file writer
+    output_path = os.path.join(directory, file)
+    with open(output_path, writer_type) as fw:
+        # Join the data together to a row
+        line = "\t".join(map(str, data)) + "\n"
+        fw.write(line)
