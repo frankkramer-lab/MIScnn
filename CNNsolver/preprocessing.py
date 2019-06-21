@@ -34,9 +34,20 @@ def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
             patches_seg = slice_3Dmatrix(mri.seg_data,
                                          config["patch_size"],
                                          config["overlap"])
-        # IF skip blank patches: remove all blank patches from the list
-        if skip_blanks and training:
-            patches_vol, patches_seg = remove_blanks(patches_vol, patches_seg)
+            # IF skip blank patches: remove all blank patches from the list
+            if skip_blanks:
+                patches_vol, patches_seg = remove_blanks(patches_vol,
+                                                         patches_seg)
+            print(len(patches_vol))
+            # IF rotation: Rotate patches for data augmentation
+            if config["rotation"]:
+                patches_vol, patches_seg = rotate_patches(patches_vol,
+                                                          patches_seg)
+            # IF reflection: Reflect patches for data augmentation
+            if config["reflection"]:
+                patches_vol, patches_seg = reflect_patches(patches_vol,
+                                                           patches_seg)
+            print(len(patches_vol))
         # Calculate the number of batches for this MRI
         steps = math.ceil(len(patches_vol) / config["batch_size"])
         # Create batches from the volume patches
@@ -102,3 +113,26 @@ def scale_volume_values(volume):
     volume_normalized = (volume - min_value) / (max_value - min_value)
     # Return scaled volume
     return volume_normalized
+
+# Rotate patches at the y-z axis
+def rotate_patches(patches_vol, patches_seg):
+    # Initialize lists for rotated patches
+    rotated_vol = []
+    rotated_seg = []
+    # Iterate over 90,180,270 degree (1*90, 2*90, 3*90)
+    for times in range(1,4):
+        # Iterate over each patch
+        for i in range(len(patches_vol)):
+            # Rotate volume & segmentation and cache rotated patches
+            patch_vol_rotated = np.rot90(patches_vol[i], k=times, axes=(2,3))
+            rotated_vol.append(patch_vol_rotated)
+            patch_seg_rotated = np.rot90(patches_seg[i], k=times, axes=(2,3))
+            rotated_seg.append(patch_seg_rotated)
+    # Add rotated patches to the original patches lists
+    patches_vol.extend(rotated_vol)
+    patches_seg.extend(rotated_seg)
+    # Return processed patches lists
+    return patches_vol, patches_seg
+
+def reflect_patches(patches_vol, patches_seg):
+    return patches_vol, patches_seg

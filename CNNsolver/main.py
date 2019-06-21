@@ -68,10 +68,12 @@ config["shuffle"] = True                        # Shuffle batches for training
 config["overlap"] = (0,0,0)                     # Overlap in (x,y,z)-axis
 config["skip_blanks"] = True                    # Skip patches with only background
 config["scale_input_values"] = False            # Scale volume values to [0,1]
+config["rotation"] = False                      # Rotate patches in 90/180/270°
+config["reflection"] = True                     # Reflect patches
 # Evaluation
 config["n_folds"] = 5                           # Number of cross-validation folds
 config["n_loo"] = 5                             # Number of cycles for leave-one-out
-config["visualize"] = True                      # Print out images for visual evaluation
+config["visualize"] = True                      # Print out slice images for visual evaluation
 config["class_freq"] = False                    # Calculate the class frequencies for each slice
 
 #-----------------------------------------------------#
@@ -81,10 +83,10 @@ config["class_freq"] = False                    # Calculate the class frequencie
 print(config)
 
 # Create the Convolutional Neural Network
-#cnn_model = CNNsolver_NN.NeuralNetwork(config)
+cnn_model = CNNsolver_NN.NeuralNetwork(config)
 
 # Train the Convolutional Neural Network model
-#cnn_model.train(config["cases"])
+cnn_model.train(config["cases"])
 # Dump the model
 #cnn_model.dump("model")
 
@@ -98,4 +100,4 @@ print(config)
 #CNNsolver_CV.cross_validation(config)
 #CNNsolver_CV.leave_one_out(config)
 
-CNNsolver_CV.detailed_validation(None, [3], config)
+#CNNsolver_CV.detailed_validation(None, [3], config)
