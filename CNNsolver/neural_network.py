@@ -48,6 +48,7 @@ class NeuralNetwork:
                                 shuffle=self.config["shuffle"])
         # Run training process with the Keras fit_generator
         self.model.fit_generator(generator=dataGen,
+                                 steps_per_epoch=len(casePointer),
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
         # Clean up temporary MRI pickles required for training
@@ -67,6 +68,7 @@ class NeuralNetwork:
             # Run prediction process with the Keras predict_generator
             pred_seg = self.model.predict_generator(
                                 generator=dataGen,
+                                steps=len(casePointer),
                                 max_queue_size=self.config["max_queue_size"])
             # Reload pickled MRI object from disk to cache
             mri = case_loader(id, self.config["data_path"],
@@ -107,7 +109,9 @@ class NeuralNetwork:
                                     shuffle=self.config["shuffle"])
         # Run training & validation process with the Keras fit_generator
         history = self.model.fit_generator(generator=dataGen_train,
+                                 steps_per_epoch=len(casePointer_training),
                                  validation_data=dataGen_val,
+                                 validation_steps=len(casePointer_validation),
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
         # Clean up temporary MRI pickles required for training & validation
