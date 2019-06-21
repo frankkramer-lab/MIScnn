@@ -38,16 +38,15 @@ def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
             if skip_blanks:
                 patches_vol, patches_seg = remove_blanks(patches_vol,
                                                          patches_seg)
-            print(len(patches_vol))
             # IF rotation: Rotate patches for data augmentation
             if config["rotation"]:
                 patches_vol, patches_seg = rotate_patches(patches_vol,
                                                           patches_seg)
-            # IF reflection: Reflect patches for data augmentation
-            if config["reflection"]:
-                patches_vol, patches_seg = reflect_patches(patches_vol,
-                                                           patches_seg)
-            print(len(patches_vol))
+            # IF flipping: Reflect/Flip patches for data augmentation
+            if config["flipping"]:
+                patches_vol, patches_seg = flip_patches(patches_vol,
+                                                        patches_seg,
+                                                        config["flip_axis"])
         # Calculate the number of batches for this MRI
         steps = math.ceil(len(patches_vol) / config["batch_size"])
         # Create batches from the volume patches
@@ -134,5 +133,20 @@ def rotate_patches(patches_vol, patches_seg):
     # Return processed patches lists
     return patches_vol, patches_seg
 
-def reflect_patches(patches_vol, patches_seg):
+# Flip patches at the provided axes
+def flip_patches(patches_vol, patches_seg, axis):
+    # Initialize list of flipped patches
+    flipped_vol = []
+    flipped_seg = []
+    # Iterate over each patch
+    for i in range(len(patches_vol)):
+        # Flip volume & segmentation and cache flipped patches
+        patch_vol_flipped = np.flip(patches_vol[i], axis=axis)
+        flipped_vol.append(patch_vol_flipped)
+        patch_seg_flipped = np.flip(patches_seg[i], axis=axis)
+        flipped_seg.append(patch_seg_flipped)
+    # Add flipped patches to the original patches lists
+    patches_vol.extend(flipped_vol)
+    patches_seg.extend(flipped_seg)
+    # Return processed patches lists
     return patches_vol, patches_seg

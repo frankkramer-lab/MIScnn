@@ -55,8 +55,8 @@ config["cases"] = list(range(0,2))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
 config["output_path"] = "predictions"           # Path to predictions directory
 # Neural Network Architecture
-config["input_shape"] = (None, 16, 16, 1)       # Neural Network input shape
-config["patch_size"] = (16, 16, 16)             # Patch shape/size
+config["input_shape"] = (None, 32, 32, 1)       # Neural Network input shape
+config["patch_size"] = (16, 32, 32)             # Patch shape/size
 config["classes"] = 3                           # Number of output classes
 config["batch_size"] = 3                        # Number of patches in on step
 # Training
@@ -69,7 +69,8 @@ config["overlap"] = (0,0,0)                     # Overlap in (x,y,z)-axis
 config["skip_blanks"] = True                    # Skip patches with only background
 config["scale_input_values"] = False            # Scale volume values to [0,1]
 config["rotation"] = False                      # Rotate patches in 90/180/270°
-config["reflection"] = True                     # Reflect patches
+config["flipping"] = True                       # Reflect/Flip patches
+config["flip_axis"] = (3)                       # Define the flipping axes (x,y,z <-> 1,2,3)
 # Evaluation
 config["n_folds"] = 5                           # Number of cross-validation folds
 config["n_loo"] = 5                             # Number of cycles for leave-one-out
