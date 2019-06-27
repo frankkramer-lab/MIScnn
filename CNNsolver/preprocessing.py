@@ -4,24 +4,27 @@
 #External libraries
 import numpy as np
 import math
+import itertools
+from tqdm import tqdm
 from keras.utils import to_categorical
 #Internal libraries/scripts
-from data_io import case_loader, mri_pickle_backup
+from data_io import case_loader, backup_batches
 from utils.matrix_operations import slice_3Dmatrix
 
 #-----------------------------------------------------#
 #          Patches and Batches Preprocessing          #
 #-----------------------------------------------------#
 # Load and preprocess all MRI's to batches for later training or prediction
-def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
+def preprocessing_MRIs(cases, config, training=False, validation=False):
     # Parameter initialization
-    casePointer = []
+    batchPointer = []
     # Iterate over each case
-    for i in cases:
+    for i in tqdm(cases):
+        # Initialize batches
+        batches_vol = None
+        batches_seg = None
         # Load the MRI of the current case
-        mri = case_loader(i, config["data_path"],
-                          load_seg=training,
-                          pickle=False)
+        mri = case_loader(i, config["data_path"], load_seg=training)
         # IF scaling: Scale each volume value to [0,1]
         if config["scale_input_values"]:
             mri.vol_data = scale_volume_values(mri.vol_data)
@@ -35,15 +38,15 @@ def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
                                          config["patch_size"],
                                          config["overlap"])
             # IF skip blank patches: remove all blank patches from the list
-            if skip_blanks:
+            if config["skip_blanks"] and not validation:
                 patches_vol, patches_seg = remove_blanks(patches_vol,
                                                          patches_seg)
             # IF rotation: Rotate patches for data augmentation
-            if config["rotation"]:
+            if config["rotation"] and not validation:
                 patches_vol, patches_seg = rotate_patches(patches_vol,
                                                           patches_seg)
             # IF flipping: Reflect/Flip patches for data augmentation
-            if config["flipping"]:
+            if config["flipping"] and not validation:
                 patches_vol, patches_seg = flip_patches(patches_vol,
                                                         patches_seg,
                                                         config["flip_axis"])
@@ -53,7 +56,6 @@ def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
         batches_vol = create_batches(patches_vol,
                                      config["batch_size"],
                                      steps)
-        mri.add_batches(batches_vol, vol=True)
         # IF training: Create batches from the segmentation batches
         if training:
             batches_seg = create_batches(patches_seg,
@@ -63,13 +65,16 @@ def preprocessing_MRIs(cases, config, training=False, skip_blanks=False):
             for b, batch in enumerate(batches_seg):
                 batches_seg[b] = to_categorical(batch,
                                                 num_classes=config["classes"])
-            mri.add_batches(batches_seg, vol=False)
-        # Backup MRI to pickle for faster access in later usages
-        mri_pickle_backup(i, mri)
-        # Save the number of steps in the casePointer list
-        casePointer.extend([i] * steps)
-    # Return the casePointer list for the data generator usage later
-    return casePointer
+        # Backup volume & segmentation batches as temporary files
+        # for later usage
+        backup_batches(batches_vol, batches_seg,
+                       path=config["model_path"],
+                       case_id=i)
+        # Extend the current batches to the batchPointer list
+        current_batchPointer = itertools.product([i], range(len(batches_vol)))
+        batchPointer.extend(list(current_batchPointer))
+    # Return the batchPointer list for the data generator usage later
+    return batchPointer
 
 # Create batches from a list of patches
 def create_batches(patches, batch_size, steps):

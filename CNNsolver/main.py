@@ -51,8 +51,9 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 config = dict()
 # Dataset
-config["cases"] = list(range(0,20))
+config["cases"] = list(range(3,5))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
+config["model_path"] = "model"                  # Path to the model data dir
 config["output_path"] = "predictions"           # Path to the predictions directory
 config["evaluation_path"] = "evaluation"        # Path to the evaluation directory
 # Neural Network Architecture
@@ -70,12 +71,12 @@ config["overlap"] = (0,0,0)                     # Overlap in (x,y,z)-axis
 config["skip_blanks"] = True                    # Skip patches with only background
 config["scale_input_values"] = False            # Scale volume values to [0,1]
 config["rotation"] = False                      # Rotate patches in 90/180/270°
-config["flipping"] = True                       # Reflect/Flip patches
+config["flipping"] = False                      # Reflect/Flip patches
 config["flip_axis"] = (3)                       # Define the flipping axes (x,y,z <-> 1,2,3)
 # Evaluation
 config["n_folds"] = 5                           # Number of folds for cross-validation
 config["per_split"] = 0.20                      # Percentage of Testing Set for split-validation
-config["n_loo"] = 5                             # Number of cycles for leave-one-out
+config["n_loo"] = 1                             # Number of cycles for leave-one-out
 config["visualize"] = True                      # Print out slice images for visual evaluation
 config["class_freq"] = False                    # Calculate the class frequencies for each slice
 
@@ -86,7 +87,7 @@ config["class_freq"] = False                    # Calculate the class frequencie
 print(config)
 
 # Create the Convolutional Neural Network
-#cnn_model = CNNsolver_NN.NeuralNetwork(config)
+cnn_model = CNNsolver_NN.NeuralNetwork(config)
 
 # Train the Convolutional Neural Network model
 #cnn_model.train(config["cases"])
@@ -103,5 +104,3 @@ print(config)
 #CNNsolver_CV.cross_validation(config)
 #CNNsolver_CV.leave_one_out(config)
 CNNsolver_CV.split_validation(config)
-
-#CNNsolver_CV.detailed_validation(None, [3], config)

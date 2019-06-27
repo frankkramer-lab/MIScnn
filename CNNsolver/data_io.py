@@ -5,21 +5,16 @@
 import os
 from re import match
 import pickle
+import shutil
 #Internal libraries/scripts
-import mri_sample as CNNsolver_MRI
+import utils.mri_sample as CNNsolver_MRI
 from utils.nifti_io import load_volume_nii, load_segmentation_nii, save_segmentation
 
 #-----------------------------------------------------#
 #                     Case Loader                     #
 #-----------------------------------------------------#
 # Load a MRI in NIFTI format and creates a MRI sample object
-def case_loader(case_id, data_path, load_seg=True, pickle=False):
-    # IF pickle modus is True and MRI pickle file exist
-    if pickle and os.path.exists("model/MRI.case" + str(case_id) + \
-                                 ".pickle"):
-        # Load MRI object from pickle and return MRI
-        mri = mri_pickle_load(case_id)
-        return mri
+def case_loader(case_id, data_path, load_seg=True):
     # Read volume NIFTI file
     volume = load_volume_nii(case_id, data_path)
     # Create and return a MRI_Sample object
@@ -46,25 +41,55 @@ def save_prediction(pred, case_id, out_path):
 #                   MRI Fast Access                   #
 #-----------------------------------------------------#
 # Backup a MRI object to a pickle for fast access later
-def mri_pickle_backup(case_id, mri):
-    pickle_out = open("model/MRI.case" + str(case_id) + ".pickle","wb")
-    pickle.dump(mri, pickle_out)
-    pickle_out.close()
+def backup_batches(batches_vol, batches_seg, path, case_id):
+    # Create model directory of not existent
+    if not os.path.exists(path):
+        os.mkdir(path)
+    # Create subdirectory for the case if not existent
+    case_dir = os.path.join(path, "tmp.case_" + str(case_id).zfill(5))
+    if not os.path.exists(case_dir):
+        os.mkdir(case_dir)
+    # Backup volume batches
+    if batches_vol is not None:
+        for i, batch in enumerate(batches_vol):
+            out_path = os.path.join(case_dir,
+                                    "batch_vol." + str(i) + ".pickle")
+            with open(out_path, 'wb') as pickle_out:
+                pickle.dump(batch, pickle_out)
+    # Backup segmentation batches
+    if batches_seg is not None:
+        for i, batch in enumerate(batches_seg):
+            out_path = os.path.join(case_dir,
+                                    "batch_seg." + str(i) + ".pickle")
+            with open(out_path, 'wb') as pickle_out:
+                pickle.dump(batch, pickle_out)
 
 # Load a MRI object from a pickle for fast access
-def mri_pickle_load(case_id):
-    pickle_in = open("model/MRI.case" + str(case_id) + ".pickle","rb")
-    mri = pickle.load(pickle_in)
-    return mri
+def batch_load(id_tuple, path, vol=True):
+    # Parse ids
+    case_id = id_tuple[0]
+    batch_id = id_tuple[1]
+    # Identify batch type (volume or segmentation)
+    if vol:
+        batch_type = "batch_vol"
+    else:
+        batch_type = "batch_seg"
+    # Set up file path
+    in_path = os.path.join(path, "tmp.case_" + str(case_id).zfill(5),
+                           batch_type + "." + str(batch_id) + ".pickle")
+    with open(in_path, 'rb') as pickle_in:
+        batch = pickle.load(pickle_in)
+    # Return loaded batch
+    return batch
 
 # Clean up all temporary pickles
-def mri_pickle_cleanup():
+def batch_pickle_cleanup():
     # Iterate over each file in the model directory
     directory = os.listdir("model")
     for file in directory:
-        # IF file matches temporary MRI pickle name pattern -> delete it
-        if match("MRI\.case[0-9]+\.pickle", file) is not None:
-            os.remove(os.path.join("model", file))
+        # IF file matches temporary subdirectory name pattern -> delete it
+        if match("tmp\.case\_[0-9]+", file) is not None:
+            shutil.rmtree(os.path.join("model", file))
 
 #-----------------------------------------------------#
 #               Evaluation Data Backup                #

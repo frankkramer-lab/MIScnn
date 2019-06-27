@@ -7,7 +7,7 @@ from keras.optimizers import Adam
 import numpy
 import math
 #Internal libraries/scripts
-from data_io import case_loader, save_prediction, mri_pickle_backup, mri_pickle_cleanup
+from data_io import case_loader, save_prediction, batch_pickle_cleanup
 from preprocessing import preprocessing_MRIs
 from data_generator import DataGenerator
 from utils.matrix_operations import concat_3Dmatrices
@@ -39,40 +39,39 @@ class NeuralNetwork:
     # Train the Neural Network model on the provided case ids
     def train(self, cases):
         # Preprocess Magnetc Resonance Images
-        casePointer = preprocessing_MRIs(cases, self.config, training=True,
-                                         skip_blanks=self.config["skip_blanks"])
+        batchPointer = preprocessing_MRIs(cases, self.config,
+                                          training=True,
+                                          validation=False)
         # Initialize Data Generator
-        dataGen = DataGenerator(casePointer,
-                                data_path=self.config["data_path"],
+        dataGen = DataGenerator(batchPointer,
+                                model_path=self.config["model_path"],
                                 training=True,
                                 shuffle=self.config["shuffle"])
         # Run training process with the Keras fit_generator
         self.model.fit_generator(generator=dataGen,
-                                 steps_per_epoch=len(casePointer),
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
-        # Clean up temporary MRI pickles required for training
-        mri_pickle_cleanup()
+        # Clean up temporary pickles required for training
+        batch_pickle_cleanup()
 
     # Predict with the Neural Network model on the provided case ids
     def predict(self, cases):
         # Iterate over each case
         for id in cases:
             # Preprocess Magnetc Resonance Images
-            casePointer = preprocessing_MRIs([id], self.config, training=False)
+            batchPointer = preprocessing_MRIs([id], self.config, training=False)
             # Initialize Data generator
-            dataGen = DataGenerator(casePointer,
-                                    data_path=self.config["data_path"],
+            dataGen = DataGenerator(batchPointer,
+                                    model_path=self.config["model_path"],
                                     training=False,
                                     shuffle=False)
             # Run prediction process with the Keras predict_generator
             pred_seg = self.model.predict_generator(
                                 generator=dataGen,
-                                steps=len(casePointer),
                                 max_queue_size=self.config["max_queue_size"])
             # Reload pickled MRI object from disk to cache
             mri = case_loader(id, self.config["data_path"],
-                              load_seg=False, pickle=True)
+                              load_seg=False)
             # Concatenate patches into a single 3D matrix back
             pred_seg = concat_3Dmatrices(patches=pred_seg,
                                          image_size=mri.vol_data.shape,
@@ -82,40 +81,38 @@ class NeuralNetwork:
             pred_seg = numpy.argmax(pred_seg, axis=-1)
             # Backup segmentation prediction in output directory
             save_prediction(pred_seg, id, self.config["output_path"])
-        # Clean up temporary MRI pickles required for prediction
-        mri_pickle_cleanup()
+        # Clean up temporary pickles required for predictions
+        batch_pickle_cleanup()
 
     # Evaluate the Neural Network model on the provided case ids
     def evaluate(self, casesTraining, casesValidation):
         # Preprocess Magnetc Resonance Images for the Training data
-        casePointer_training = preprocessing_MRIs(casesTraining,
+        batchPointer_training = preprocessing_MRIs(casesTraining,
                                          self.config,
                                          training=True,
-                                         skip_blanks=self.config["skip_blanks"])
+                                         validation=False)
         # Preprocess Magnetc Resonance Images for the Validation data
-        casePointer_validation = preprocessing_MRIs(casesValidation,
+        batchPointer_validation = preprocessing_MRIs(casesValidation,
                                          self.config,
                                          training=True,
-                                         skip_blanks=False)
+                                         validation=True)
         # Initialize Training Data Generator
-        dataGen_train = DataGenerator(casePointer_training,
-                                      data_path=self.config["data_path"],
+        dataGen_train = DataGenerator(batchPointer_training,
+                                      model_path=self.config["model_path"],
                                       training=True,
                                       shuffle=self.config["shuffle"])
         # Initialize Validation Data Generator
-        dataGen_val = DataGenerator(casePointer_validation,
-                                    data_path=self.config["data_path"],
+        dataGen_val = DataGenerator(batchPointer_validation,
+                                    model_path=self.config["model_path"],
                                     training=True,
                                     shuffle=self.config["shuffle"])
         # Run training & validation process with the Keras fit_generator
         history = self.model.fit_generator(generator=dataGen_train,
-                                 steps_per_epoch=len(casePointer_training),
                                  validation_data=dataGen_val,
-                                 validation_steps=len(casePointer_validation),
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
-        # Clean up temporary MRI pickles required for training & validation
-        mri_pickle_cleanup()
+        # Clean up temporary pickles required for predictions
+        batch_pickle_cleanup()
         # Return the training & validation history
         return history
 
