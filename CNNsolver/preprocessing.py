@@ -28,6 +28,9 @@ def preprocessing_MRIs(cases, config, training=False, validation=False):
         # IF scaling: Scale each volume value to [0,1]
         if config["scale_input_values"]:
             mri.vol_data = scale_volume_values(mri.vol_data)
+        import matplotlib.pyplot as plt
+        plt.hist(mri.vol_data.flatten(), bins='auto')
+        plt.show()
         # Slice volume into patches
         patches_vol = slice_3Dmatrix(mri.vol_data,
                                      config["patch_size"],
@@ -108,13 +111,20 @@ def remove_blanks(patches_vol, patches_seg, background_class=0):
     # Return all non blank patches
     return patches_vol, patches_seg
 
-# Scale the input volume voxel values between [0,1]
-def scale_volume_values(volume):
-    # Identify minimum and maximum
-    max_value = np.max(volume)
-    min_value = np.min(volume)
-    # Scaling
-    volume_normalized = (volume - min_value) / (max_value - min_value)
+# Scale the input volume voxel values between [0,1] or with Z-Score
+def scale_volume_values(volume, z_score=True):
+    if z_score:
+        # Compute mean and standard deviation
+        mean = np.mean(volume)
+        std = np.std(volume)
+        # Scaling
+        volume_normalized = (volume - mean) / std
+    else:
+        # Identify minimum and maximum
+        max_value = np.max(volume)
+        min_value = np.min(volume)
+        # Scaling
+        volume_normalized = (volume - min_value) / (max_value - min_value)
     # Return scaled volume
     return volume_normalized
 

@@ -11,6 +11,7 @@ from data_io import case_loader, save_prediction, batch_pickle_cleanup
 from preprocessing import preprocessing_MRIs
 from data_generator import DataGenerator
 from utils.matrix_operations import concat_3Dmatrices
+from utils.callback import TrainingCallback
 from models.unet_muellerdo import Unet
 from models.metrics import dice_coefficient, dice_classwise, tversky_loss
 
@@ -106,9 +107,12 @@ class NeuralNetwork:
                                     model_path=self.config["model_path"],
                                     training=True,
                                     shuffle=self.config["shuffle"])
+        # Initialize custom Keras Callback to backup evaluation scores
+        fitting_callback = TrainingCallback(self.config["evaluation_path"])
         # Run training & validation process with the Keras fit_generator
         history = self.model.fit_generator(generator=dataGen_train,
                                  validation_data=dataGen_val,
+                                 callbacks=[fitting_callback],
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
         # Clean up temporary pickles required for predictions

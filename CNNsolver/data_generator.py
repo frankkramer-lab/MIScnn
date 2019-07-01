@@ -46,7 +46,8 @@ class DataGenerator(keras.utils.Sequence):
 
     # At every epoch end: Shuffle batchPointer list
     def on_epoch_end(self):
-        self.batchPointer = np.random.shuffle(self.batchPointer)
+        if self.shuffle:
+            np.random.shuffle(self.batchPointer)
 
 #-----------------------------------------------------#
 #            OLD MRI Data Generator (Keras)           #

@@ -51,7 +51,7 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 config = dict()
 # Dataset
-config["cases"] = list(range(3,5))
+config["cases"] = list(range(3,4))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
 config["model_path"] = "model"                  # Path to the model data dir
 config["output_path"] = "predictions"           # Path to the predictions directory
@@ -60,7 +60,7 @@ config["evaluation_path"] = "evaluation"        # Path to the evaluation directo
 config["input_shape"] = (None, 32, 32, 1)       # Neural Network input shape
 config["patch_size"] = (16, 32, 32)             # Patch shape/size
 config["classes"] = 3                           # Number of output classes
-config["batch_size"] = 3                        # Number of patches in on step
+config["batch_size"] = 20                       # Number of patches in on step
 # Training
 config["epochs"] = 1                            # Number of epochs for training
 config["max_queue_size"] = 3                    # Number of preprocessed batches
@@ -103,4 +103,6 @@ cnn_model = CNNsolver_NN.NeuralNetwork(config)
 # Evaluate the Convolutional Neural Network
 #CNNsolver_CV.cross_validation(config)
 #CNNsolver_CV.leave_one_out(config)
-CNNsolver_CV.split_validation(config)
+#CNNsolver_CV.split_validation(config)
+
+cnn_model.evaluate([3],[4])
