@@ -5,7 +5,7 @@
 import numpy as np
 import math
 # Internal libraries/scripts
-import neural_network as CNNsolver_NN
+import neural_network as MIScnn_NN
 from utils.visualizer import visualize_training, visualize_evaluation
 from utils.nifti_io import load_segmentation_nii, load_prediction_nii
 from data_io import save_evaluation
@@ -22,7 +22,7 @@ def cross_validation(config):
     # Start cross-validation
     for i in fold_indices:
         # Create a Convolutional Neural Network model
-        model = CNNsolver_NN.NeuralNetwork(config)
+        model = MIScnn_NN.NeuralNetwork(config)
         # Subset training and validation data set
         training = np.concatenate([folds[x] for x in fold_indices if x!=i],
                                   axis=0)
@@ -51,7 +51,7 @@ def split_validation(config):
     # Rename the remaining cases as training
     training = cases
     # Create a Convolutional Neural Network model
-    model = CNNsolver_NN.NeuralNetwork(config)
+    model = MIScnn_NN.NeuralNetwork(config)
     # Run training & validation
     history = model.evaluate(training, testing)
     # Draw plots for the training & validation
@@ -66,7 +66,7 @@ def leave_one_out(config):
     # Start leave-one-out cycling
     for i in range(config["n_loo"]):
         # Create a Convolutional Neural Network model
-        model = CNNsolver_NN.NeuralNetwork(config)
+        model = MIScnn_NN.NeuralNetwork(config)
         # Create a copy of the caseList
         cases = config["cases"]
         # Choose a random sample

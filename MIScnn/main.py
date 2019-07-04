@@ -10,9 +10,10 @@ import argparse
 import os
 import tensorflow as tf
 # Internal libraries/scripts
-import neural_network as CNNsolver_NN
-import evaluation as CNNsolver_CV
+import neural_network as MIScnn_NN
+import evaluation as MIScnn_CV
 
+#-----------------------------------------------------#
 #-----------------------------------------------------#
 #                  Parse command line                 #
 #-----------------------------------------------------#
@@ -57,10 +58,10 @@ config["model_path"] = "model"                  # Path to the model data dir
 config["output_path"] = "predictions"           # Path to the predictions directory
 config["evaluation_path"] = "evaluation"        # Path to the evaluation directory
 # Neural Network Architecture
-config["input_shape"] = (None, 32, 32, 1)       # Neural Network input shape
-config["patch_size"] = (16, 32, 32)             # Patch shape/size
+config["input_shape"] = (None, 16, 16, 1)       # Neural Network input shape
+config["patch_size"] = (16, 16, 16)             # Patch shape/size
 config["classes"] = 3                           # Number of output classes
-config["batch_size"] = 20                       # Number of patches in on step
+config["batch_size"] = 16                       # Number of patches in on step
 # Training
 config["epochs"] = 1                            # Number of epochs for training
 config["max_queue_size"] = 3                    # Number of preprocessed batches
@@ -87,10 +88,10 @@ config["class_freq"] = False                    # Calculate the class frequencie
 print(config)
 
 # Create the Convolutional Neural Network
-cnn_model = CNNsolver_NN.NeuralNetwork(config)
+cnn_model = MIScnn_NN.NeuralNetwork(config)
 
 # Train the Convolutional Neural Network model
-#cnn_model.train(config["cases"])
+cnn_model.train(config["cases"])
 # Dump the model
 #cnn_model.dump("model")
 
@@ -101,8 +102,8 @@ cnn_model = CNNsolver_NN.NeuralNetwork(config)
 #cnn_model.predict(list(range(3,4)))
 
 # Evaluate the Convolutional Neural Network
-#CNNsolver_CV.cross_validation(config)
-#CNNsolver_CV.leave_one_out(config)
-#CNNsolver_CV.split_validation(config)
+#MIScnn_CV.cross_validation(config)
+#MIScnn_CV.leave_one_out(config)
+#MIScnn_CV.split_validation(config)
 
-cnn_model.evaluate([3],[4])
+#cnn_model.evaluate([3],[4])

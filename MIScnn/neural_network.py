@@ -7,7 +7,7 @@ from keras.optimizers import Adam
 import numpy
 import math
 #Internal libraries/scripts
-from data_io import case_loader, save_prediction, batch_pickle_cleanup
+from data_io import case_loader, save_prediction, batch_npz_cleanup
 from preprocessing import preprocessing_MRIs
 from data_generator import DataGenerator
 from utils.matrix_operations import concat_3Dmatrices
@@ -52,8 +52,8 @@ class NeuralNetwork:
         self.model.fit_generator(generator=dataGen,
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
-        # Clean up temporary pickles required for training
-        batch_pickle_cleanup()
+        # Clean up temporary npz files required for training
+        batch_npz_cleanup()
 
     # Predict with the Neural Network model on the provided case ids
     def predict(self, cases):
@@ -70,7 +70,7 @@ class NeuralNetwork:
             pred_seg = self.model.predict_generator(
                                 generator=dataGen,
                                 max_queue_size=self.config["max_queue_size"])
-            # Reload pickled MRI object from disk to cache
+            # Reload MRI object from disk to cache
             mri = case_loader(id, self.config["data_path"],
                               load_seg=False)
             # Concatenate patches into a single 3D matrix back
@@ -82,8 +82,8 @@ class NeuralNetwork:
             pred_seg = numpy.argmax(pred_seg, axis=-1)
             # Backup segmentation prediction in output directory
             save_prediction(pred_seg, id, self.config["output_path"])
-        # Clean up temporary pickles required for predictions
-        batch_pickle_cleanup()
+        # Clean up temporary npz files required for training
+        batch_npz_cleanup()
 
     # Evaluate the Neural Network model on the provided case ids
     def evaluate(self, casesTraining, casesValidation):
@@ -115,8 +115,8 @@ class NeuralNetwork:
                                  callbacks=[fitting_callback],
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
-        # Clean up temporary pickles required for predictions
-        batch_pickle_cleanup()
+        # Clean up temporary npz files required for training
+        batch_npz_cleanup()
         # Return the training & validation history
         return history
 

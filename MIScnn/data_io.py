@@ -4,10 +4,10 @@
 #External libraries
 import os
 from re import match
-import pickle
+import numpy as np
 import shutil
 #Internal libraries/scripts
-import utils.mri_sample as CNNsolver_MRI
+import utils.mri_sample as MIScnn_MRI
 from utils.nifti_io import load_volume_nii, load_segmentation_nii, save_segmentation
 
 #-----------------------------------------------------#
@@ -18,7 +18,7 @@ def case_loader(case_id, data_path, load_seg=True):
     # Read volume NIFTI file
     volume = load_volume_nii(case_id, data_path)
     # Create and return a MRI_Sample object
-    mri = CNNsolver_MRI.MRI(volume)
+    mri = MIScnn_MRI.MRI(volume)
     # IF needed read the provided segmentation for current MRI sample
     if load_seg:
         segmentation = load_segmentation_nii(case_id, data_path)
@@ -40,7 +40,7 @@ def save_prediction(pred, case_id, out_path):
 #-----------------------------------------------------#
 #                   MRI Fast Access                   #
 #-----------------------------------------------------#
-# Backup a MRI object to a pickle for fast access later
+# Backup a MRI object to a npz for fast access later
 def backup_batches(batches_vol, batches_seg, path, case_id):
     # Create model directory of not existent
     if not os.path.exists(path):
@@ -53,18 +53,17 @@ def backup_batches(batches_vol, batches_seg, path, case_id):
     if batches_vol is not None:
         for i, batch in enumerate(batches_vol):
             out_path = os.path.join(case_dir,
-                                    "batch_vol." + str(i) + ".pickle")
-            with open(out_path, 'wb') as pickle_out:
-                pickle.dump(batch, pickle_out)
+                                    "batch_vol." + str(i))
+            np.savez(out_path, data=batch)
+
     # Backup segmentation batches
     if batches_seg is not None:
         for i, batch in enumerate(batches_seg):
             out_path = os.path.join(case_dir,
-                                    "batch_seg." + str(i) + ".pickle")
-            with open(out_path, 'wb') as pickle_out:
-                pickle.dump(batch, pickle_out)
+                                    "batch_seg." + str(i))
+            np.savez_compressed(out_path, data=batch)
 
-# Load a MRI object from a pickle for fast access
+# Load a MRI object from a npz for fast access
 def batch_load(id_tuple, path, vol=True):
     # Parse ids
     case_id = id_tuple[0]
@@ -76,14 +75,14 @@ def batch_load(id_tuple, path, vol=True):
         batch_type = "batch_seg"
     # Set up file path
     in_path = os.path.join(path, "tmp.case_" + str(case_id).zfill(5),
-                           batch_type + "." + str(batch_id) + ".pickle")
-    with open(in_path, 'rb') as pickle_in:
-        batch = pickle.load(pickle_in)
+                           batch_type + "." + str(batch_id) + ".npz")
+    # Load numpy array from file
+    batch = np.load(in_path)["data"]
     # Return loaded batch
     return batch
 
-# Clean up all temporary pickles
-def batch_pickle_cleanup():
+# Clean up all temporary npz files
+def batch_npz_cleanup():
     # Iterate over each file in the model directory
     directory = os.listdir("model")
     for file in directory:

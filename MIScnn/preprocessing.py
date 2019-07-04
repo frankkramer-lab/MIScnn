@@ -28,9 +28,6 @@ def preprocessing_MRIs(cases, config, training=False, validation=False):
         # IF scaling: Scale each volume value to [0,1]
         if config["scale_input_values"]:
             mri.vol_data = scale_volume_values(mri.vol_data)
-        import matplotlib.pyplot as plt
-        plt.hist(mri.vol_data.flatten(), bins='auto')
-        plt.show()
         # Slice volume into patches
         patches_vol = slice_3Dmatrix(mri.vol_data,
                                      config["patch_size"],
