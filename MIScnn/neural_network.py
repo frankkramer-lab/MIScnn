@@ -3,6 +3,7 @@
 #-----------------------------------------------------#
 #External libraries
 from keras.models import model_from_json
+from keras.utils import multi_gpu_model
 from keras.optimizers import Adam
 import numpy
 import math
@@ -28,9 +29,14 @@ class NeuralNetwork:
 
     # Create a Convolutional Neural Network with Keras
     def __init__(self, config):
+        # Initialize model
         model = Unet(input_shape=config["input_shape"],
                      n_labels=config["classes"],
                      activation="softmax")
+        # Transform to Keras multi GPU model
+        if config["gpu_number"] > 1:
+            model = multi_gpu_model(model, config["gpu_number"])
+        # Compile model
         model.compile(optimizer=Adam(lr=config["learninig_rate"]),
                       loss=tversky_loss,
                       metrics=self.metrics)
@@ -82,8 +88,8 @@ class NeuralNetwork:
             pred_seg = numpy.argmax(pred_seg, axis=-1)
             # Backup segmentation prediction in output directory
             save_prediction(pred_seg, id, self.config["output_path"])
-        # Clean up temporary npz files required for training
-        batch_npz_cleanup()
+            # Clean up temporary npz files required for prediction
+            batch_npz_cleanup()
 
     # Evaluate the Neural Network model on the provided case ids
     def evaluate(self, casesTraining, casesValidation):
@@ -115,7 +121,7 @@ class NeuralNetwork:
                                  callbacks=[fitting_callback],
                                  epochs=self.config["epochs"],
                                  max_queue_size=self.config["max_queue_size"])
-        # Clean up temporary npz files required for training
+        # Clean up temporary npz files required for evaluation
         batch_npz_cleanup()
         # Return the training & validation history
         return history

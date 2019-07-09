@@ -146,7 +146,7 @@ def rotate_patches(patches_vol, patches_seg):
     return patches_vol, patches_seg
 
 # Flip patches at the provided axes
-def flip_patches(patches_vol, patches_seg, axis):
+def flip_patches(patches_vol, patches_seg, axis=(-2)):
     # Initialize list of flipped patches
     flipped_vol = []
     flipped_seg = []

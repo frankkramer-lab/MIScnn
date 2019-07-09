@@ -22,7 +22,7 @@ class TrainingCallback(keras.callbacks.Callback):
                          "dice_classwise", "val.tversky_loss",
                          "val.dice_coef", "val.dice_classwise"],
                         eval_path,
-                        "evaluation.tsv",
+                        "validation.tsv",
                         start=True)
         # Create training tsv file
         save_evaluation(["epoch", "batch", "tversky_loss",
@@ -41,7 +41,7 @@ class TrainingCallback(keras.callbacks.Callback):
                       logs["dice_coefficient"], logs["dice_classwise"],
                       logs["val_loss"],
                       logs["val_dice_coefficient"], logs["val_dice_classwise"]]
-        save_evaluation(data_point, self.eval_path, "evaluation.tsv")
+        save_evaluation(data_point, self.eval_path, "validation.tsv")
 
     # Save the current training scores for each batch in the training tsv
     def on_batch_end(self, batch, logs={}):

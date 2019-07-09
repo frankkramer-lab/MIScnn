@@ -8,12 +8,10 @@
 import sys
 import argparse
 import os
-import tensorflow as tf
 # Internal libraries/scripts
 import neural_network as MIScnn_NN
 import evaluation as MIScnn_CV
 
-#-----------------------------------------------------#
 #-----------------------------------------------------#
 #                  Parse command line                 #
 #-----------------------------------------------------#
@@ -57,6 +55,8 @@ config["data_path"] = args.args_input           # Path to the kits19 data dir
 config["model_path"] = "model"                  # Path to the model data dir
 config["output_path"] = "predictions"           # Path to the predictions directory
 config["evaluation_path"] = "evaluation"        # Path to the evaluation directory
+# GPU Architecture
+config["gpu_number"] = 2                        # Number of GPUs (if > 2 = multi GPU)
 # Neural Network Architecture
 config["input_shape"] = (None, 16, 16, 1)       # Neural Network input shape
 config["patch_size"] = (16, 16, 16)             # Patch shape/size
