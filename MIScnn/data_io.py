@@ -109,3 +109,16 @@ def save_evaluation(data, directory, file, start=False):
         # Join the data together to a row
         line = "\t".join(map(str, data)) + "\n"
         fw.write(line)
+
+# Create an evaluation subdirectory and change path
+def update_evalpath(updated_path, eval_path):
+    # Create evaluation directory if necessary
+    if not os.path.exists(eval_path):
+        os.mkdir(eval_path)
+    # Concatenate evaluation subdirectory path
+    subdir = os.path.join(eval_path, updated_path)
+    # Set up the evaluation subdirectory
+    if not os.path.exists(subdir):
+        os.mkdir(subdir)
+    # Return updated path to evaluation subdirectory
+    return subdir

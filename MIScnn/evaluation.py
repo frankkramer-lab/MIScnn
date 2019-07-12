@@ -7,8 +7,8 @@ import math
 # Internal libraries/scripts
 import neural_network as MIScnn_NN
 from utils.visualizer import visualize_training, visualize_evaluation
-from utils.nifti_io import load_segmentation_nii, load_prediction_nii
-from data_io import save_evaluation
+from utils.nifti_io import load_segmentation_nii, load_prediction_nii, load_volume_nii
+from data_io import save_evaluation, update_evalpath
 
 #-----------------------------------------------------#
 #                   Cross-Validation                  #
@@ -19,6 +19,8 @@ def cross_validation(config):
     # Split case list into folds
     folds = np.array_split(cases_permuted, config["n_folds"])
     fold_indices = list(range(len(folds)))
+    # Cache original evaluation path
+    eval_path = config["evaluation_path"]
     # Start cross-validation
     for i in fold_indices:
         # Create a Convolutional Neural Network model
@@ -27,13 +29,14 @@ def cross_validation(config):
         training = np.concatenate([folds[x] for x in fold_indices if x!=i],
                                   axis=0)
         validation = folds[i]
+        # Initialize evaluation subdirectory for current fold
+        config["evaluation_path"] = update_evalpath("fold_" + str(i), eval_path)
         # Run training & validation
         history = model.evaluate(training, validation)
         # Draw plots for the training & validation
-        print(history.history)
         visualize_training(history, "fold_" + str(i), config["evaluation_path"])
         # Make a detailed validation of the current cv-fold
-        detailed_validation(model, validation, config)
+        detailed_validation(model, validation, "fold_" + str(i), config)
 
 #-----------------------------------------------------#
 #                 %-Split Validation                  #
@@ -57,7 +60,7 @@ def split_validation(config):
     # Draw plots for the training & validation
     visualize_training(history, "split_validation", config["evaluation_path"])
     # Make a detailed validation of the current cv-fold
-    detailed_validation(model, testing, config)
+    detailed_validation(model, testing, "complete", config)
 
 #-----------------------------------------------------#
 #                    Leave-one-out                    #
@@ -74,16 +77,16 @@ def leave_one_out(config):
         # Train the model with the remaining cases
         model.train(cases)
         # Make a detailed validation on the LOO sample
-        detailed_validation(model, [loo], config)
+        detailed_validation(model, [loo], str(loo), config)
 
 #-----------------------------------------------------#
 #                 Detailed Validation                 #
 #-----------------------------------------------------#
-def detailed_validation(model, cases, config):
+def detailed_validation(model, cases, suffix, config):
     # Initialize kits19 scoring file
     save_evaluation(["case_id", "score_KidneyTumor", "score_Tumor"],
                     config["evaluation_path"],
-                    "kits19_scoring.tsv",
+                    "kits19_scoring." + suffix + ".tsv",
                     start=True)
     # Predict the cases with the provided model
     model.predict(cases)
@@ -98,7 +101,7 @@ def detailed_validation(model, cases, config):
         # Save kits19 score to file
         save_evaluation([id, score_kidney, score_tumor],
                         config["evaluation_path"],
-                        "kits19_scoring.tsv")
+                        "kits19_scoring." + suffix + ".tsv")
         # Calculate class frequency per slice
         if config["class_freq"]:
             class_freq = calc_ClassFrequency(truth, pred)
@@ -106,7 +109,10 @@ def detailed_validation(model, cases, config):
                 print(str(id) + "\t" + str(i) + "\t" + str(class_freq[i]))
         # Visualize the truth and prediction segmentation
         if config["visualize"]:
-            visualize_evaluation(id, truth, pred, config["evaluation_path"])
+            # Load the volume
+            vol = load_volume_nii(id, config["data_path"]).get_data()
+            # Run visualization
+            visualize_evaluation(id, vol, truth, pred, config["evaluation_path"])
 
 #-----------------------------------------------------#
 #              Other evaluation functions             #

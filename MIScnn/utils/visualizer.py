@@ -38,20 +38,23 @@ def visualize_training(history, prefix, eva_path):
     plt.savefig(out_path)
     plt.close()
 
-def visualize_evaluation(case_id, truth, pred, eva_path):
+def visualize_evaluation(case_id, vol, truth, pred, eva_path):
+    # Color volumes according to truth and pred segmentation
+    vol_truth = overlay_segmentation(vol, truth)
+    vol_pred = overlay_segmentation(vol, pred)
     # Create a figure and two axes objects from matplot
     fig, (ax1, ax2) = plt.subplots(1, 2)
     # Initialize the two subplots (axes) with an empty 512x512 image
-    data = np.zeros((512, 512))
+    data = np.zeros(vol.shape[1:3])
     ax1.set_title("Ground Truth")
     ax2.set_title("Prediction")
-    img1 = ax1.imshow(data, cmap="gray", vmin=0, vmax=2)
-    img2 = ax2.imshow(data, cmap="gray", vmin=0, vmax=2)
+    img1 = ax1.imshow(data)
+    img2 = ax2.imshow(data)
     # Update function for both images to show the slice for the current frame
     def update(i):
         plt.suptitle("Case ID: " + str(case_id) + " - " + "Frame: " + str(i))
-        img1.set_data(truth[i])
-        img2.set_data(pred[i])
+        img1.set_data(vol_truth[i])
+        img2.set_data(vol_pred[i])
         return [img1, img2]
     # Compute the animation (gif)
     ani = animation.FuncAnimation(fig, update, frames=len(truth), interval=5,
@@ -65,3 +68,32 @@ def visualize_evaluation(case_id, truth, pred, eva_path):
     ani.save(out_path, writer='imagemagick', fps=30)
     # Close the matplot
     plt.close()
+
+
+#-----------------------------------------------------#
+#                     Subroutines                     #
+#-----------------------------------------------------#
+# Based on: https://github.com/neheller/kits19/blob/master/starter_code/visualize.py
+def overlay_segmentation(vol, seg):
+    # Scale volume to greyscale range
+    vol_greyscale = (255*(vol - np.min(vol))/np.ptp(vol)).astype(int)
+    # Convert volume to RGB
+    vol_rgb = np.stack([vol_greyscale, vol_greyscale, vol_greyscale], axis=-1)
+    # Initialize segmentation in RGB
+    shp = seg.shape
+    seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
+    # Set class to appropriate color
+    seg_rgb[np.equal(seg, 1)] = [255, 0,   0]
+    seg_rgb[np.equal(seg, 2)] = [0,   0, 255]
+    # Get binary array for places where an ROI lives
+    segbin = np.greater(seg, 0)
+    repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
+    # Weighted sum where there's a value to overlay
+    alpha = 0.3
+    vol_overlayed = np.where(
+        repeated_segbin,
+        np.round(alpha*seg_rgb+(1-alpha)*vol_rgb).astype(np.uint8),
+        np.round(vol_rgb).astype(np.uint8)
+    )
+    # Return final volume with segmentation overlay
+    return vol_overlayed
