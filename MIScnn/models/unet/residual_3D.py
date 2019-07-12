@@ -1,4 +1,14 @@
 #-----------------------------------------------------#
+#               Source Code is based on:              #
+# https://github.com/mrkolarik/3D-brain-segmentation  #
+#                                                     #
+#                     Reference:                      #
+#Kolařík, M., Burget, R., Uher, V., Říha, K., & Dutta,#
+#                    M. K. (2019).                    #
+#  Optimized High Resolution 3D Dense-U-Net Network   #
+#          for Brain and Spine Segmentation.          #
+#        Applied Sciences, 9(3), vol. 9, no. 3.       #
+#-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
 from keras.models import Model
@@ -45,14 +55,16 @@ def Unet(input_shape, n_labels, n_filters=32, depth=4, activation='sigmoid'):
 def contracting_layer(input, neurons):
     conv1 = Conv3D(neurons, (3,3,3), activation='relu', padding='same')(input)
     conv2 = Conv3D(neurons, (3,3,3), activation='relu', padding='same')(conv1)
-    pool = MaxPooling3D(pool_size=(2, 2, 2))(conv2)
+    conc1 = concatenate([input, conv2], axis=4)
+    pool = MaxPooling3D(pool_size=(2, 2, 2))(conc1)
     return pool, conv2
 
 # Create the middle layer between the contracting and expanding layers
 def middle_layer(input, neurons):
     conv_m1 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(input)
     conv_m2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conv_m1)
-    return conv_m2
+    conc1 = concatenate([input, conv_m2], axis=4)
+    return conc1
 
 # Create an expanding layer
 def expanding_layer(input, neurons, concatenate_link):
@@ -60,4 +72,5 @@ def expanding_layer(input, neurons, concatenate_link):
                      padding='same')(input), concatenate_link], axis=4)
     conv1 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(up)
     conv2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conv1)
-    return conv2
+    conc1 = concatenate([up, conv2], axis=4)
+    return conc1
