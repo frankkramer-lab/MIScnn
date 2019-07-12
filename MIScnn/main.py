@@ -50,22 +50,22 @@ args = parser.parse_args()
 #-----------------------------------------------------#
 config = dict()
 # Dataset
-config["cases"] = list(range(3,4))
+config["cases"] = list(range(2,5))
 config["data_path"] = args.args_input           # Path to the kits19 data dir
 config["model_path"] = "model"                  # Path to the model data dir
 config["output_path"] = "predictions"           # Path to the predictions directory
 config["evaluation_path"] = "evaluation"        # Path to the evaluation directory
 # GPU Architecture
-config["gpu_number"] = 2                        # Number of GPUs (if > 2 = multi GPU)
+config["gpu_number"] = 1                        # Number of GPUs (if > 2 = multi GPU)
 # Neural Network Architecture
 config["input_shape"] = (None, 16, 16, 1)       # Neural Network input shape
 config["patch_size"] = (16, 16, 16)             # Patch shape/size
 config["classes"] = 3                           # Number of output classes
 config["batch_size"] = 16                       # Number of patches in on step
 # Training
-config["epochs"] = 1                            # Number of epochs for training
+config["epochs"] = 2                            # Number of epochs for training
 config["max_queue_size"] = 3                    # Number of preprocessed batches
-config["learninig_rate"] = 0.00001              # Learninig rate for the training
+config["learninig_rate"] = 0.0001               # Learninig rate for the training
 config["shuffle"] = True                        # Shuffle batches for training
 # Data Augmentation
 config["overlap"] = (0,0,0)                     # Overlap in (x,y,z)-axis
@@ -74,8 +74,10 @@ config["scale_input_values"] = False            # Scale volume values to [0,1]
 config["rotation"] = False                      # Rotate patches in 90/180/270°
 config["flipping"] = False                      # Reflect/Flip patches
 config["flip_axis"] = (3)                       # Define the flipping axes (x,y,z <-> 1,2,3)
+# Prediction
+config["pred_overlap"] = False                  # Usage of overlapping patches in prediction
 # Evaluation
-config["n_folds"] = 5                           # Number of folds for cross-validation
+config["n_folds"] = 3                           # Number of folds for cross-validation
 config["per_split"] = 0.20                      # Percentage of Testing Set for split-validation
 config["n_loo"] = 1                             # Number of cycles for leave-one-out
 config["visualize"] = True                      # Print out slice images for visual evaluation
@@ -88,10 +90,10 @@ config["class_freq"] = False                    # Calculate the class frequencie
 print(config)
 
 # Create the Convolutional Neural Network
-cnn_model = MIScnn_NN.NeuralNetwork(config)
+#cnn_model = MIScnn_NN.NeuralNetwork(config)
 
 # Train the Convolutional Neural Network model
-cnn_model.train(config["cases"])
+#cnn_model.train(config["cases"])
 # Dump the model
 #cnn_model.dump("model")
 
@@ -102,8 +104,8 @@ cnn_model.train(config["cases"])
 #cnn_model.predict(list(range(3,4)))
 
 # Evaluate the Convolutional Neural Network
-#MIScnn_CV.cross_validation(config)
+MIScnn_CV.cross_validation(config)
 #MIScnn_CV.leave_one_out(config)
 #MIScnn_CV.split_validation(config)
 
-#cnn_model.evaluate([3],[4])
+#MIScnn_CV.detailed_validation(None, [3], "test", config)

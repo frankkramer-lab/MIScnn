@@ -13,7 +13,7 @@ from preprocessing import preprocessing_MRIs
 from data_generator import DataGenerator
 from utils.matrix_operations import concat_3Dmatrices
 from utils.callback import TrainingCallback
-from models.unet_muellerdo import Unet
+from models.unet.standard import Unet
 from models.metrics import dice_coefficient, dice_classwise, tversky_loss
 
 #-----------------------------------------------------#
@@ -63,6 +63,10 @@ class NeuralNetwork:
 
     # Predict with the Neural Network model on the provided case ids
     def predict(self, cases):
+        # Define overlap usage for patches
+        if not self.config["pred_overlap"]:
+            cache_overlap = self.config["overlap"]
+            self.config["overlap"] = (0,0,0)
         # Iterate over each case
         for id in cases:
             # Preprocess Magnetc Resonance Images
@@ -90,6 +94,9 @@ class NeuralNetwork:
             save_prediction(pred_seg, id, self.config["output_path"])
             # Clean up temporary npz files required for prediction
             batch_npz_cleanup()
+        # Reset overlap in config if required
+        if not self.config["pred_overlap"]:
+            self.config["overlap"] = cache_overlap
 
     # Evaluate the Neural Network model on the provided case ids
     def evaluate(self, casesTraining, casesValidation):
