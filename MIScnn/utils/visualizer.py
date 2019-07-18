@@ -52,12 +52,12 @@ def visualize_evaluation(case_id, vol, truth, pred, eva_path):
     img2 = ax2.imshow(data)
     # Update function for both images to show the slice for the current frame
     def update(i):
-        plt.suptitle("Case ID: " + str(case_id) + " - " + "Frame: " + str(i))
+        plt.suptitle("Case ID: " + str(case_id) + " - " + "Slice: " + str(i))
         img1.set_data(vol_truth[i])
         img2.set_data(vol_pred[i])
         return [img1, img2]
     # Compute the animation (gif)
-    ani = animation.FuncAnimation(fig, update, frames=len(truth), interval=5,
+    ani = animation.FuncAnimation(fig, update, frames=len(truth), interval=10,
                                   repeat_delay=0, blit=False)
     # Set up the output path for the gif
     if not os.path.exists(eva_path):
