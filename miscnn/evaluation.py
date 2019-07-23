@@ -35,6 +35,8 @@ def cross_validation(cases, config):
         history = model.evaluate(training, validation)
         # Draw plots for the training & validation
         visualize_training(history, "fold_" + str(i), config["evaluation_path"])
+        # Save model to file
+        model.dump("fold_" + str(i))
         # Make a detailed validation of the current cv-fold
         detailed_validation(model, validation, "fold_" + str(i), config)
 

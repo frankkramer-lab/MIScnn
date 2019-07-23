@@ -7,6 +7,7 @@ from keras.utils import multi_gpu_model
 from keras.optimizers import Adam
 import numpy
 import math
+import os
 #Internal libraries/scripts
 from miscnn.data_io import case_loader, save_prediction, batch_npz_cleanup
 from miscnn.preprocessing import preprocessing_MRIs
@@ -134,23 +135,33 @@ class NeuralNetwork:
         return history
 
     # Dump model to file
-    def dump(self, path):
+    def dump(self, name):
+        # Create model output path
+        outpath_model = os.path.join(self.config["model_path"],
+                                     name + "model.json")
+        outpath_weights = os.path.join(self.config["model_path"],
+                                       name + ".weights.h5")
         # Serialize model to JSON
         model_json = self.model.to_json()
-        with open("model/model.json", "w") as json_file:
+        with open(outpath_model, "w") as json_file:
             json_file.write(model_json)
         # Serialize weights to HDF5
-        self.model.save_weights("model/weights.h5")
+        self.model.save_weights(outpath_weights)
 
     # Load model from file
-    def load(self, path):
+    def load(self, name):
+        # Create model input path
+        inpath_model = os.path.join(self.config["model_path"],
+                                    name + "model.json")
+        inpath_weights = os.path.join(self.config["model_path"],
+                                      name + ".weights.h5")
         # Load json and create model
-        json_file = open('model/model.json', 'r')
+        json_file = open(inpath_model, 'r')
         loaded_model_json = json_file.read()
         json_file.close()
         self.model = model_from_json(loaded_model_json)
         # Load weights into new model
-        self.model.load_weights("model/weights.h5")
+        self.model.load_weights(inpath_weights)
         # Compile model
         self.model.compile(optimizer=Adam(lr=self.config["learninig_rate"]),
                            loss=tversky_loss,
