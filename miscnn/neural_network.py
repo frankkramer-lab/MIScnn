@@ -33,7 +33,7 @@ class NeuralNetwork:
         # Initialize model
         model = Unet(input_shape=config["input_shape"],
                      n_labels=config["classes"],
-                     activation="softmax")
+                     activation="sigmoid")
         # Transform to Keras multi GPU model
         if config["gpu_number"] > 1:
             model = multi_gpu_model(model, config["gpu_number"])
@@ -136,9 +136,12 @@ class NeuralNetwork:
 
     # Dump model to file
     def dump(self, name):
+        # Create the model directory if not existent
+        if not os.path.exists(self.config["model_path"]):
+            os.mkdir(self.config["model_path"])
         # Create model output path
         outpath_model = os.path.join(self.config["model_path"],
-                                     name + "model.json")
+                                     name + ".model.json")
         outpath_weights = os.path.join(self.config["model_path"],
                                        name + ".weights.h5")
         # Serialize model to JSON
@@ -152,7 +155,7 @@ class NeuralNetwork:
     def load(self, name):
         # Create model input path
         inpath_model = os.path.join(self.config["model_path"],
-                                    name + "model.json")
+                                    name + ".model.json")
         inpath_weights = os.path.join(self.config["model_path"],
                                       name + ".weights.h5")
         # Load json and create model

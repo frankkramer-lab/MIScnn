@@ -111,5 +111,5 @@ MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Net
 
 ## License
 
-This project is licensed under the MIT License.\
+This project is licensed under the GNU GENERAL PUBLIC LICENSE Version 3.\
 See the LICENSE.md file for license rights and limitations.

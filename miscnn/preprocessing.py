@@ -88,7 +88,7 @@ def create_batches(patches, batch_size, steps, train=True):
         end = start + batch_size
         if end > len(patches):
             end = len(patches)
-            if (end - batch_size) >= 0 and pred:
+            if (end - batch_size) >= 0 and train:
                 start = end - batch_size
         # Concatenate volume patches into the batch
         batch = np.concatenate(patches[start:end], axis=0)
