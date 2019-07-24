@@ -55,7 +55,8 @@ def preprocessing_MRIs(cases, config, training=False, validation=False):
         # Create batches from the volume patches
         batches_vol = create_batches(patches_vol,
                                      config["batch_size"],
-                                     steps)
+                                     steps,
+                                     train=training)
         # IF training: Create batches from the segmentation batches
         if training:
             batches_seg = create_batches(patches_seg,
@@ -77,7 +78,7 @@ def preprocessing_MRIs(cases, config, training=False, validation=False):
     return batchPointer
 
 # Create batches from a list of patches
-def create_batches(patches, batch_size, steps):
+def create_batches(patches, batch_size, steps, train=True):
     # Initialize result list
     batches = []
     # Create a batch in each step
@@ -87,7 +88,7 @@ def create_batches(patches, batch_size, steps):
         end = start + batch_size
         if end > len(patches):
             end = len(patches)
-            if (end - batch_size) >= 0:
+            if (end - batch_size) >= 0 and pred:
                 start = end - batch_size
         # Concatenate volume patches into the batch
         batch = np.concatenate(patches[start:end], axis=0)
