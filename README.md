@@ -86,7 +86,7 @@ sudo pip install miscnn
 First, clone MIScnn using git:
 
 ```sh
-git clone https://github.com/muellerdo/MIScnn.git
+git clone https://github.com/frankkramer-lab/MIScnn
 ```
 
 Then, cd to the MIScnn folder and run the install command:

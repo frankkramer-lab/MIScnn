@@ -1,17 +1,18 @@
 from setuptools import setup
 from setuptools import find_packages
 
-with open("README.md", "r") as fh:
+
+with open("docs/README.PyPI.md", "r") as fh:
     long_description = fh.read()
 
 setup(
    name='miscnn',
-   version='0.3',
+   version='0.1',
    description='Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning',
-   url='https://github.com/muellerdo/MIScnn',
+   url='https://github.com/frankkramer-lab/MIScnn',
    author='Dominik Müller',
    author_email='dominik.mueller@informatik.uni-augsburg.de',
-   license='MIT',
+   license='GPLv3',
    long_description=long_description,
    long_description_content_type="text/markdown",
    packages=find_packages(),
