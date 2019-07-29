@@ -12,7 +12,7 @@ MIScnn provides several core features:
 - Custom model, data I/O and metric support
 - Based on Keras with Tensorflow as backend
 
-![MIScnn workflow](docs/MIScnn.pipeline.png)
+![MIScnn workflow](https://raw.githubusercontent.com/frankkramer-lab/MIScnn/master/docs/MIScnn.pipeline.png)
 
 ## Getting started: 30 seconds to a MIS pipeline
 
@@ -76,7 +76,7 @@ sudo pip install miscnn
 First, clone MIScnn using git:
 
 ```sh
-git clone https://github.com/frankkramer-lab/MIScnn
+git clone https://github.com/frankkramer-lab/MIScnn.git
 ```
 
 Then, cd to the MIScnn folder and run the install command:
@@ -85,18 +85,6 @@ Then, cd to the MIScnn folder and run the install command:
 cd MIScnn
 sudo python setup.py install
 ```
-
-## Experiments and Results
-
-The task of the Kidney Tumor Segmentation challenge 2019 (KITS19) was to compute a semantic segmentation of arterial phase abdominal CT scans from 300 kidney cancer patients. Each pixel had to be labeled into one of three classes: Background, kidney or tumor. The original scans have an image resolution of 512x512 and on average 216 slices (highest slice number is 1059).
-
-MIScnn was used on the KITS19 training data set in order to perform a 3-fold cross-validation with a 3D standard U-Net model.
-
-![evaluation plots](docs/all.png)
-
-![example gif](docs/visualization.case_00095.gif)
-
-Additionally, MIScnn was used for participation at the Kidney Tumor Segmentation Challenge 2019. The Git repository for this use case can be found here: https://github.com/muellerdo/kits19.MIScnn
 
 ## Author
 
