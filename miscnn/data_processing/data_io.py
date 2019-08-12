@@ -1,124 +1,182 @@
+#==============================================================================#
+# Author:       Dominik Müller                                                 #
+# Copyright:    2019 IT-Infrastructure for Translational Medical Research,     #
+#               University of Augsburg                                         #
+# License:      GNU General Public License v3.0                                #
+#                                                                              #
+# Unless required by applicable law or agreed to in writing, software          #
+# distributed under the License is distributed on an "AS IS" BASIS,            #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.     #
+# See the License for the specific language governing permissions and          #
+# limitations under the License.                                               #
+#==============================================================================#
 #-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
-#External libraries
+# External libraries
 import os
 from re import match
 import numpy as np
+import random
 import shutil
-#Internal libraries/scripts
-import miscnn.utils.mri_sample as MIScnn_MRI
-from miscnn.utils.nifti_io import load_volume_nii, load_segmentation_nii, save_segmentation
+# Internal libraries/scripts
+import miscnn.data_processing.sample as MIScnn_sample
 
 #-----------------------------------------------------#
-#                     Case Loader                     #
+#                    Data IO class                    #
 #-----------------------------------------------------#
-# Load a MRI in NIFTI format and creates a MRI sample object
-def case_loader(case_id, data_path, load_seg=True):
-    # Read volume NIFTI file
-    volume = load_volume_nii(case_id, data_path)
-    # Create and return a MRI_Sample object
-    mri = MIScnn_MRI.MRI(volume)
-    # IF needed read the provided segmentation for current MRI sample
-    if load_seg:
-        segmentation = load_segmentation_nii(case_id, data_path)
-        mri.add_segmentation(segmentation)
-    # Return MRI sample object
-    return mri
+# Class to handle all input and output functionality
+class Data_IO:
+    # Class variables
+    interface = None                    # Data I/O interface
+    input_path = None                   # Path to input data directory
+    output_path = None                  # Path to MIScnn prediction directory
+    batch_path = None                   # Path to temporary batch storage directory
+    evaluation_path = None              # Path to evaluation results directory
+    indices_list = None                 # List of sample indices after data set initialization
+    delete_batchDir = True              # Boolean for deletion of complete tmp batches directory
+                                        # or just the batch data for the current seed
+    seed = random.randint(0,99999999)   # Random seed if running multiple MIScnn instances
 
-#-----------------------------------------------------#
-#                  Prediction backup                  #
-#-----------------------------------------------------#
-# Save a segmentation prediction in NIFTI format
-def save_prediction(pred, case_id, out_path):
-    # Create the output directory if not existent
-    if not os.path.exists(out_path):
-        os.mkdir(out_path)
-    # Backup the prediction
-    save_segmentation(pred, case_id, out_path)
+    #---------------------------------------------#
+    #                Initialization               #
+    #---------------------------------------------#
+    """ Initialization function for creating an object of the Data IO class.
+    This class provides functionality for handling all input and output processes
+    of the imaging data, as well as the temporary backup of batches to the disk.
 
-#-----------------------------------------------------#
-#                   MRI Fast Access                   #
-#-----------------------------------------------------#
-# Backup a MRI object to a npz for fast access later
-def backup_batches(batches_vol, batches_seg, path, case_id):
-    # Create model directory of not existent
-    if not os.path.exists(path):
-        os.mkdir(path)
-    # Create subdirectory for the case if not existent
-    case_dir = os.path.join(path, "tmp.case_" + str(case_id).zfill(5))
-    if not os.path.exists(case_dir):
-        os.mkdir(case_dir)
-    # Backup volume batches
-    if batches_vol is not None:
-        for i, batch in enumerate(batches_vol):
-            out_path = os.path.join(case_dir,
-                                    "batch_vol." + str(i))
-            np.savez(out_path, data=batch)
+    The user is only required to create an instance of the Data IO class with the desired specifications
+    and IO interface for the correct format. It is possible to create a custom IO interface for handling
+    special data structures or formats.
 
-    # Backup segmentation batches
-    if batches_seg is not None:
-        for i, batch in enumerate(batches_seg):
-            out_path = os.path.join(case_dir,
-                                    "batch_seg." + str(i))
-            np.savez_compressed(out_path, data=batch)
+    Args:
+        interface (io_interface):   A data IO interface which inherits the abstract_io class with the following methods:
+                                    initialize, load_image, load_segmentation, load_prediction, save_prediction
+        input_path (string):        Path to the input data directory, in which all imaging data have to be accessible.
+        output_path (string):       Path to the output data directory, in which computed predictions will be stored. This directory
+                                    will be created.
+        batch_path (string):        Path to the batch data directory. This directory will be created and used for temporary files.
+        evaluation_path (string):   Path to the evaluation data directory. This directory will be created and used for storing
+                                    all kinds of evaluation results during validation processes.
+    """
+    def __init__(self, interface, input_path, output_path="predictions",
+                 batch_path="batches", evaluation_path="evaluation"):
+        # Parse parameter
+        self.interface = interface
+        self.input_path = input_path
+        self.output_path = output_path
+        self.batch_path = batch_path
+        self.evaluation_path = evaluation_path
+        # Initialize Data I/O interface
+        self.indices_list = interface.initialize(input_path)
 
-# Load a MRI object from a npz for fast access
-def batch_load(id_tuple, path, vol=True):
-    # Parse ids
-    case_id = id_tuple[0]
-    batch_id = id_tuple[1]
-    # Identify batch type (volume or segmentation)
-    if vol:
-        batch_type = "batch_vol"
-    else:
-        batch_type = "batch_seg"
-    # Set up file path
-    in_path = os.path.join(path, "tmp.case_" + str(case_id).zfill(5),
-                           batch_type + "." + str(batch_id) + ".npz")
-    # Load numpy array from file
-    batch = np.load(in_path)["data"]
-    # Return loaded batch
-    return batch
+    #---------------------------------------------#
+    #                Sample Loader                #
+    #---------------------------------------------#
+    # Load a sample from the data set
+    def sample_loader(self, index, load_seg=True, load_pred=False):
+        # Load the image with the I/O interface
+        image = self.interface.load_image(index)
+        # Create a Sample object
+        sample = MIScnn_sample.Sample(index, image, self.interface.channels)
+        # IF needed read the provided segmentation for current sample
+        if load_seg:
+            segmentation = self.interface.load_segmentation(index)
+            sample.add_segmentation(segmentation)
+        # IF needed read the provided prediction for current sample
+        if load_pred:
+            prediction = self.interface.load_prediction(index, self.output_path)
+            sample.add_prediction(prediction)
+        # Return sample object
+        return sample
 
-# Clean up all temporary npz files
-def batch_npz_cleanup():
-    # Iterate over each file in the model directory
-    directory = os.listdir("model")
-    for file in directory:
-        # IF file matches temporary subdirectory name pattern -> delete it
-        if match("tmp\.case\_[0-9]+", file) is not None:
-            shutil.rmtree(os.path.join("model", file))
+    #---------------------------------------------#
+    #              Prediction Backup              #
+    #---------------------------------------------#
+    # Save a segmentation prediction in NIFTI format
+    def save_prediction(self, pred, index):
+        # Create the output directory if not existent
+        if not os.path.exists(self.output_path):
+            os.mkdir(self.output_path)
+        # Backup the prediction
+        self.interface.save_prediction(pred, index, self.output_path)
 
-#-----------------------------------------------------#
-#               Evaluation Data Backup                #
-#-----------------------------------------------------#
-# Backup evaluation as TSV (Tab Separated File)
-def save_evaluation(data, directory, file, start=False):
-    # Set up the evaluation directory
-    if start and not os.path.exists(directory):
-        os.mkdir(directory)
-    # Define the writing type
-    if start:
-        writer_type = "w"
-    else:
-        writer_type = "a"
-    # Opening file writer
-    output_path = os.path.join(directory, file)
-    with open(output_path, writer_type) as fw:
-        # Join the data together to a row
-        line = "\t".join(map(str, data)) + "\n"
-        fw.write(line)
+    #---------------------------------------------#
+    #               Batch Management              #
+    #---------------------------------------------#
+    # Backup batches to npz files for fast access later
+    def backup_batches(self, batch_img, batch_seg, pointer):
+        # Create batch directory of not existent
+        if not os.path.exists(self.batch_path):
+            os.mkdir(self.batch_path)
+        # Backup image batch
+        if batch_img is not None:
+            batch_img_path = os.path.join(self.batch_path, "batch_img." + \
+                                          str(self.seed) + "." + str(pointer))
+            np.savez(batch_img_path, data=batch_img)
+        # Backup segmentation batch
+        if batch_seg is not None:
+            batch_seg_path = os.path.join(self.batch_path, "batch_seg." + \
+                                          str(self.seed) + "." + str(pointer))
+            np.savez_compressed(batch_seg_path, data=batch_seg)
 
-# Create an evaluation subdirectory and change path
-def update_evalpath(updated_path, eval_path):
-    # Create evaluation directory if necessary
-    if not os.path.exists(eval_path):
-        os.mkdir(eval_path)
-    # Concatenate evaluation subdirectory path
-    subdir = os.path.join(eval_path, updated_path)
-    # Set up the evaluation subdirectory
-    if not os.path.exists(subdir):
-        os.mkdir(subdir)
-    # Return updated path to evaluation subdirectory
-    return subdir
+    # Load a batch from a npz file for fast access
+    def batch_load(self, pointer, img=True):
+        # Identify batch type (image or segmentation)
+        if img:
+            batch_type = "batch_img"
+        else:
+            batch_type = "batch_seg"
+        # Set up file path
+        in_path = os.path.join(self.batch_path, batch_type + "." + \
+                               str(self.seed) + "." + str(pointer) + ".npz")
+        # Load numpy array from file
+        batch = np.load(in_path)["data"]
+        # Return loaded batch
+        return batch
+
+    # Clean up all temporary npz files
+    def batch_npz_cleanup(self, delete_dir=self.delete_batchDir):
+        # Iterate over each file in the batch directory
+        directory = os.listdir(self.batch_path)
+        for file in directory:
+            # IF file matches seed pattern -> delete it
+            if match("batch_[a-z]+\." + str(self.seed) + "\.*", file) \
+                is not None:
+                os.remove(os.path.join(self.batch_path, file))
+        # Delete complete batch directory
+        if delete_dir:
+            shutil.rmtree(self.batch_path)
+
+# #-----------------------------------------------------#
+# #               Evaluation Data Backup                #
+# #-----------------------------------------------------#
+# # Backup evaluation as TSV (Tab Separated File)
+# def save_evaluation(data, directory, file, start=False):
+#     # Set up the evaluation directory
+#     if start and not os.path.exists(directory):
+#         os.mkdir(directory)
+#     # Define the writing type
+#     if start:
+#         writer_type = "w"
+#     else:
+#         writer_type = "a"
+#     # Opening file writer
+#     output_path = os.path.join(directory, file)
+#     with open(output_path, writer_type) as fw:
+#         # Join the data together to a row
+#         line = "\t".join(map(str, data)) + "\n"
+#         fw.write(line)
+#
+# # Create an evaluation subdirectory and change path
+# def update_evalpath(updated_path, eval_path):
+#     # Create evaluation directory if necessary
+#     if not os.path.exists(eval_path):
+#         os.mkdir(eval_path)
+#     # Concatenate evaluation subdirectory path
+#     subdir = os.path.join(eval_path, updated_path)
+#     # Set up the evaluation subdirectory
+#     if not os.path.exists(subdir):
+#         os.mkdir(subdir)
+#     # Return updated path to evaluation subdirectory
+#     return subdir

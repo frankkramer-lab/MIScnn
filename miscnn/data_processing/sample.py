@@ -23,20 +23,32 @@ import math
 # Object containing an image and the associated segmentation
 class Sample:
     # Initialize class variable
-    vol_data = None
+    index = None
+    img_data = None
     seg_data = None
+    pred_data = None
     shape = None
     channels = None
 
     # Create a Sample object
-    def __init__(self, volume, channels):
-        # Add and preprocess volume data
-        vol_data = volume.get_data()
-        self.vol_data = numpy.reshape(vol_data, vol_data.shape + (channels,))
+    def __init__(self, index, image, channels):
+        # Preprocess image data if required
+        if image.shape[-1] != channels:
+            image = numpy.reshape(image, image.shape + (channels,))
+        # Cache data
+        self.index = index
+        self.img_data = image
         self.channels = channels
-        self.shape = self.vol_data.shape
+        self.shape = self.img_data.shape
 
-    # Add and preprocess segmentation annotation
-    def add_segmentation(self, segmentation):
-        seg_data = segmentation.get_data()
-        self.seg_data = numpy.reshape(seg_data, seg_data.shape + (1,))
+    # Add and preprocess a segmentation annotation
+    def add_segmentation(self, seg):
+        if seg.shape[-1] != 1:
+            seg = numpy.reshape(seg, seg.shape + (1,))
+        self.seg_data = seg
+
+    # Add and preprocess a prediction annotation
+    def add_prediction(self, pred):
+        if pred.shape[-1] != 1:
+            pred = numpy.reshape(pred, pred.shape + (1,))
+        self.pred_data = pred

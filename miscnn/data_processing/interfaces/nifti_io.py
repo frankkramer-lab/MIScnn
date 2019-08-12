@@ -68,7 +68,7 @@ class NIFTI_interface(Abstract_IO):
         img_path = os.path.join(self.data_directory, index)
         if not os.path.exists(img_path):
             raise ValueError(
-                "Image could not be found \"{}\"".format(img_path.name)
+                "Image could not be found \"{}\"".format(img_path)
             )
         # Load volume from NIFTI file
         vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
@@ -86,7 +86,7 @@ class NIFTI_interface(Abstract_IO):
         seg_path = os.path.join(self.data_directory, index)
         if not os.path.exists(seg_path):
             raise ValueError(
-                "Segmentation could not be found \"{}\"".format(seg_path.name)
+                "Segmentation could not be found \"{}\"".format(seg_path)
             )
         # Load segmentation from NIFTI file
         seg = nib.load(os.path.join(seg_path, "segmentation.nii.gz"))
@@ -111,7 +111,7 @@ class NIFTI_interface(Abstract_IO):
         # Make sure that prediction file exists under the prediction directory
         if not os.path.exists(pred_path):
             raise ValueError(
-                "Prediction could not be found \"{}\"".format(pred_path.name)
+                "Prediction could not be found \"{}\"".format(pred_path)
             )
         # Load prediction from NIFTI file
         pred = nib.load(pred_path)
@@ -128,7 +128,7 @@ class NIFTI_interface(Abstract_IO):
         # Resolve location where data should be written
         if not os.path.exists(output_path):
             raise IOError(
-                "Data path, {}, could not be resolved".format(str(output_path))
+                "Data path, {}, could not be resolved".format(output_path)
             )
         # Convert numpy array to NIFTI
         nifti = nib.Nifti1Image(pred, None)
