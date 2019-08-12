@@ -1,96 +1,132 @@
+#==============================================================================#
+# Author:       Dominik Müller                                                 #
+# Copyright:    2019 IT-Infrastructure for Translational Medical Research,     #
+#               University of Augsburg                                         #
+# License:      GNU General Public License v3.0                                #
+#                                                                              #
+# Unless required by applicable law or agreed to in writing, software          #
+# distributed under the License is distributed on an "AS IS" BASIS,            #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.     #
+# See the License for the specific language governing permissions and          #
+# limitations under the License.                                               #
+#==============================================================================#
 #-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
-#External libraries
+# External libraries
 import os
 import nibabel as nib
+import re
+# Internal libraries/scripts
+from miscnn.data_processing.interfaces.abstract_io import Abstract_IO
 
 #-----------------------------------------------------#
-#                    NIFTI Reader                     #
+#                 NIfTI I/O Interface                 #
 #-----------------------------------------------------#
-## Code source from provided starter_code.utils on kits19 github
-## Slightly modified for easier usage
+""" asd
 
-# Read a volumne NIFTI file from the kits19 data directory
-def load_volume_nii(cid, data_path):
-    # Resolve location where data should be living
-    if not os.path.exists(data_path):
-        raise IOError(
-            "Data path, {}, could not be resolved".format(str(data_path))
-        )
-    # Get case_id from provided cid
-    try:
-        cid = int(cid)
-        case_id = "case_{:05d}".format(cid)
-    except ValueError:
-        case_id = cid
-    # Make sure that case_id exists under the data_path
-    case_path = os.path.join(data_path, case_id)
-    if not os.path.exists(case_path):
-        raise ValueError(
-            "Case could not be found \"{}\"".format(case_path.name)
-        )
-    # Load volume from NIFTI file
-    vol = nib.load(os.path.join(case_path, "imaging.nii.gz"))
-    return vol
+Code source heavily modified from the Kidney Tumor Segmentation Challenge 2019 git repository:
+https://github.com/neheller/kits19
+"""
+class NIFTI_interface(Abstract_IO):
+    # Class variables
+    data_directory = None
+    #---------------------------------------------#
+    #                  initialize                 #
+    #---------------------------------------------#
+    # Initialize the interface and return number of samples
+    def initialize(self, input_path, pattern=None):
+        # Resolve location where imaging data should be living
+        if not os.path.exists(input_path):
+            raise IOError(
+                "Data path, {}, could not be resolved".format(str(input_path))
+            )
+        # Cache data directory
+        self.data_directory = input_path
+        # Identify samples
+        sample_list = os.listdir(input_path)
+        # IF pattern provided: Remove every file which does not match
+        if pattern != None and isinstance(pattern, str):
+            for i in reversed(range(0, len(sample_list))):
+                if not re.fullmatch(pattern, sample_list[i]):
+                    del sample_list[i]
+        # Return sample list
+        return sample_list
 
-# Read a segmentation NIFTI file from the kits19 data directory
-def load_segmentation_nii(cid, data_path):
-    # Resolve location where data should be living
-    if not os.path.exists(data_path):
-        raise IOError(
-            "Data path, {}, could not be resolved".format(str(data_path))
-        )
-    # Get case_id from provided cid
-    try:
-        cid = int(cid)
-        case_id = "case_{:05d}".format(cid)
-    except ValueError:
-        case_id = cid
-    # Make sure that case_id exists under the data_path
-    case_path = os.path.join(data_path, case_id)
-    if not os.path.exists(case_path):
-        raise ValueError(
-            "Case could not be found \"{}\"".format(case_path.name)
-        )
-    # Load segmentation from NIFTI file
-    seg = nib.load(os.path.join(case_path, "segmentation.nii.gz"))
-    return seg
+    #---------------------------------------------#
+    #                  load_image                 #
+    #---------------------------------------------#
+    # Read a volume NIFTI file from the data directory
+    def load_image(self, index):
+        # Make sure that the image file exists in the data set directory
+        img_path = os.path.join(self.data_directory, index)
+        if not os.path.exists(img_path):
+            raise ValueError(
+                "Image could not be found \"{}\"".format(img_path.name)
+            )
+        # Load volume from NIFTI file
+        vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
+        # Transform NIFTI object to numpy array
+        vol_data = vol.get_data()
+        # Return volume
+        return vol_data
 
+    #---------------------------------------------#
+    #              load_segmentation              #
+    #---------------------------------------------#
+    # Read a segmentation NIFTI file from the data directory
+    def load_segmentation(self, index):
+        # Make sure that the segmentation file exists in the data set directory
+        seg_path = os.path.join(self.data_directory, index)
+        if not os.path.exists(seg_path):
+            raise ValueError(
+                "Segmentation could not be found \"{}\"".format(seg_path.name)
+            )
+        # Load segmentation from NIFTI file
+        seg = nib.load(os.path.join(seg_path, "segmentation.nii.gz"))
+        # Transform NIFTI object to numpy array
+        seg_data = seg.get_data()
+        # Return segmentation
+        return seg_data
 
-# Read a prediction NIFTI file from the prediction directory
-def load_prediction_nii(pid, data_path):
-    # Resolve location where data should be living
-    if not os.path.exists(data_path):
-        raise IOError(
-            "Data path, {}, could not be resolved".format(str(data_path))
-        )
-    # Parse the prediction name for the provided pid
-    pid = int(pid)
-    pred_file = "prediction_{:05d}".format(pid) + ".nii.gz"
-    # Make sure that pred_id exists under the data_path
-    pred_path = os.path.join(data_path, pred_file)
-    if not os.path.exists(pred_path):
-        raise ValueError(
-            "Prediction could not be found \"{}\"".format(pred_path.name)
-        )
-    # Load prediction from NIFTI file
-    pred = nib.load(pred_path)
-    return pred
+    #---------------------------------------------#
+    #               load_prediction               #
+    #---------------------------------------------#
+    # Read a prediction NIFTI file from the MIScnn output directory
+    def load_prediction(self, index, output_path):
+        # Resolve location where data should be living
+        if not os.path.exists(output_path):
+            raise IOError(
+                "Data path, {}, could not be resolved".format(str(output_path))
+            )
+        # Parse the provided index to the prediction file name
+        pred_file = str(index) + ".nii.gz"
+        pred_path = os.path.join(output_path, pred_file)
+        # Make sure that prediction file exists under the prediction directory
+        if not os.path.exists(pred_path):
+            raise ValueError(
+                "Prediction could not be found \"{}\"".format(pred_path.name)
+            )
+        # Load prediction from NIFTI file
+        pred = nib.load(pred_path)
+        # Transform NIFTI object to numpy array
+        pred_data = pred.get_data()
+        # Return prediction
+        return pred_data
 
-#-----------------------------------------------------#
-#                    NIFTI Writer                     #
-#-----------------------------------------------------#
-# Write a segmentation prediction into in the NIFTI file format
-def save_segmentation(seg, cid, output_path):
-    # Resolve location where data should be written
-    if not os.path.exists(output_path):
-        raise IOError(
-            "Data path, {}, could not be resolved".format(str(output_path))
-        )
-    # Convert numpy array to NIFTI
-    nifti = nib.Nifti1Image(seg, None)
-    nifti.get_data_dtype() == seg.dtype
-    # Save segmentation to disk
-    nib.save(nifti, os.path.join(output_path,
-                                 "prediction_" + str(cid).zfill(5) + ".nii.gz"))
+    #---------------------------------------------#
+    #               save_prediction               #
+    #---------------------------------------------#
+    # Write a segmentation prediction into in the NIFTI file format
+    def save_prediction(self, pred, index, output_path):
+        # Resolve location where data should be written
+        if not os.path.exists(output_path):
+            raise IOError(
+                "Data path, {}, could not be resolved".format(str(output_path))
+            )
+        # Convert numpy array to NIFTI
+        nifti = nib.Nifti1Image(pred, None)
+        #nifti.get_data_dtype() == pred.dtype
+        # Save segmentation to disk
+        pred_file = str(index) + ".nii.gz"
+        nib.save(nifti, os.path.join(output_path, pred_file))
