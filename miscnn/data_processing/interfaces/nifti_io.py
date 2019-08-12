@@ -31,13 +31,16 @@ Code source heavily modified from the Kidney Tumor Segmentation Challenge 2019 g
 https://github.com/neheller/kits19
 """
 class NIFTI_interface(Abstract_IO):
-    # Class variables
-    data_directory = None
+    # Class variable initialization
+    def __init__(self, pattern=None):
+        self.data_directory = None
+        self.pattern = pattern
+
     #---------------------------------------------#
     #                  initialize                 #
     #---------------------------------------------#
     # Initialize the interface and return number of samples
-    def initialize(self, input_path, pattern=None):
+    def initialize(self, input_path):
         # Resolve location where imaging data should be living
         if not os.path.exists(input_path):
             raise IOError(
@@ -48,9 +51,9 @@ class NIFTI_interface(Abstract_IO):
         # Identify samples
         sample_list = os.listdir(input_path)
         # IF pattern provided: Remove every file which does not match
-        if pattern != None and isinstance(pattern, str):
+        if self.pattern != None and isinstance(self.pattern, str):
             for i in reversed(range(0, len(sample_list))):
-                if not re.fullmatch(pattern, sample_list[i]):
+                if not re.fullmatch(self.pattern, sample_list[i]):
                     del sample_list[i]
         # Return sample list
         return sample_list
