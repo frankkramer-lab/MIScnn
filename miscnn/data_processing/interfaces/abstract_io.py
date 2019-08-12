@@ -30,6 +30,24 @@ Methods:
 """
 class Abstract_IO(ABC):
     #---------------------------------------------#
+    #                   __init__                  #
+    #---------------------------------------------#
+    """ Functions which will be called during the I/O interface object creation.
+        This function can be used to pass variables in the custom I/O interface.
+        The only required passed variable is the number of channels in the images.
+        Be aware that MIScnn only supports a last_channel structure.
+        2D: (x,y,channel) or (x,y)
+        3D: (x,y,z,channel) or (x,y,z)
+
+        Parameter:
+            channels (integer):    Path to the input data directory, in which all imaging data have to be accessible
+        Return:
+            None
+    """
+    @abstractmethod
+    def __init__(self, channels=1):
+        pass
+    #---------------------------------------------#
     #                  initialize                 #
     #---------------------------------------------#
     """ Initialize and prepare the image data set, return the number of samples in the data set
