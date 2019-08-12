@@ -6,18 +6,22 @@ import numpy
 import math
 
 #-----------------------------------------------------#
-#           Magnetic Resonance Image - class          #
+#                 Image Sample - class                #
 #-----------------------------------------------------#
-class MRI:
+# Object containing an image and the associated segmentation
+class Sample:
     # Initialize class variable
     vol_data = None
     seg_data = None
+    shape = None
+    channels = None
 
-    # Create a MRI Sample object
-    def __init__(self, volume):
+    # Create a Sample object
+    def __init__(self, volume, channels):
         # Add and preprocess volume data
         vol_data = volume.get_data()
-        self.vol_data = numpy.reshape(vol_data, vol_data.shape + (1,))
+        self.vol_data = numpy.reshape(vol_data, vol_data.shape + (channels,))
+        self.channels = channels
         self.shape = self.vol_data.shape
 
     # Add and preprocess segmentation annotation
