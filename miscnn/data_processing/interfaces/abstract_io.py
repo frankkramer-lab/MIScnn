@@ -22,6 +22,7 @@ from abc import ABC, abstractmethod
 """ An abstract base class for a Data_IO interface.
 
 Methods:
+    __init__                Object creation function
     initialize:             Prepare the data set and create indices list
     load_image:             Load an image
     load_segmentation:      Load a segmentation
