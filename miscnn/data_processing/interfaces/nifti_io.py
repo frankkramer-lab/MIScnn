@@ -23,7 +23,9 @@ from miscnn.data_processing.interfaces.abstract_io import Abstract_IO
 #-----------------------------------------------------#
 #                 NIfTI I/O Interface                 #
 #-----------------------------------------------------#
-""" asd
+""" Data I/O Interface for NIfTI files. The Neuroimaging Informatics Technology Initiative file format
+    is designed to contain brain images from e.g. magnetic resonance tomography. Nevertheless, it is
+    currently broadly used for any 3D medical image data.
 
 Code source heavily modified from the Kidney Tumor Segmentation Challenge 2019 git repository:
 https://github.com/neheller/kits19

@@ -13,7 +13,7 @@
 #-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
-#External libraries
+# External libraries
 import numpy
 import math
 
