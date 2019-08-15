@@ -40,7 +40,7 @@ class Data_IO:
     batch_path = None                   # Path to temporary batch storage directory
     evaluation_path = None              # Path to evaluation results directory
     indices_list = None                 # List of sample indices after data set initialization
-    delete_batchDir = True              # Boolean for deletion of complete tmp batches directory
+    delete_batchDir = None              # Boolean for deletion of complete tmp batches directory
                                         # or just the batch data for the current seed
     seed = random.randint(0,99999999)   # Random seed if running multiple MIScnn instances
 
@@ -66,13 +66,15 @@ class Data_IO:
                                     all kinds of evaluation results during validation processes.
     """
     def __init__(self, interface, input_path, output_path="predictions",
-                 batch_path="batches", evaluation_path="evaluation"):
+                 batch_path="batches", evaluation_path="evaluation",
+                 delete_batchDir=True):
         # Parse parameter
         self.interface = interface
         self.input_path = input_path
         self.output_path = output_path
         self.batch_path = batch_path
         self.evaluation_path = evaluation_path
+        self.delete_batchDir = delete_batchDir
         # Initialize Data I/O interface
         self.indices_list = interface.initialize(input_path)
 
@@ -142,7 +144,7 @@ class Data_IO:
         return batch
 
     # Clean up all temporary npz files
-    def batch_npz_cleanup(self, delete_dir=self.delete_batchDir):
+    def batch_npz_cleanup(self):
         # Iterate over each file in the batch directory
         directory = os.listdir(self.batch_path)
         for file in directory:
@@ -151,8 +153,14 @@ class Data_IO:
                 is not None:
                 os.remove(os.path.join(self.batch_path, file))
         # Delete complete batch directory
-        if delete_dir:
+        if self.delete_batchDir:
             shutil.rmtree(self.batch_path)
+
+    #---------------------------------------------#
+    #               Variable Access               #
+    #---------------------------------------------#
+    def get_indiceslist(self):
+        return self.indices_list.copy()
 
 # #-----------------------------------------------------#
 # #               Evaluation Data Backup                #
