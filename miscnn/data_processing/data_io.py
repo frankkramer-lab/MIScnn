@@ -144,17 +144,35 @@ class Data_IO:
         return batch
 
     # Clean up all temporary npz files
-    def batch_npz_cleanup(self):
-        # Iterate over each file in the batch directory
-        directory = os.listdir(self.batch_path)
-        for file in directory:
-            # IF file matches seed pattern -> delete it
-            if match("batch_[a-z]+\." + str(self.seed) + "\.*", file) \
-                is not None:
-                os.remove(os.path.join(self.batch_path, file))
-        # Delete complete batch directory
-        if self.delete_batchDir:
-            shutil.rmtree(self.batch_path)
+    def batch_npz_cleanup(self, pointer=None):
+        # If a specific pointer is provided -> only delete this batch
+        if pointer != None:
+            # Define path to image file
+            img_file = os.path.join(self.batch_path, "batch_img." + \
+                                    str(self.seed) + "." + str(pointer) + \
+                                    ".npz")
+            # Delete image file
+            if os.path.exists(img_file):
+                os.remove(img_file)
+            # Define path to segmentation file
+            seg_file = os.path.join(self.batch_path, "batch_seg." + \
+                                    str(self.seed) + "." + str(pointer) + \
+                                    ".npz")
+            # Delete segmentation file
+            if os.path.exists(seg_file):
+                os.remove(seg_file)
+        # If no pointer is provided, delete all batches of this MIScnn instance
+        elif pointer == None:
+            # Iterate over each file in the batch directory
+            directory = os.listdir(self.batch_path)
+            for file in directory:
+                # IF file matches seed pattern -> delete it
+                if pointer == None and match("batch_[a-z]+\." + \
+                    str(self.seed) + "\.*", file) is not None:
+                    os.remove(os.path.join(self.batch_path, file))
+            # Delete complete batch directory
+            if self.delete_batchDir:
+                shutil.rmtree(self.batch_path)
 
     #---------------------------------------------#
     #               Variable Access               #
