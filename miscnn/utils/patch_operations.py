@@ -47,10 +47,8 @@ def slice_3Dmatrix(array, window, overlap):
                     z_end = len(array[0][0])
                 # Cut window
                 window_cut = array[x_start:x_end,y_start:y_end,z_start:z_end]
-                # Reshape window
-                window_slice = np.reshape(window_cut, (1,) + window_cut.shape)
                 # Add to result list
-                patches.append(window_slice)
+                patches.append(window_cut)
     return patches
 
 # Concatenate a list of patches together to a numpy matrix
