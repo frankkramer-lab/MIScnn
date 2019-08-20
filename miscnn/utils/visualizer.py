@@ -69,6 +69,39 @@ def visualize_evaluation(case_id, vol, truth, pred, eva_path):
     # Close the matplot
     plt.close()
 
+def visualize_sample(img, seg, index, eva_path):
+    # Squeeze image files to remove channel axis
+    # THIS IS JUST A TEMPORARY SOLUTION
+    # THIS JUST WORKS FOR GREYSCALE IMAGES!!
+    img = np.squeeze(img, axis=-1)
+    seg = np.squeeze(seg, axis=-1)
+    # Color image with segmentation if present
+    if seg is not None:
+        img = overlay_segmentation(img, seg)
+    # Create a figure and an axes object from matplot
+    fig, ax = plt.subplots()
+    # Initialize the plot with an empty image
+    data = np.zeros(img.shape[1:3])
+    ax.set_title("Visualization")
+    axis_img = ax.imshow(data)
+    # Update function for both images to show the slice for the current frame
+    def update(i):
+        plt.suptitle("Slice: " + str(i))
+        axis_img.set_data(img[i])
+        return [axis_img]
+    # Compute the animation (gif)
+    ani = animation.FuncAnimation(fig, update, frames=len(seg), interval=10,
+                                  repeat_delay=0, blit=False)
+    # Set up the output path for the gif
+    if not os.path.exists(eva_path):
+        os.mkdir(eva_path)
+    file_name = "visualization." + str(index) + ".gif"
+    out_path = os.path.join(eva_path, file_name)
+    # Save the animation (gif)
+    ani.save(out_path, writer='imagemagick', fps=30)
+    # Close the matplot
+    plt.close()
+
 
 #-----------------------------------------------------#
 #                     Subroutines                     #
