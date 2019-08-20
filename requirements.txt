@@ -3,3 +3,4 @@ tqdm==4.32.2
 Keras==2.2.4
 nibabel==2.4.0
 matplotlib==3.0.3
+batchgenerators==0.19.3
