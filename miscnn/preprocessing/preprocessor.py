@@ -97,13 +97,15 @@ class Preprocessor:
     patchwise_grid_skip_class = 0           # Class, which will be skipped if patchwise_grid_skip_blanks is True
     img_queue = []                          # Intern queue of already processed and data augmentated images or segmentations.
                                             # The function create_batches will use this queue to create batches
-    batchpointer = -1                       # Batch pointer for later batchpointer list (references to batch disk backup)
 
     #---------------------------------------------#
     #               Prepare Batches               #
     #---------------------------------------------#
-    # Preprocess data and prepare all batches before starting the training/prediction
-    def prepare_batches(self, indices_list, training=True, validation=False):
+    # Preprocess data and prepare the batches for a given list of indices
+    def run(self, indices_list, training=True, validation=False, backup=False):
+        # Initialize storage type
+        if backup : batchpointer = -1           # Batch pointer for later batchpointer list (references to batch disk backup)
+        else : all_batches = []                 # List of batches from all samples (can sum up large amount of memory with wrong usage)
         # Iterate over all samples
         for index in tqdm(indices_list):
             # Load sample
@@ -112,7 +114,7 @@ class Preprocessor:
             for sf in self.subfunctions:
                 sf.transform(sample, training=training)
             # Decide if data augmentation should be performed
-            if training and not validation and self.data_augmentation!=None:
+            if training and not validation and self.data_augmentation is not None:
                 data_aug = True
             else:
                 data_aug = False
@@ -121,8 +123,8 @@ class Preprocessor:
                 ready_data = self.analysis_fullimage(sample, training,
                                                      data_aug)
             # Run patchwise cropping analysis
-            elif self.analysis == "patchwise-crop" and data_aug:
-                ready_data = self.analysis_patchwise_crop(sample)
+            elif self.analysis == "patchwise-crop" and training:
+                ready_data = self.analysis_patchwise_crop(sample, data_aug)
             # Run patchwise grid analysis
             else:
                 ready_data = self.analysis_patchwise_grid(sample, training,
@@ -139,12 +141,16 @@ class Preprocessor:
             batches = create_batches(self.img_queue, self.batch_size,
                                      incomplete_batches, last_index)
             # Backup batches to disk
-            for batch in batches:
-                self.batchpointer += 1
-                self.data_io.backup_batches(batch[0], batch[1],
-                                            self.batchpointer)
-        # Return Batchpointer
-        return self.batchpointer
+            if backup:
+                for batch in batches:
+                    batchpointer += 1
+                    self.data_io.backup_batches(batch[0], batch[1],
+                                                batchpointer)
+            # Backup batches to memory
+            else : all_batches.extend(batches)
+        # Return prepared batches
+        if backup : return batchpointer
+        else : return all_batches
 
     #---------------------------------------------#
     #           Patch-wise grid Analysis          #
@@ -185,14 +191,36 @@ class Preprocessor:
     #---------------------------------------------#
     #           Patch-wise crop Analysis          #
     #---------------------------------------------#
-    def analysis_patchwise_crop(self, sample):
-        #-> data_aug and random crop in one step
-        return None
+    def analysis_patchwise_crop(self, sample, data_aug):
+        # Access image and segmentation data
+        img = sample.img_data
+        seg = sample.seg_data
+        # If no data augmentation should be performed
+        # -> create Data Augmentation instance without augmentation methods
+        if not data_aug or self.data_augmentation is None:
+            cropping_data_aug = Data_Augmentation(cycles=1,
+                                        scaling=False, rotations=False,
+                                        elastic_deform=False, mirror=False,
+                                        brightness=False, contrast=False,
+                                        gamma=False, gaussian_noise=False)
+        else : cropping_data_aug = self.data_augmentation
+        # Configure the Data Augmentation instance to cropping
+        cropping_data_aug.cropping = True
+        cropping_data_aug.cropping_patch_shape = self.patch_shape
+        # Expand image dimension to simulate a batch with one image
+        img_data = np.expand_dims(img, axis=0)
+        seg_data = np.expand_dims(seg, axis=0)
+        # Run data augmentation and cropping
+        img_data, seg_data = cropping_data_aug.run(img_data, seg_data)
+        # Create tuple of preprocessed data
+        ready_data = list(zip(img_data, seg_data))
+        # Return preprocessed data tuple
+        return ready_data
 
     #---------------------------------------------#
     #             Full-Image Analysis             #
     #---------------------------------------------#
-    def analysis_fullimage(self, sample, data_aug):
+    def analysis_fullimage(self, sample, training, data_aug):
         #-> optional data_aug
 
         # # Expand image dimension to simulate a batch with one image
