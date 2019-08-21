@@ -45,11 +45,13 @@ class Preprocessor:
 
     Args:
         data_io (Data_IO):                      Data IO class instance which handles all I/O operations according to the user
-                                                defined interface
-        batch_size (integer):                   Number of samples inside a single batch
+                                                defined interface.
+        batch_size (integer):                   Number of samples inside a single batch.
         subfunctions (list of Subfunctions):    List of Subfunctions class instances which will be SEQUENTIALLY executed on the data set.
                                                 (clipping, normalization, resampling, ...)
-        data_aug (Data_Augmentation):           Data Augmentation class instance which performs diverse data augmentation techniques
+        data_aug (Data_Augmentation):           Data Augmentation class instance which performs diverse data augmentation techniques.
+                                                If no Data Augmentation is provided, an instance with default settings will be created.
+                                                Use data_aug=None, if you want no data augmentation at all.
         prepare_batches (boolean):              Should all batches be prepared and backup to disk before starting the trianing (True),
                                                 or should the batches be created during runtime? (False)
         analysis (string):                      Modus selection of analysis type. Options:
@@ -61,14 +63,11 @@ class Preprocessor:
                                                 Be aware that the x-axis represents the number of slices in 3D volumes.
                                                 This parameter will be redundant if fullimage or patchwise-crop analysis is selected!!
     """
-    def __init__(self, data_io, batch_size, subfunctions=[], data_aug=True,
-                 prepare_batches=True, analysis="patchwise-grid",
-                 patch_shape=None):
-        # Create a default Data Augmentation instance if no one is provided
-        if data_aug == True:
-            self.data_augmentation = Data_Augmentation(cycles=2)
+    def __init__(self, data_io, batch_size, subfunctions=[],
+                 data_aug=Data_Augmentation(), prepare_batches=True,
+                 analysis="patchwise-grid", patch_shape=None):
         # Parse Data Augmentation
-        elif isinstance(data_aug, Data_Augmentation):
+        if isinstance(data_aug, Data_Augmentation):
             self.data_augmentation = data_aug
         else:
             self.data_augmentation = None
@@ -92,17 +91,19 @@ class Preprocessor:
     # Class variables
     patchwise_grid_overlap = (0,0,0)        # In patchwise_analysis and without random cropping, an overlap can be defined
                                             # between adjuncted patches.
-    patchwise_grid_skip_blanks = True      # In patchwise_analysis and without random cropping, patches, containing only the
+    patchwise_grid_skip_blanks = True       # In patchwise_analysis and without random cropping, patches, containing only the
                                             # background annotation, can be skipped with this option. This result into only
                                             # training on relevant patches and ignore patches without any information.
     patchwise_grid_skip_class = 0           # Class, which will be skipped if patchwise_grid_skip_blanks is True
     img_queue = []                          # Intern queue of already processed and data augmentated images or segmentations.
                                             # The function create_batches will use this queue to create batches
+    batchpointer = -1                       # Batch pointer for later batchpointer list (references to batch disk backup)
 
     #---------------------------------------------#
-    #              Run preprocessing              #
+    #               Prepare Batches               #
     #---------------------------------------------#
-    def run(self, indices_list, training=True, validation=False):
+    # Preprocess data and prepare all batches before starting the training/prediction
+    def prepare_batches(self, indices_list, training=True, validation=False):
         # Iterate over all samples
         for index in tqdm(indices_list):
             # Load sample
@@ -110,56 +111,40 @@ class Preprocessor:
             # Run Subfunctions on the image data
             for sf in self.subfunctions:
                 sf.transform(sample, training=training)
-
-            # IF batches are fully prepared before training
-            if self.prepare_batches:
-                # Decide if data augmentation should be performed
-                if training and not validation and self.data_augmentation!=None:
-                    data_aug = True
-                else:
-                    data_aug = False
-                # Run Fullimage analysis
-                if self.analysis == "fullimage":
-                    ready_data = self.analysis_fullimage(sample, training,
-                                                         data_aug)
-                # Run patchwise cropping analysis
-                elif self.analysis == "patchwise-crop" and data_aug:
-                    ready_data = self.analysis_patchwise_crop(sample)
-                # Run patchwise grid analysis
-                else:
-                    ready_data = self.analysis_patchwise_grid(sample, training,
-                                                              data_aug)
-                # Put the preprocessed data at the image queue end
-                self.img_queue.extend(ready_data)
-
-
-                #DEBUGGING!!!!!!!
-                print(len(ready_data))
-                print(ready_data[0][0].shape)
-                from utils.visualizer import visualize_sample
-                for i in range(0, len(ready_data)):
-                    print("plotting: " + str(i))
-                    visualize_sample(img=ready_data[i][0], seg=ready_data[i][1], index=str(i), eva_path="test")
-                #DEBUGGING!!!!!!!
-
-                # identify if last sample
-                # last_sample_boolean
-
-                # create batches
-                # create_batches(data, last_sample_boolean)
+            # Decide if data augmentation should be performed
+            if training and not validation and self.data_augmentation!=None:
+                data_aug = True
             else:
-                print("no preparing")
-                #save preprocessed stuff into files
-
-        #return batchpointer?
-        return None
-
-    #---------------------------------------------#
-    #           Patch-wise crop Analysis          #
-    #---------------------------------------------#
-    def analysis_patchwise_crop(self, sample):
-        #-> data_aug and random crop in one step
-        return None
+                data_aug = False
+            # Run Fullimage analysis
+            if self.analysis == "fullimage":
+                ready_data = self.analysis_fullimage(sample, training,
+                                                     data_aug)
+            # Run patchwise cropping analysis
+            elif self.analysis == "patchwise-crop" and data_aug:
+                ready_data = self.analysis_patchwise_crop(sample)
+            # Run patchwise grid analysis
+            else:
+                ready_data = self.analysis_patchwise_grid(sample, training,
+                                                          data_aug)
+            # Put the preprocessed data at the image queue end
+            self.img_queue.extend(ready_data)
+            # Identify if current index is the last one
+            if index == indices_list[-1]: last_index = True
+            else : last_index = False
+            # Identify if incomplete_batches are allowed for batch creation
+            if training and not validation : incomplete_batches = False
+            else : incomplete_batches = True
+            # Create batches by gathering images from the img_queue
+            batches = create_batches(self.img_queue, self.batch_size,
+                                     incomplete_batches, last_index)
+            # Backup batches to disk
+            for batch in batches:
+                self.batchpointer += 1
+                self.data_io.backup_batches(batch[0], batch[1],
+                                            self.batchpointer)
+        # Return Batchpointer
+        return self.batchpointer
 
     #---------------------------------------------#
     #           Patch-wise grid Analysis          #
@@ -196,6 +181,13 @@ class Preprocessor:
             ready_data = list(zip(img_data))
         # Return preprocessed data tuple
         return ready_data
+
+    #---------------------------------------------#
+    #           Patch-wise crop Analysis          #
+    #---------------------------------------------#
+    def analysis_patchwise_crop(self, sample):
+        #-> data_aug and random crop in one step
+        return None
 
     #---------------------------------------------#
     #             Full-Image Analysis             #
