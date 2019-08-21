@@ -80,7 +80,7 @@ class Data_Augmentation:
         transforms = []
         # Add mirror augmentation
         if self.mirror:
-            aug_mirror = MirrorTransform(axes=config_mirror_axes)
+            aug_mirror = MirrorTransform(axes=self.config_mirror_axes)
             transforms.append(aug_mirror)
         # Add contrast augmentation
         if self.contrast:
@@ -135,7 +135,7 @@ class Data_Augmentation:
                                     border_cval_data=0,
                                     border_mode_seg='constant',
                                     border_cval_seg=0,
-                                    order_data=3, order_seg=1,
+                                    order_data=3, order_seg=0,
                                     p_el_per_sample=self.config_p_per_sample,
                                     p_rot_per_sample=self.config_p_per_sample,
                                     p_scale_per_sample=self.config_p_per_sample,
