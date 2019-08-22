@@ -86,7 +86,8 @@ class Data_IO:
         # Load the image with the I/O interface
         image = self.interface.load_image(index)
         # Create a Sample object
-        sample = MIScnn_sample.Sample(index, image, self.interface.channels)
+        sample = MIScnn_sample.Sample(index, image, self.interface.channels,
+                                      self.interface.classes)
         # IF needed read the provided segmentation for current sample
         if load_seg:
             segmentation = self.interface.load_segmentation(index)

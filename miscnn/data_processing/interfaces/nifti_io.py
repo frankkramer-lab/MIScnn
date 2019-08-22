@@ -38,9 +38,10 @@ https://github.com/neheller/kits19
 """
 class NIFTI_interface(Abstract_IO):
     # Class variable initialization
-    def __init__(self, channels=1, pattern=None):
+    def __init__(self, channels=1, classes=2, pattern=None):
         self.data_directory = None
         self.channels = channels
+        self.classes = classes
         self.pattern = pattern
 
     #---------------------------------------------#

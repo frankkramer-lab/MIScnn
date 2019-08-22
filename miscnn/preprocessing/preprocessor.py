@@ -22,6 +22,7 @@
 # External libraries
 from tqdm import tqdm
 import numpy as np
+from keras.utils import to_categorical
 # Internal libraries/scripts
 from miscnn.preprocessing.data_augmentation import Data_Augmentation
 from miscnn.preprocessing.batch_creation import create_batches
@@ -113,6 +114,9 @@ class Preprocessor:
             # Run Subfunctions on the image data
             for sf in self.subfunctions:
                 sf.transform(sample, training=training)
+            # Transform digit segmentation classes into categorical
+            sample.seg_data = to_categorical(sample.seg_data,
+                                             num_classes=sample.classes)
             # Decide if data augmentation should be performed
             if training and not validation and self.data_augmentation is not None:
                 data_aug = True

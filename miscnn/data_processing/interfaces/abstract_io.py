@@ -47,12 +47,13 @@ class Abstract_IO(ABC):
         3D: (x,y,z,channel) or (x,y,z)
 
         Parameter:
-            channels (integer):    Path to the input data directory, in which all imaging data have to be accessible
+            channels (integer):    Number of channels of the image (grayscale:1, RGB:3)
+            classes (integer):     Number of classes in the segmentation (binary:2, multi-class:3+)
         Return:
             None
     """
     @abstractmethod
-    def __init__(self, channels=1):
+    def __init__(self, channels=1, classes=2):
         pass
     #---------------------------------------------#
     #                  initialize                 #
