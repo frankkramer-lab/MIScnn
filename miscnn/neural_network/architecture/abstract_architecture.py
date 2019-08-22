@@ -29,9 +29,10 @@ from abc import ABC, abstractmethod
 
 Methods:
     __init__                Object creation function
-    create_model:           Creating the Keras model
+    create_model_2D:        Creating a 2D Keras model
+    create_model_3D:        Creating a 3D Keras model
 """
-class Abstract_Subfunction(ABC):
+class Abstract_Architecture(ABC):
     #---------------------------------------------#
     #                   __init__                  #
     #---------------------------------------------#
@@ -48,22 +49,38 @@ class Abstract_Subfunction(ABC):
     def __init__(self):
         pass
     #---------------------------------------------#
-    #                 Create Model                #
+    #               Create 2D Model               #
     #---------------------------------------------#
-    """ Create a deep learning or convolutional neural network model.
+    """ Create the 2D version of a deep learning or convolutional neural network model.
         This function will be called inside the pipeline and have to return a functional
-        Keras model. The model itself should be created here or in a subfunction
+        Keras model for 2D images. The model itself should be created here or in a subfunction
         called by this function.
         It is possible to pass configurations through the initialization function of this class.
 
         Parameter:
             input_shape (Tuple):        Input shape of the image data for the first model layer
             n_labels (Integer):         Number of classes/labels of the segmentation (by default binary problem)
-            three_dim (Boolean):        Boolean variable indicating, if image data is three dimensional or two
-                                        dimensional (default)
         Return:
             model (Keras model):        A Keras model
     """
     @abstractmethod
-    def create_model(self, input_shape, n_labels=2, three_dim=False):
+    def create_model_2D(self, input_shape, n_labels=2):
+        pass
+    #---------------------------------------------#
+    #               Create 3D Model               #
+    #---------------------------------------------#
+    """ Create the 3D version of a deep learning or convolutional neural network model.
+        This function will be called inside the pipeline and have to return a functional
+        Keras model for 3D images. The model itself should be created here or in a subfunction
+        called by this function.
+        It is possible to pass configurations through the initialization function of this class.
+
+        Parameter:
+            input_shape (Tuple):        Input shape of the image data for the first model layer
+            n_labels (Integer):         Number of classes/labels of the segmentation (by default binary problem)
+        Return:
+            model (Keras model):        A Keras model
+    """
+    @abstractmethod
+    def create_model_3D(self, input_shape, n_labels=2):
         pass
