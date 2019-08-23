@@ -41,19 +41,21 @@ class Abstract_IO(ABC):
     #---------------------------------------------#
     """ Functions which will be called during the I/O interface object creation.
         This function can be used to pass variables in the custom I/O interface.
-        The only required passed variable is the number of channels in the images.
-        Be aware that MIScnn only supports a last_channel structure.
-        2D: (x,y,channel) or (x,y)
-        3D: (x,y,z,channel) or (x,y,z)
+        The only required passed variable is the number of channels in the images,
+        the number of classes in the segmentation and the dimension of the data.
 
         Parameter:
             channels (integer):    Number of channels of the image (grayscale:1, RGB:3)
             classes (integer):     Number of classes in the segmentation (binary:2, multi-class:3+)
+            three_dim (boolean):   Variable to express, if the data is two or three dimensional
         Return:
             None
     """
     @abstractmethod
-    def __init__(self, channels=1, classes=2):
+    def __init__(self, channels=1, classes=2, three_dim=False):
+        self.channels = channels
+        self.classes = classes
+        self.three_dim = three_dim
         pass
     #---------------------------------------------#
     #                  initialize                 #
@@ -76,6 +78,9 @@ class Abstract_IO(ABC):
     #                  load_image                 #
     #---------------------------------------------#
     """ Load the image with the index i from the data set and return it as a numpy matrix.
+        Be aware that MIScnn only supports a last_channel structure.
+        2D: (x,y,channel) or (x,y)
+        3D: (x,y,z,channel) or (x,y,z)
 
         Parameter:
             index (variable):       An index from the provided indices_list of the initialize function
@@ -89,6 +94,9 @@ class Abstract_IO(ABC):
     #              load_segmentation              #
     #---------------------------------------------#
     """ Load the segmentation of the image with the index i from the data set and return it as a numpy matrix.
+        Be aware that MIScnn only supports a last_channel structure.
+        2D: (x,y,channel) or (x,y)
+        3D: (x,y,z,channel) or (x,y,z)
 
         Parameter:
             index (variable):       An index from the provided indices_list of the initialize function
