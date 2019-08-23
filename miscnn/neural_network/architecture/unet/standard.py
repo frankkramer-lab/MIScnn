@@ -41,7 +41,8 @@ from miscnn.neural_network.architecture.abstract_architecture import Abstract_Ar
 
 Methods:
     __init__                Object creation function
-    create_model:           Creating the U-Net standard model using Keras
+    create_model_2D:        Creating the 2D U-Net standard model using Keras
+    create_model_3D:        Creating the 3D U-Net standard model using Keras
 """
 class Architecture(Abstract_Architecture):
     #---------------------------------------------#
