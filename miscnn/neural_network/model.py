@@ -20,17 +20,18 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
+from keras.utils import multi_gpu_model
+from keras.optimizers import Adam
 # Internal libraries/scripts
 from miscnn.neural_network.metrics import dice_classwise, tversky_loss
+from miscnn.neural_network.architecture.unet.standard import Architecture
+from miscnn.neural_network.data_generator import DataGenerator
 
 #-----------------------------------------------------#
 #            Neural Network (model) class             #
 #-----------------------------------------------------#
 # Class which represents the Neural Network and which run the whole pipeline
 class Neural_Network:
-    #---------------------------------------------#
-    #                Initialization               #
-    #---------------------------------------------#
     """ Initialization function for creating a Neural Network (model) object.
     This class provides functionality for handling all model methods.
     This class runs the whole pipeline and uses a Preprocessor instance to obtain batches.
@@ -57,25 +58,70 @@ class Neural_Network:
                  loss=tversky_loss, metrics=[dice_classwise],
                  epochs=20, learninig_rate=0.0001,
                  batch_queue_size=2, gpu_number=1):
-        pass
+        # Identify data parameters
+        three_dim = preprocessor.data_io.interface.three_dim
+        channels = preprocessor.data_io.interface.channels
+        classes = preprocessor.data_io.interface.classes
+        # Assemble the input shape
+        input_shape = (None,)
+        # Initialize model for 3D data
+        if three_dim:
+            input_shape = (None, None, None, channels)
+            self.model = architecture.create_model_3D(input_shape=input_shape,
+                                                      n_labels=classes)
+         # Initialize model for 2D data
+        else:
+             input_shape = (None, None, channels)
+             self.model = architecture.create_model_2D(input_shape=input_shape,
+                                                       n_labels=classes)
+        # Transform to Keras multi GPU model
+        if gpu_number > 1:
+            self.model = multi_gpu_model(self.model, gpu_number)
+        # Compile model
+        self.model.compile(optimizer=Adam(lr=learninig_rate),
+                           loss=loss, metrics=metrics)
+        # Cache parameter
+        self.preprocessor = preprocessor
+        self.epochs = epochs
+        self.batch_queue_size = batch_queue_size
+
+    #---------------------------------------------#
+    #               Class variables               #
+    #---------------------------------------------#
+    shuffle_batches = True                  # Option whether batch order should be shuffled or not
 
     #---------------------------------------------#
     #                  Training                   #
     #---------------------------------------------#
-    #
-    def train():
-        pass
+    # Start the training pipeline of the Neural Network model
+    def train(self, sample_list=None):
+        # Without sample list, use all samples from the Preprocessor
+        if not isinstance(sample_list, list):
+            sample_list = self.preprocessor.data_io.get_indiceslist()
+        # Initialize Keras Data Generator for generating batches
+        dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
+                                validation=False, shuffle=self.shuffle_batches)
+        # # Run training process with the Keras fit_generator
+        # self.model.fit_generator(generator=dataGen,
+        #                          epochs=self.config["epochs"],
+        #                          max_queue_size=self.config["max_queue_size"])
+        # # Clean up temporary npz files required for training
+        # batch_npz_cleanup()
 
     #---------------------------------------------#
     #                 Prediction                  #
     #---------------------------------------------#
     #
-    def predict():
-        pass
+    def predict(self, sample_list=None):
+        # Without sample list, use all samples from the Preprocessor
+        if not isinstance(sample_list, list):
+            sample_list = self.preprocessor.data_io.get_indiceslist()
 
     #---------------------------------------------#
     #                 Evaluation                  #
     #---------------------------------------------#
     #
-    def evaluate():
-        pass
+    def evaluate(self, sample_list=None):
+        # Without sample list, use all samples from the Preprocessor
+        if not isinstance(sample_list, list):
+            sample_list = self.preprocessor.data_io.get_indiceslist()

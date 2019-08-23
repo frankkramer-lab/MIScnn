@@ -43,25 +43,26 @@ def create_batches(img_queue, batch_size, incomplete_batches=True,
         # Add batch to finished batches list
         batches.append(batch)
     # Handle remaining images in the image queue
-    # Create a batch which is smaller than provided batch size
-    if incomplete_batches:
-        # Identify images which will be relocated in the next batch
-        start = batch_number * batch_size
-        end = len(img_queue)
-        # Gather images and combine them into a batch
-        batch = collect_batch(img_queue, start, end)
-        # Add batch to finished batches list
-        batches.append(batch)
-    # Stock up the last batch in the epoch with already batched images
-    elif last_index:
-        # Identify images which will be relocated in the next batch
-        end = len(img_queue)
-        if (end - batch_size) >= 0 : start = end - batch_size
-        else : start = 0
-        # Gather images and combine them into a batch
-        batch = collect_batch(img_queue, start, end)
-        # Add batch to finished batches list
-        batches.append(batch)
+    if len(img_queue) % batch_size != 0:
+        # Create a batch which is smaller than provided batch size
+        if incomplete_batches:
+            # Identify images which will be relocated in the next batch
+            start = batch_number * batch_size
+            end = len(img_queue)
+            # Gather images and combine them into a batch
+            batch = collect_batch(img_queue, start, end)
+            # Add batch to finished batches list
+            batches.append(batch)
+        # Stock up the last batch in the epoch with already batched images
+        elif last_index:
+            # Identify images which will be relocated in the next batch
+            end = len(img_queue)
+            if (end - batch_size) >= 0 : start = end - batch_size
+            else : start = 0
+            # Gather images and combine them into a batch
+            batch = collect_batch(img_queue, start, end)
+            # Add batch to finished batches list
+            batches.append(batch)
     # Update image queue by removing already batched images
     update_queue(img_queue, batch_size, incomplete_batches, last_index)
     # Return list of created batches

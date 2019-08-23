@@ -65,8 +65,8 @@ class Preprocessor:
                                                 This parameter will be redundant if fullimage or patchwise-crop analysis is selected!!
     """
     def __init__(self, data_io, batch_size, subfunctions=[],
-                 data_aug=Data_Augmentation(), prepare_batches=True,
-                 analysis="patchwise-grid", patch_shape=None):
+                 data_aug=Data_Augmentation(), prepare_batches=False,
+                 analysis="patchwise-crop", patch_shape=None):
         # Parse Data Augmentation
         if isinstance(data_aug, Data_Augmentation):
             self.data_augmentation = data_aug
@@ -89,7 +89,9 @@ class Preprocessor:
         self.analysis = analysis
         self.patch_shape = patch_shape
 
-    # Class variables
+    #---------------------------------------------#
+    #               Class variables               #
+    #---------------------------------------------#
     patchwise_grid_overlap = (0,0,0)        # In patchwise_analysis and without random cropping, an overlap can be defined
                                             # between adjuncted patches.
     patchwise_grid_skip_blanks = True       # In patchwise_analysis and without random cropping, patches, containing only the
@@ -103,10 +105,10 @@ class Preprocessor:
     #               Prepare Batches               #
     #---------------------------------------------#
     # Preprocess data and prepare the batches for a given list of indices
-    def run(self, indices_list, training=True, validation=False, backup=False):
+    def run(self, indices_list, training=True, validation=False):
         # Initialize storage type
-        if backup : batchpointer = -1           # Batch pointer for later batchpointer list (references to batch disk backup)
-        else : all_batches = []                 # List of batches from all samples (can sum up large amount of memory with wrong usage)
+        if self.prepare_batches : batchpointer = -1     # Batch pointer for later batchpointer list (references to batch disk backup)
+        else : all_batches = []                         # List of batches from all samples (can sum up large amount of memory with wrong usage)
         # Iterate over all samples
         for index in tqdm(indices_list):
             # Load sample
@@ -115,8 +117,9 @@ class Preprocessor:
             for sf in self.subfunctions:
                 sf.transform(sample, training=training)
             # Transform digit segmentation classes into categorical
-            sample.seg_data = to_categorical(sample.seg_data,
-                                             num_classes=sample.classes)
+            if training:
+                sample.seg_data = to_categorical(sample.seg_data,
+                                                 num_classes=sample.classes)
             # Decide if data augmentation should be performed
             if training and not validation and self.data_augmentation is not None:
                 data_aug = True
@@ -145,7 +148,7 @@ class Preprocessor:
             batches = create_batches(self.img_queue, self.batch_size,
                                      incomplete_batches, last_index)
             # Backup batches to disk
-            if backup:
+            if self.prepare_batches:
                 for batch in batches:
                     batchpointer += 1
                     self.data_io.backup_batches(batch[0], batch[1],
@@ -153,7 +156,7 @@ class Preprocessor:
             # Backup batches to memory
             else : all_batches.extend(batches)
         # Return prepared batches
-        if backup : return batchpointer
+        if self.prepare_batches : return batchpointer
         else : return all_batches
 
     #---------------------------------------------#
@@ -180,7 +183,7 @@ class Preprocessor:
                     del patches_seg[i]
         # Concatenate a list of patches into a single numpy array
         img_data = np.stack(patches_img, axis=0)
-        seg_data = np.stack(patches_seg, axis=0)
+        if training : seg_data = np.stack(patches_seg, axis=0)
         # Run data augmentation
         if data_aug:
             img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
