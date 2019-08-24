@@ -67,7 +67,8 @@ class DataGenerator(keras.utils.Sequence):
         elif not self.training:
             return len(self.batch_queue)
         else:
-            if self.preprocessor.data_augmentation is not None:
+            if self.preprocessor.data_augmentation is not None and not \
+                self.validation:
                 cycles = self.preprocessor.data_augmentation.cycles
             else:
                 cycles = 1
@@ -100,7 +101,7 @@ class DataGenerator(keras.utils.Sequence):
             # Return image and segmentation batch
             return (batch_img, batch_seg)
         # IF batch is for predicting -> return only next image batch
-        else : return (batch_img)
+        else : return (batch_img, None)
 
     # Generate a batch during runtime
     def generate_batch(self, idx):
@@ -110,7 +111,8 @@ class DataGenerator(keras.utils.Sequence):
         # otherwise generate a new batch
         else:
             # identify number of images required for a single batch
-            if self.preprocessor.data_augmentation is not None:
+            if self.preprocessor.data_augmentation is not None and not \
+                self.validation:
                 cycles = self.preprocessor.data_augmentation.cycles
             else:
                 cycles = 1

@@ -20,7 +20,6 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from tqdm import tqdm
 import numpy as np
 from keras.utils import to_categorical
 # Internal libraries/scripts
@@ -110,7 +109,7 @@ class Preprocessor:
         if self.prepare_batches : batchpointer = -1     # Batch pointer for later batchpointer list (references to batch disk backup)
         else : all_batches = []                         # List of batches from all samples (can sum up large amount of memory with wrong usage)
         # Iterate over all samples
-        for index in tqdm(indices_list):
+        for index in indices_list:
             # Load sample
             sample = self.data_io.sample_loader(index, load_seg=training)
             # Run Subfunctions on the image data
@@ -142,7 +141,7 @@ class Preprocessor:
             if index == indices_list[-1]: last_index = True
             else : last_index = False
             # Identify if incomplete_batches are allowed for batch creation
-            if training and not validation : incomplete_batches = False
+            if training : incomplete_batches = False
             else : incomplete_batches = True
             # Create batches by gathering images from the img_queue
             batches = create_batches(self.img_queue, self.batch_size,
@@ -178,7 +177,7 @@ class Preprocessor:
             # Iterate over each patch
             for i in reversed(range(0, len(patches_seg))):
                 # IF patch DON'T contain any non background class -> remove it
-                if not np.any(patches_seg[i] != self.patchwise_grid_skip_class):
+                if not np.any(patches_seg[i][...,self.patchwise_grid_skip_class] != 1):
                     del patches_img[i]
                     del patches_seg[i]
         # Concatenate a list of patches into a single numpy array
