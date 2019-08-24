@@ -9,7 +9,7 @@ MIScnn provides several core features:
 - State-of-the-art deep learning model and metric library
 - Intuitive and fast model utilization (training, prediction)
 - Multiple automatic evaluation techniques (e.g. cross-validation)
-- Custom model, data I/O and metric support
+- Custom model, data I/O, pre-/postprocessing and metric support
 - Based on Keras with Tensorflow as backend
 
 ![MIScnn workflow](docs/MIScnn.pipeline.png)
