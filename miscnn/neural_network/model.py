@@ -22,10 +22,12 @@
 # External libraries
 from keras.utils import multi_gpu_model
 from keras.optimizers import Adam
+import numpy as np
 # Internal libraries/scripts
 from miscnn.neural_network.metrics import dice_classwise, tversky_loss
 from miscnn.neural_network.architecture.unet.standard import Architecture
 from miscnn.neural_network.data_generator import DataGenerator
+from miscnn.utils.patch_operations import concat_3Dmatrices
 
 #-----------------------------------------------------#
 #            Neural Network (model) class             #
@@ -113,10 +115,12 @@ class Neural_Network:
     #                 Prediction                  #
     #---------------------------------------------#
     # Predict with the fitted Neural Network model
-    def predict(self, sample_list=None):
+    def predict(self, sample_list=None, direct_output=False):
         # Without sample list, use all samples from the Preprocessor
         if not isinstance(sample_list, list):
             sample_list = self.preprocessor.data_io.get_indiceslist()
+        # Initialize result array for direct output
+        if direct_output : results = []
         # Iterate over each sample
         for sample in sample_list:
             # Initialize Keras Data Generator for generating batches
@@ -127,26 +131,31 @@ class Neural_Network:
             pred_seg = self.model.predict_generator(
                                      generator=dataGen,
                                      max_queue_size=self.batch_queue_size)
-            
 
+            # Reassemble patches into original shape for patchwise analysis
+            if self.preprocessor.analysis == "patchwise-crop" or \
+                self.preprocessor.analysis == "patchwise-grid":
+                # Load cached shape
+                seg_shape = self.preprocessor.shape_cache.pop(sample)
+                # Concatenate patches into original shape
+                pred_seg = concat_3Dmatrices(
+                               patches=pred_seg,
+                               image_size=seg_shape,
+                               window=self.preprocessor.patch_shape,
+                               overlap=self.preprocessor.patchwise_grid_overlap)
+            # Transform probabilities to classes
+            pred_seg = np.argmax(pred_seg, axis=-1)
+            # Run Subfunction postprocessing on the prediction
+            for sf in self.preprocessor.subfunctions:
+                sf.postprocessing(pred_seg)
+            # Backup predicted segmentation
+            if direct_output : results.append(pred_seg)
+            else : self.preprocessor.data_io.save_prediction(pred_seg, sample)
             # Clean up temporary npz files if necessary
             if self.preprocessor.prepare_batches:
                 self.preprocessor.data_io.batch_npz_cleanup()
-
-            # Reload MRI object from disk to cache
-            mri = case_loader(id, self.config["data_path"],
-                              load_seg=False)
-            # Concatenate patches into a single 3D matrix back
-            pred_seg = concat_3Dmatrices(patches=pred_seg,
-                                         image_size=mri.vol_data.shape,
-                                         window=self.config["patch_size"],
-                                         overlap=self.config["overlap"])
-            # Transform probabilities to classes
-            pred_seg = numpy.argmax(pred_seg, axis=-1)
-            # Backup segmentation prediction in output directory
-            save_prediction(pred_seg, id, self.config["output_path"])
-            # Clean up temporary npz files required for prediction
-            batch_npz_cleanup()
+        # Output predictions results if direct output modus is active
+        if direct_output : return results
 
     #---------------------------------------------#
     #                 Evaluation                  #

@@ -99,6 +99,7 @@ class Preprocessor:
     patchwise_grid_skip_class = 0           # Class, which will be skipped if patchwise_grid_skip_blanks is True
     img_queue = []                          # Intern queue of already processed and data augmentated images or segmentations.
                                             # The function create_batches will use this queue to create batches
+    shape_cache = dict()                    # Cache the shape of an image for patch assembling after patchwise prediction
 
     #---------------------------------------------#
     #               Prepare Batches               #
@@ -133,6 +134,7 @@ class Preprocessor:
                 ready_data = self.analysis_patchwise_crop(sample, data_aug)
             # Run patchwise grid analysis
             else:
+                if not training: self.shape_cache[index] = sample.img_data.shape
                 ready_data = self.analysis_patchwise_grid(sample, training,
                                                           data_aug)
             # Put the preprocessed data at the image queue end
