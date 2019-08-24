@@ -29,7 +29,8 @@ from abc import ABC, abstractmethod
 
 Methods:
     __init__                Object creation function
-    transform:              Transform the imaging data
+    preprocessing:          Transform the imaging data
+    postprocessing:         Transform the predicted segmentation
 """
 class Abstract_Subfunction(ABC):
     #---------------------------------------------#
