@@ -89,13 +89,20 @@ class DataGenerator(keras.utils.Sequence):
     #-----------------------------------------------------#
     # Load an already prepared batch from disk
     def load_batch(self, idx):
+        # Identify batch address
+        if not self.training:
+            batch_address = "prediction" + "." + str(self.batchpointers[idx])
+        elif self.validation:
+            batch_address = "validation" + "." + str(self.batchpointers[idx])
+        else:
+            batch_address = "training" + "." + str(self.batchpointers[idx])
         # Load next batch containing images
-        batch_img = self.preprocessor.data_io.batch_load(self.batchpointers[idx],
+        batch_img = self.preprocessor.data_io.batch_load(batch_address,
                                                          img=True)
         # IF batch is for training -> return next img & seg batch
         if self.training:
             # Load next batch containing segmentations
-            batch_seg = self.preprocessor.data_io.batch_load(self.batchpointers[idx],
+            batch_seg = self.preprocessor.data_io.batch_load(batch_address,
                                                              img=False)
             # Return image and segmentation batch
             return (batch_img, batch_seg)

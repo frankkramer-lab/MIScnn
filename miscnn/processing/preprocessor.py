@@ -152,8 +152,14 @@ class Preprocessor:
             if self.prepare_batches:
                 for batch in batches:
                     batchpointer += 1
+                    if not training:
+                        batch_address = "prediction" + "." + str(batchpointer)
+                    elif validation:
+                        batch_address = "validation" + "." + str(batchpointer)
+                    else:
+                        batch_address = "training" + "." + str(batchpointer)
                     self.data_io.backup_batches(batch[0], batch[1],
-                                                batchpointer)
+                                                batch_address)
             # Backup batches to memory
             else : all_batches.extend(batches)
         # Return prepared batches

@@ -96,10 +96,7 @@ class Neural_Network:
     #                  Training                   #
     #---------------------------------------------#
     # Train the Neural Network model using the MIScnn pipeline
-    def train(self, sample_list=None):
-        # Without sample list, use all samples from the Preprocessor
-        if not isinstance(sample_list, list):
-            sample_list = self.preprocessor.data_io.get_indiceslist()
+    def train(self, sample_list):
         # Initialize Keras Data Generator for generating batches
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
                                 validation=False, shuffle=self.shuffle_batches)
@@ -115,10 +112,7 @@ class Neural_Network:
     #                 Prediction                  #
     #---------------------------------------------#
     # Predict with the fitted Neural Network model
-    def predict(self, sample_list=None, direct_output=False):
-        # Without sample list, use all samples from the Preprocessor
-        if not isinstance(sample_list, list):
-            sample_list = self.preprocessor.data_io.get_indiceslist()
+    def predict(self, sample_list, direct_output=False):
         # Initialize result array for direct output
         if direct_output : results = []
         # Iterate over each sample
@@ -131,7 +125,6 @@ class Neural_Network:
             pred_seg = self.model.predict_generator(
                                      generator=dataGen,
                                      max_queue_size=self.batch_queue_size)
-
             # Reassemble patches into original shape for patchwise analysis
             if self.preprocessor.analysis == "patchwise-crop" or \
                 self.preprocessor.analysis == "patchwise-grid":
@@ -160,8 +153,25 @@ class Neural_Network:
     #---------------------------------------------#
     #                 Evaluation                  #
     #---------------------------------------------#
-    #
-    def evaluate(self, sample_list=None):
-        # Without sample list, use all samples from the Preprocessor
-        if not isinstance(sample_list, list):
-            sample_list = self.preprocessor.data_io.get_indiceslist()
+    # Evaluate the Neural Network model using the MIScnn pipeline
+    def evaluate(self, training_samples, validation_samples, callbacks=[]):
+        # Initialize a Keras Data Generator for generating Training data
+        dataGen_training = DataGenerator(training_samples, self.preprocessor,
+                                         training=True, validation=False,
+                                         shuffle=self.shuffle_batches)
+        # Initialize a Keras Data Generator for generating Validation data
+        dataGen_validation = DataGenerator(validation_samples,
+                                           self.preprocessor,
+                                           training=True, validation=True,
+                                           shuffle=self.shuffle_batches)
+        # Run training & validation process with the Keras fit_generator
+        history = self.model.fit_generator(generator=dataGen_training,
+                                 validation_data=dataGen_validation,
+                                 callbacks=callbacks,
+                                 epochs=self.epochs,
+                                 max_queue_size=self.batch_queue_size)
+        # Clean up temporary npz files if necessary
+        if self.preprocessor.prepare_batches:
+            self.preprocessor.data_io.batch_npz_cleanup()
+        # Return the training & validation history
+        return history
