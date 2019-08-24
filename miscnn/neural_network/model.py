@@ -22,6 +22,7 @@
 # External libraries
 from keras.utils import multi_gpu_model
 from keras.optimizers import Adam
+from keras.models import model_from_json
 import numpy as np
 # Internal libraries/scripts
 from miscnn.neural_network.metrics import dice_classwise, tversky_loss
@@ -84,7 +85,10 @@ class Neural_Network:
                            loss=loss, metrics=metrics)
         # Cache parameter
         self.preprocessor = preprocessor
+        self.loss = loss
+        self.metrics = metrics
         self.epochs = epochs
+        self.learninig_rate = learninig_rate
         self.batch_queue_size = batch_queue_size
 
     #---------------------------------------------#
@@ -95,7 +99,11 @@ class Neural_Network:
     #---------------------------------------------#
     #                  Training                   #
     #---------------------------------------------#
-    # Train the Neural Network model using the MIScnn pipeline
+    """ Fitting function for the Neural Network model using the provided list of sample indices.
+
+    Args:
+        sample_list (list of indices):  A list of sample indicies which will be used for training
+    """
     def train(self, sample_list):
         # Initialize Keras Data Generator for generating batches
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
@@ -111,7 +119,15 @@ class Neural_Network:
     #---------------------------------------------#
     #                 Prediction                  #
     #---------------------------------------------#
-    # Predict with the fitted Neural Network model
+    """ Prediction function for the Neural Network model. The fitted model will predict a segmentation
+        for the provided list of sample indices.
+
+    Args:
+        sample_list (list of indices):  A list of sample indicies for which a segmentation prediction will be computed
+        direct_output (boolean):        Parameter which decides, if computed predictions will be output as the return of this
+                                        function or if the predictions will be saved with the save_prediction method defined
+                                        in the provided Data I/O interface.
+    """
     def predict(self, sample_list, direct_output=False):
         # Initialize result array for direct output
         if direct_output : results = []
@@ -153,6 +169,18 @@ class Neural_Network:
     #---------------------------------------------#
     #                 Evaluation                  #
     #---------------------------------------------#
+    """ Evaluation function for the Neural Network model using the provided lists of sample indices
+        for training and validation. It is also possible to pass custom Callback classes in order to
+        obtain more information.
+
+    Args:
+        training_samples (list of indices):     A list of sample indicies which will be used for training
+        validation_samples (list of indices):   A list of sample indicies which will be used for validation
+        callbacks (list of Callback classes):   A list of Callback classes for custom evaluation
+
+    Return:
+        history (Keras history object):         Gathered fitting information and evaluation results of the validation
+    """
     # Evaluate the Neural Network model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, callbacks=[]):
         # Initialize a Keras Data Generator for generating Training data
@@ -175,3 +203,34 @@ class Neural_Network:
             self.preprocessor.data_io.batch_npz_cleanup()
         # Return the training & validation history
         return history
+
+    #---------------------------------------------#
+    #            Model Backup & Loading           #
+    #---------------------------------------------#
+    # Dump model to file
+    def dump(self, file_path):
+        # Create model output path
+        outpath_model = file_path + ".model.json"
+        outpath_weights = file_path + ".weights.h5"
+        # Serialize model to JSON
+        model_json = self.model.to_json()
+        with open(outpath_model, "w") as json_file:
+            json_file.write(model_json)
+        # Serialize weights to HDF5
+        self.model.save_weights(outpath_weights)
+
+    # Load model from file
+    def load(self, file_path):
+        # Create model input path
+        inpath_model = file_path + ".model.json"
+        inpath_weights = file_path + ".weights.h5"
+        # Load json and create model
+        json_file = open(inpath_model, 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        self.model = model_from_json(loaded_model_json)
+        # Load weights into new model
+        self.model.load_weights(inpath_weights)
+        # Compile model
+        self.model.compile(optimizer=Adam(lr=self.learninig_rate),
+                           loss=self.loss, metrics=self.metrics)
