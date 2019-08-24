@@ -24,7 +24,7 @@ import os
 import nibabel as nib
 import re
 # Internal libraries/scripts
-from miscnn.data_processing.interfaces.abstract_io import Abstract_IO
+from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 
 #-----------------------------------------------------#
 #                 NIfTI I/O Interface                 #

@@ -23,7 +23,6 @@
 import keras
 import math
 import numpy as np
-#Internal libraries/scripts
 
 #-----------------------------------------------------#
 #                 Keras Data Generator                #
@@ -45,7 +44,7 @@ class DataGenerator(keras.utils.Sequence):
         # If batches should be prepared before runtime -> do it now
         if preprocessor.prepare_batches:
             batches_count = preprocessor.run(sample_list, training, validation)
-            self.batchpointers = range(0, batches_count+1)
+            self.batchpointers = list(range(0, batches_count+1))
         elif not training:
             self.batch_queue = preprocessor.run(sample_list, False, False)
 
@@ -77,7 +76,7 @@ class DataGenerator(keras.utils.Sequence):
 
     # At every epoch end: Shuffle batchPointer list and reset sample_list
     def on_epoch_end(self):
-        if self.shuffle and training:
+        if self.shuffle and self.training:
             if self.preprocessor.prepare_batches:
                 np.random.shuffle(self.batchpointers)
             else:

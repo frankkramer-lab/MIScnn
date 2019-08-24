@@ -20,7 +20,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # Internal libraries/scripts
-from miscnn.data_processing.interfaces.abstract_io import Abstract_IO
+from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 
 #-----------------------------------------------------#
 #               Dictionary I/O Interface              #

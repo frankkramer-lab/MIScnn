@@ -23,8 +23,8 @@
 import numpy as np
 from keras.utils import to_categorical
 # Internal libraries/scripts
-from miscnn.preprocessing.data_augmentation import Data_Augmentation
-from miscnn.preprocessing.batch_creation import create_batches
+from miscnn.processing.data_augmentation import Data_Augmentation
+from miscnn.processing.batch_creation import create_batches
 from miscnn.utils.patch_operations import slice_3Dmatrix
 
 #-----------------------------------------------------#
@@ -37,7 +37,7 @@ class Preprocessor:
     #---------------------------------------------#
     """ Initialization function for creating a Preprocessor object.
     This class provides functionality for handling all preprocessing methods. This includes diverse
-    optional preprocessing subfunctions like resampling, clipping, normalization or custom subfcuntions.
+    optional processing subfunctions like resampling, clipping, normalization or custom subfcuntions.
     This class processes the data into batches which are ready to be used for training, prediction and validation.
 
     The user is only required to create an instance of the Preprocessor class with the desired specifications
@@ -114,7 +114,7 @@ class Preprocessor:
             sample = self.data_io.sample_loader(index, load_seg=training)
             # Run Subfunctions on the image data
             for sf in self.subfunctions:
-                sf.transform(sample, training=training)
+                sf.preprocessing(sample, training=training)
             # Transform digit segmentation classes into categorical
             if training:
                 sample.seg_data = to_categorical(sample.seg_data,

@@ -93,7 +93,7 @@ class Neural_Network:
     #---------------------------------------------#
     #                  Training                   #
     #---------------------------------------------#
-    # Start the training pipeline of the Neural Network model
+    # Train the Neural Network model using the MIScnn pipeline
     def train(self, sample_list=None):
         # Without sample list, use all samples from the Preprocessor
         if not isinstance(sample_list, list):
@@ -101,21 +101,52 @@ class Neural_Network:
         # Initialize Keras Data Generator for generating batches
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
                                 validation=False, shuffle=self.shuffle_batches)
-        # # Run training process with the Keras fit_generator
-        # self.model.fit_generator(generator=dataGen,
-        #                          epochs=self.config["epochs"],
-        #                          max_queue_size=self.config["max_queue_size"])
-        # # Clean up temporary npz files required for training
-        # batch_npz_cleanup()
+        # Run training process with Keras fit_generator
+        self.model.fit_generator(generator=dataGen,
+                                 epochs=self.epochs,
+                                 max_queue_size=self.batch_queue_size)
+        # Clean up temporary npz files if necessary
+        if self.preprocessor.prepare_batches:
+            self.preprocessor.data_io.batch_npz_cleanup()
 
     #---------------------------------------------#
     #                 Prediction                  #
     #---------------------------------------------#
-    #
+    # Predict with the fitted Neural Network model
     def predict(self, sample_list=None):
         # Without sample list, use all samples from the Preprocessor
         if not isinstance(sample_list, list):
             sample_list = self.preprocessor.data_io.get_indiceslist()
+        # Iterate over each sample
+        for sample in sample_list:
+            # Initialize Keras Data Generator for generating batches
+            dataGen = DataGenerator([sample], self.preprocessor,
+                                    training=False, validation=False,
+                                    shuffle=False)
+            # Run prediction process with Keras predict_generator
+            pred_seg = self.model.predict_generator(
+                                     generator=dataGen,
+                                     max_queue_size=self.batch_queue_size)
+            
+
+            # Clean up temporary npz files if necessary
+            if self.preprocessor.prepare_batches:
+                self.preprocessor.data_io.batch_npz_cleanup()
+
+            # Reload MRI object from disk to cache
+            mri = case_loader(id, self.config["data_path"],
+                              load_seg=False)
+            # Concatenate patches into a single 3D matrix back
+            pred_seg = concat_3Dmatrices(patches=pred_seg,
+                                         image_size=mri.vol_data.shape,
+                                         window=self.config["patch_size"],
+                                         overlap=self.config["overlap"])
+            # Transform probabilities to classes
+            pred_seg = numpy.argmax(pred_seg, axis=-1)
+            # Backup segmentation prediction in output directory
+            save_prediction(pred_seg, id, self.config["output_path"])
+            # Clean up temporary npz files required for prediction
+            batch_npz_cleanup()
 
     #---------------------------------------------#
     #                 Evaluation                  #

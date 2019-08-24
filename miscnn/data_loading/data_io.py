@@ -26,7 +26,7 @@ import numpy as np
 import random
 import shutil
 # Internal libraries/scripts
-import miscnn.data_processing.sample as MIScnn_sample
+import miscnn.data_loading.sample as MIScnn_sample
 
 #-----------------------------------------------------#
 #                    Data IO class                    #
