@@ -38,7 +38,6 @@ class Data_IO:
     input_path = None                   # Path to input data directory
     output_path = None                  # Path to MIScnn prediction directory
     batch_path = None                   # Path to temporary batch storage directory
-    evaluation_path = None              # Path to evaluation results directory
     indices_list = None                 # List of sample indices after data set initialization
     delete_batchDir = None              # Boolean for deletion of complete tmp batches directory
                                         # or just the batch data for the current seed
@@ -62,18 +61,17 @@ class Data_IO:
         output_path (string):       Path to the output data directory, in which computed predictions will be stored. This directory
                                     will be created.
         batch_path (string):        Path to the batch data directory. This directory will be created and used for temporary files.
-        evaluation_path (string):   Path to the evaluation data directory. This directory will be created and used for storing
-                                    all kinds of evaluation results during validation processes.
+        delete_batchDir (boolean):  Boolean if the whole temporary batch directory for prepared batches should be deleted after
+                                    model utilization. If false only the batches with the associated seed will be deleted.
+                                    This parameter is important when running multiple instances of MIScnn.
     """
     def __init__(self, interface, input_path, output_path="predictions",
-                 batch_path="batches", evaluation_path="evaluation",
-                 delete_batchDir=True):
+                 batch_path="batches", delete_batchDir=True):
         # Parse parameter
         self.interface = interface
         self.input_path = input_path
         self.output_path = output_path
         self.batch_path = batch_path
-        self.evaluation_path = evaluation_path
         self.delete_batchDir = delete_batchDir
         # Initialize Data I/O interface
         self.indices_list = interface.initialize(input_path)
@@ -181,9 +179,40 @@ class Data_IO:
     def get_indiceslist(self):
         return self.indices_list.copy()
 
-# #-----------------------------------------------------#
-# #               Evaluation Data Backup                #
-# #-----------------------------------------------------#
+#-----------------------------------------------------#
+#               Evaluation Data Backup                #
+#-----------------------------------------------------#
+# Backup history evaluation as TSV (Tab Separated File) on disk
+def backup_history(history, evaluation_path):
+    # Opening file writer
+    output_path = os.path.join(evaluation_path, "history.tsv")
+    with open(output_path, "w") as fw:
+        # Write the header
+        header = "epoch" + "\t" + "\t".join(history.keys()) + "\n"
+        fw.write(header)
+        # Write data rows
+        zipped_data = list(zip(*history.values()))
+        for i in range(0, len(history["loss"])):
+            line = str(i+1) + "\t" + "\t".join(map(str, zipped_data[i])) + "\n"
+            fw.write(line)
+
+# # Backup evaluation as TSV (Tab Separated File) on disk
+# def backup_evaluation(data, evaluation_path, file, history=True):
+#     # Define the writing type
+#     if history : writer_type = "w"
+#     else : writer_type = "a"
+#     # Opening file writer
+#     output_path = os.path.join(evaluation_path, str(file) + ".tsv")
+#     with open(output_path, writer_type) as fw:
+#         # Handle a history
+#         if history:
+#             content = ""
+#             for i in range(0, len(history["loss"])):
+#                 print(i)
+#         # # Join the data together to a row
+#         # line = "\t".join(map(str, data)) + "\n"
+#         # fw.write(line)
+
 # # Backup evaluation as TSV (Tab Separated File)
 # def save_evaluation(data, directory, file, start=False):
 #     # Set up the evaluation directory
@@ -200,16 +229,18 @@ class Data_IO:
 #         # Join the data together to a row
 #         line = "\t".join(map(str, data)) + "\n"
 #         fw.write(line)
-#
-# # Create an evaluation subdirectory and change path
-# def update_evalpath(updated_path, eval_path):
-#     # Create evaluation directory if necessary
-#     if not os.path.exists(eval_path):
-#         os.mkdir(eval_path)
-#     # Concatenate evaluation subdirectory path
-#     subdir = os.path.join(eval_path, updated_path)
-#     # Set up the evaluation subdirectory
-#     if not os.path.exists(subdir):
-#         os.mkdir(subdir)
-#     # Return updated path to evaluation subdirectory
-#     return subdir
+
+# Create an evaluation subdirectory and change path
+def create_directories(eval_path, subeval_path=None):
+    # Create evaluation directory if necessary
+    if not os.path.exists(eval_path):
+        os.mkdir(eval_path)
+    # Create evaluation subdirectory if necessary
+    if subeval_path is not None:
+        # Concatenate evaluation subdirectory path if present
+        subdir = os.path.join(eval_path, subeval_path)
+        # Set up the evaluation subdirectory
+        if not os.path.exists(subdir):
+            os.mkdir(subdir)
+        # Return path to evaluation subdirectory
+        return subdir

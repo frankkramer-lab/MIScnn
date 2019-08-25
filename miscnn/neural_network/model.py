@@ -84,7 +84,7 @@ class Neural_Network:
         self.model.compile(optimizer=Adam(lr=learninig_rate),
                            loss=loss, metrics=metrics)
         # Cache starting weights
-        self.initialization_weights self.model.get_weights()
+        self.initialization_weights = self.model.get_weights()
         # Cache parameter
         self.preprocessor = preprocessor
         self.loss = loss
@@ -212,7 +212,7 @@ class Neural_Network:
     #---------------------------------------------#
     # Re-initialize model weights
     def reset_weights(self):
-        self.model.load_weights(self.initialization_weights)
+        self.model.set_weights(self.initialization_weights)
 
     # Dump model to file
     def dump(self, file_path):

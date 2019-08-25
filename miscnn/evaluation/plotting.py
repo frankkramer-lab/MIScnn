@@ -20,12 +20,10 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-import numpy as np
 # Internal libraries/scripts
-from miscnn.data_loading.data_io import create_directories, backup_history
 
 #-----------------------------------------------------#
-#               k-fold Cross-Validation               #
+#      Create evaluation figures of a validation      #
 #-----------------------------------------------------#
 """ Function for an automatic k-fold Cross-Validation of the Neural Network model by
     running the whole pipeline several times with different data set combinations.
@@ -41,40 +39,6 @@ Args:
                                             directory.
     detailed_evaluation (boolean):          Option if a detailed evaluation (additional prediction) should be performed.
     callbacks (list of Callback classes):   A list of Callback classes for custom evaluation.
-    direct_output (boolean):                Option, if computed evaluations will be output as the return of this function or
-                                            if the evaluations will be saved on disk in the evaluation directory.
 """
-def cross_validation(sample_list, model, k_fold=3, evaluation_path="evaluation",
-                     draw_figures=True, detailed_evaluation=True, callbacks=[],
-                     direct_output=False):
-    # Initialize result cache
-    if direct_output : validation_results = []
-    # Randomly permute the sample list
-    samples_permuted = np.random.permutation(sample_list)
-    # Split sample list into folds
-    folds = np.array_split(samples_permuted, k_fold)
-    fold_indices = list(range(len(folds)))
-    # Start cross-validation
-    for i in fold_indices:
-        # Reset Neural Network model weights
-        model.reset_weights()
-        # Subset training and validation data set
-        training = np.concatenate([folds[x] for x in fold_indices if x!=i],
-                                  axis=0)
-        validation = folds[i]
-        # Initialize evaluation subdirectory for current fold
-        subdir = create_directories(evaluation_path, "fold_" + str(i))
-        # Run training & validation
-        history = model.evaluate(training, validation, callbacks)
-        # Backup current history dictionary
-        if direct_output : validation_results.append(history.history)
-        else : backup_history(history.history, subdir)
-        # Draw plots for the training & validation
-        # if draw_figures:
-        #     plot_validation(history.history, model.metrics, subdir)
-
-        # # Make a detailed validation of the current cv-fold
-        # detailed_validation(model, validation, "fold_" + str(i), config)
-
-    # Return the validation results
-    if direct_output : return validation_results
+def plot_validation(history, metrics, evaluation_directory):
+    pass
