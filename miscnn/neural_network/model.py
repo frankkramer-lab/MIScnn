@@ -83,6 +83,8 @@ class Neural_Network:
         # Compile model
         self.model.compile(optimizer=Adam(lr=learninig_rate),
                            loss=loss, metrics=metrics)
+        # Cache starting weights
+        self.initialization_weights self.model.get_weights()
         # Cache parameter
         self.preprocessor = preprocessor
         self.loss = loss
@@ -95,6 +97,7 @@ class Neural_Network:
     #               Class variables               #
     #---------------------------------------------#
     shuffle_batches = True                  # Option whether batch order should be shuffled or not
+    initialization_weights = None           # Neural Network model weights for weight reinitialization
 
     #---------------------------------------------#
     #                  Training                   #
@@ -205,8 +208,12 @@ class Neural_Network:
         return history
 
     #---------------------------------------------#
-    #            Model Backup & Loading           #
+    #               Model Management              #
     #---------------------------------------------#
+    # Re-initialize model weights
+    def reset_weights(self):
+        self.model.load_weights(self.initialization_weights)
+
     # Dump model to file
     def dump(self, file_path):
         # Create model output path
