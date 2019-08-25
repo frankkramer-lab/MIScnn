@@ -7,38 +7,13 @@ import matplotlib.animation as animation
 import numpy as np
 import os
 
-#-----------------------------------------------------#
-#             Functions for Visualization             #
-#-----------------------------------------------------#
-# Visualize loss and metric plot for training
-def visualize_training(history, prefix, eva_path):
-    # Set up the evaluation directory
-    if not os.path.exists(eva_path):
-        os.mkdir(eva_path)
-    # Plot the generalized dice coefficient
-    plt.plot(history.history['dice_classwise'])
-    plt.plot(history.history['val_dice_classwise'])
-    plt.title('Generalized Dice coefficient')
-    plt.ylabel('Dice coefficient')
-    plt.xlabel('Epoch')
-    plt.legend(['Train Set', 'Test Set'], loc='upper left')
-    out_path = os.path.join(eva_path,
-                            "dice_classwise." + str(prefix) + ".png")
-    plt.savefig(out_path)
-    plt.close()
-    # Plot the tversky loss
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('Tvsersky Loss')
-    plt.ylabel('Loss')
-    plt.xlabel('Epoch')
-    plt.legend(['Train Set', 'Test Set'], loc='upper left')
-    out_path = os.path.join(eva_path,
-                            "tversky_loss." + str(prefix) + ".png")
-    plt.savefig(out_path)
-    plt.close()
-
 def visualize_evaluation(case_id, vol, truth, pred, eva_path):
+    # Squeeze image files to remove channel axis
+    # THIS IS JUST A TEMPORARY SOLUTION
+    # THIS JUST WORKS FOR GREYSCALE IMAGES!!
+    vol = np.squeeze(vol, axis=-1)
+    truth = np.squeeze(truth, axis=-1)
+    pred = np.squeeze(pred, axis=-1)
     # Color volumes according to truth and pred segmentation
     vol_truth = overlay_segmentation(vol, truth)
     vol_pred = overlay_segmentation(vol, pred)

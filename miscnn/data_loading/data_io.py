@@ -196,39 +196,20 @@ def backup_history(history, evaluation_path):
             line = str(i+1) + "\t" + "\t".join(map(str, zipped_data[i])) + "\n"
             fw.write(line)
 
-# # Backup evaluation as TSV (Tab Separated File) on disk
-# def backup_evaluation(data, evaluation_path, file, history=True):
-#     # Define the writing type
-#     if history : writer_type = "w"
-#     else : writer_type = "a"
-#     # Opening file writer
-#     output_path = os.path.join(evaluation_path, str(file) + ".tsv")
-#     with open(output_path, writer_type) as fw:
-#         # Handle a history
-#         if history:
-#             content = ""
-#             for i in range(0, len(history["loss"])):
-#                 print(i)
-#         # # Join the data together to a row
-#         # line = "\t".join(map(str, data)) + "\n"
-#         # fw.write(line)
-
-# # Backup evaluation as TSV (Tab Separated File)
-# def save_evaluation(data, directory, file, start=False):
-#     # Set up the evaluation directory
-#     if start and not os.path.exists(directory):
-#         os.mkdir(directory)
-#     # Define the writing type
-#     if start:
-#         writer_type = "w"
-#     else:
-#         writer_type = "a"
-#     # Opening file writer
-#     output_path = os.path.join(directory, file)
-#     with open(output_path, writer_type) as fw:
-#         # Join the data together to a row
-#         line = "\t".join(map(str, data)) + "\n"
-#         fw.write(line)
+# Backup evaluation as TSV (Tab Separated File)
+def backup_evaluation(data, evaluation_path, start=False):
+    # Set up the evaluation directory
+    if start and not os.path.exists(evaluation_path):
+        os.mkdir(evaluation_path)
+    # Define the writing type
+    if start : writer_type = "w"
+    else : writer_type = "a"
+    # Opening file writer
+    output_path = os.path.join(evaluation_path, "detailed_validation.tsv")
+    with open(output_path, writer_type) as fw:
+        # Join the data together to a row
+        line = "\t".join(map(str, data)) + "\n"
+        fw.write(line)
 
 # Create an evaluation subdirectory and change path
 def create_directories(eval_path, subeval_path=None):

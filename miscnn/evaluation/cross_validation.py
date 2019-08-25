@@ -24,6 +24,7 @@ import numpy as np
 # Internal libraries/scripts
 from miscnn.data_loading.data_io import create_directories, backup_history
 from miscnn.evaluation.plotting import plot_validation
+from miscnn.evaluation.detailed_validation import detailed_validation
 
 #-----------------------------------------------------#
 #               k-fold Cross-Validation               #
@@ -40,14 +41,14 @@ Args:
                                             used for storing all kinds of evaluation results during the validation processes.
     draw_figures (boolean):                 Option if evaluation figures should be automatically plotted in the evaluation
                                             directory.
-    detailed_evaluation (boolean):          Option if a detailed evaluation (additional prediction) should be performed.
+    run_detailed_evaluation (boolean):      Option if a detailed evaluation (additional prediction) should be performed.
     callbacks (list of Callback classes):   A list of Callback classes for custom evaluation.
     direct_output (boolean):                Option, if computed evaluations will be output as the return of this function or
                                             if the evaluations will be saved on disk in the evaluation directory.
 """
 def cross_validation(sample_list, model, k_fold=3, evaluation_path="evaluation",
-                     draw_figures=True, detailed_evaluation=True, callbacks=[],
-                     direct_output=False):
+                     draw_figures=True, run_detailed_evaluation=True,
+                     callbacks=[], direct_output=False):
     # Initialize result cache
     if direct_output : validation_results = []
     # Randomly permute the sample list
@@ -73,8 +74,8 @@ def cross_validation(sample_list, model, k_fold=3, evaluation_path="evaluation",
         # Draw plots for the training & validation
         if draw_figures:
             plot_validation(history.history, model.metrics, subdir)
-        # # Make a detailed validation of the current cv-fold
-        # detailed_validation(model, validation, "fold_" + str(i), config)
-
+        # Make a detailed validation of the current cv-fold
+        if run_detailed_evaluation:
+            detailed_validation(validation, model, subdir)
     # Return the validation results
     if direct_output : return validation_results
