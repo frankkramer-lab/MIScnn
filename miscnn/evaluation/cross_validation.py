@@ -23,6 +23,7 @@
 import numpy as np
 # Internal libraries/scripts
 from miscnn.data_loading.data_io import create_directories, backup_history
+from miscnn.evaluation.plotting import plot_validation
 
 #-----------------------------------------------------#
 #               k-fold Cross-Validation               #
@@ -70,9 +71,8 @@ def cross_validation(sample_list, model, k_fold=3, evaluation_path="evaluation",
         if direct_output : validation_results.append(history.history)
         else : backup_history(history.history, subdir)
         # Draw plots for the training & validation
-        # if draw_figures:
-        #     plot_validation(history.history, model.metrics, subdir)
-
+        if draw_figures:
+            plot_validation(history.history, model.metrics, subdir)
         # # Make a detailed validation of the current cv-fold
         # detailed_validation(model, validation, "fold_" + str(i), config)
 
