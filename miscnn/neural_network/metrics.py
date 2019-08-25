@@ -39,10 +39,11 @@ def dice_coefficient_loss(y_true, y_pred):
 #             Class-wise Dice coefficient             #
 #-----------------------------------------------------#
 def dice_classwise(y_true, y_pred, smooth=0.00001):
+    axis = identify_axis(y_true.get_shape())
     intersection = y_true * y_pred
-    intersection = K.sum(intersection, axis=[1,2,3])
-    y_true = K.sum(y_true, axis=[1,2,3])
-    y_pred = K.sum(y_pred, axis=[1,2,3])
+    intersection = K.sum(intersection, axis=axis)
+    y_true = K.sum(y_true, axis=axis)
+    y_pred = K.sum(y_pred, axis=axis)
     dice = ((2 * intersection) + smooth) / (y_true + y_pred + smooth)
     return dice
 
@@ -66,9 +67,10 @@ def tversky_loss(y_true, y_pred, smooth=0.000001):
     alpha = 0.5
     beta  = 0.5
     # Calculate Tversky for each class
-    tp = K.sum(y_true * y_pred, axis=[1,2,3])
-    fn = K.sum(y_true * (1-y_pred), axis=[1,2,3])
-    fp = K.sum((1-y_true) * y_pred, axis=[1,2,3])
+    axis = identify_axis(y_true.get_shape())
+    tp = K.sum(y_true * y_pred, axis=axis)
+    fn = K.sum(y_true * (1-y_pred), axis=axis)
+    fp = K.sum((1-y_true) * y_pred, axis=axis)
     tversky_class = (tp + smooth)/(tp + alpha*fn + beta*fp + smooth)
     # Sum up classes to one score
     tversky = K.sum(tversky_class, axis=[-1])
@@ -76,3 +78,15 @@ def tversky_loss(y_true, y_pred, smooth=0.000001):
     n = K.cast(K.shape(y_true)[-1], 'float32')
     # Return Tversky
     return n-tversky
+
+#-----------------------------------------------------#
+#                     Subroutines                     #
+#-----------------------------------------------------#
+# Identify shape of tensor and return correct axes
+def identify_axis(shape):
+    # Three dimensional
+    if len(shape) == 5 : return [1,2,3]
+    # Two dimensional
+    elif len(shape) == 4 : return [1,2]
+    # Exception - Unknown
+    else : raise ValueError('Metric: Shape of tensor is neither 2D or 3D.')
