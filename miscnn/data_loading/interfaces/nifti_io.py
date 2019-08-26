@@ -44,6 +44,7 @@ class NIFTI_interface(Abstract_IO):
         self.classes = classes
         self.three_dim = three_dim
         self.pattern = pattern
+        self.cache = dict()
 
     #---------------------------------------------#
     #                  initialize                 #
@@ -82,6 +83,8 @@ class NIFTI_interface(Abstract_IO):
         vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
         # Transform NIFTI object to numpy array
         vol_data = vol.get_data()
+        # Save spacing in cache
+        self.cache[index] = vol.affine
         # Return volume
         return vol_data
 
@@ -127,6 +130,18 @@ class NIFTI_interface(Abstract_IO):
         pred_data = pred.get_data()
         # Return prediction
         return pred_data
+
+    #---------------------------------------------#
+    #                 load_details                #
+    #---------------------------------------------#
+    # Parse slice thickness
+    def load_details(self, i):
+        # Access spacing from previous loaded image
+        spacing = self.cache[i]
+        # Delete cached spacing
+        del self.cache[i]
+        # Return detail dictionary
+        return {"spacing":spacing}
 
     #---------------------------------------------#
     #               save_prediction               #

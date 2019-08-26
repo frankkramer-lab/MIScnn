@@ -94,6 +94,8 @@ class Data_IO:
         if load_pred:
             prediction = self.interface.load_prediction(index, self.output_path)
             sample.add_prediction(prediction)
+        # Add optional details to the sample object
+        sample.add_details(self.interface.load_details(index))
         # Return sample object
         return sample
 

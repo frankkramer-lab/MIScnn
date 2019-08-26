@@ -36,6 +36,7 @@ class Sample:
     shape = None
     channels = None
     classes = None
+    details = None
 
     # Create a Sample object
     def __init__(self, index, image, channels, classes):
@@ -60,3 +61,7 @@ class Sample:
         if pred.shape[-1] != 1:
             pred = numpy.reshape(pred, pred.shape + (1,))
         self.pred_data = pred
+
+    # Add optional information / details for custom usage
+    def add_details(self, details):
+        self.details = details

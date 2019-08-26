@@ -37,6 +37,7 @@ from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
         Value: Tuple containing:    (0) image as numpy array
                                     (1) optional segmentation as numpy array
                                     (2) optional prediction as numpy array
+                                    (3) optional details
 """
 class Dictionary_interface(Abstract_IO):
     # Class variable initialization
@@ -77,6 +78,14 @@ class Dictionary_interface(Abstract_IO):
     def load_prediction(self, index, output_path):
         # Return prediction
         return self.dictionary[index][2]
+
+    #---------------------------------------------#
+    #                 load_details                #
+    #---------------------------------------------#
+    # Parse additional information
+    def load_details(self, index):
+        # Return detail dictionary
+        return self.dictionary[index][3]
 
     #---------------------------------------------#
     #               save_prediction               #
