@@ -52,15 +52,13 @@ class Neural_Network:
         metrics (List of Metric Functions):     List of one or multiple Metric Functions, which will be shown during training.
                                                 Any Metric Function defined in Keras, in miscnn.neural_network.metrics or any custom
                                                 metric function, which follows the Keras metric guidelines, can be used.
-        epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
         learning_rate (float):                  Learning rate in which weights of the neural network will be updated.
         batch_queue_size (integer):             The batch queue size is the number of previously prepared batches in the cache during runtime.
         gpu_number (integer):                   Number of GPUs, which will be used for training.
     """
     def __init__(self, preprocessor, architecture=Architecture(),
                  loss=tversky_loss, metrics=[dice_classwise],
-                 epochs=20, learninig_rate=0.0001,
-                 batch_queue_size=2, gpu_number=1):
+                 learninig_rate=0.0001, batch_queue_size=2, gpu_number=1):
         # Identify data parameters
         three_dim = preprocessor.data_io.interface.three_dim
         channels = preprocessor.data_io.interface.channels
@@ -89,7 +87,6 @@ class Neural_Network:
         self.preprocessor = preprocessor
         self.loss = loss
         self.metrics = metrics
-        self.epochs = epochs
         self.learninig_rate = learninig_rate
         self.batch_queue_size = batch_queue_size
 
@@ -106,14 +103,15 @@ class Neural_Network:
 
     Args:
         sample_list (list of indices):  A list of sample indicies which will be used for training
+        epochs (integer):               Number of epochs. A single epoch is defined as one iteration through the complete data set.
     """
-    def train(self, sample_list):
+    def train(self, sample_list, epochs=20):
         # Initialize Keras Data Generator for generating batches
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
                                 validation=False, shuffle=self.shuffle_batches)
         # Run training process with Keras fit_generator
         self.model.fit_generator(generator=dataGen,
-                                 epochs=self.epochs,
+                                 epochs=epochs,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
@@ -179,13 +177,15 @@ class Neural_Network:
     Args:
         training_samples (list of indices):     A list of sample indicies which will be used for training
         validation_samples (list of indices):   A list of sample indicies which will be used for validation
+        epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
         callbacks (list of Callback classes):   A list of Callback classes for custom evaluation
 
     Return:
         history (Keras history object):         Gathered fitting information and evaluation results of the validation
     """
     # Evaluate the Neural Network model using the MIScnn pipeline
-    def evaluate(self, training_samples, validation_samples, callbacks=[]):
+    def evaluate(self, training_samples, validation_samples, epochs=20,
+                 callbacks=[]):
         # Initialize a Keras Data Generator for generating Training data
         dataGen_training = DataGenerator(training_samples, self.preprocessor,
                                          training=True, validation=False,
@@ -199,7 +199,7 @@ class Neural_Network:
         history = self.model.fit_generator(generator=dataGen_training,
                                  validation_data=dataGen_validation,
                                  callbacks=callbacks,
-                                 epochs=self.epochs,
+                                 epochs=epochs,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:

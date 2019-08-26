@@ -35,6 +35,7 @@ from miscnn.evaluation.detailed_validation import detailed_validation
 Args:
     sample_list (list of indices):          A list of sample indicies which will be used for validation.
     model (Neural Network model):           Instance of a Neural Network model class instance.
+    epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
     k_fold (integer):                       The number of k-folds for the Cross-Validationself. By default, a
                                             3-fold Cross-Validation is performed.
     evaluation_path (string):               Path to the evaluation data directory. This directory will be created and
@@ -46,7 +47,8 @@ Args:
     direct_output (boolean):                Option, if computed evaluations will be output as the return of this function or
                                             if the evaluations will be saved on disk in the evaluation directory.
 """
-def cross_validation(sample_list, model, k_fold=3, evaluation_path="evaluation",
+def cross_validation(sample_list, model, epochs=20, k_fold=3,
+                     evaluation_path="evaluation",
                      draw_figures=True, run_detailed_evaluation=True,
                      callbacks=[], direct_output=False):
     # Initialize result cache

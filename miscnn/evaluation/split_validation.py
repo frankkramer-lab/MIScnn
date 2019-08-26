@@ -38,6 +38,7 @@ Args:
     model (Neural Network model):           Instance of a Neural Network model class instance.
     percentage (float):                     Split percentage of how big the testing data set should be.
                                             By default, the percentage value is 0.2 -> 20% testing and 80% training
+    epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
     evaluation_path (string):               Path to the evaluation data directory. This directory will be created and
                                             used for storing all kinds of evaluation results during the validation processes.
     draw_figures (boolean):                 Option if evaluation figures should be automatically plotted in the evaluation
@@ -47,7 +48,7 @@ Args:
     direct_output (boolean):                Option, if computed evaluations will be output as the return of this function or
                                             if the evaluations will be saved on disk in the evaluation directory.
 """
-def split_validation(sample_list, model, percentage=0.2,
+def split_validation(sample_list, model, percentage=0.2, epochs=20,
                      evaluation_path="evaluation", draw_figures=True,
                      run_detailed_evaluation=True, callbacks=[],
                      direct_output=False):
@@ -63,7 +64,7 @@ def split_validation(sample_list, model, percentage=0.2,
     # Reset Neural Network model weights
     model.reset_weights()
     # Run training & validation
-    history = model.evaluate(training, validation, callbacks)
+    history = model.evaluate(training, validation, epochs, callbacks)
     # Initialize evaluation directory
     create_directories(evaluation_path)
     # Draw plots for the training & validation
