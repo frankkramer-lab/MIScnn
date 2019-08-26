@@ -23,6 +23,7 @@
 import os
 import nibabel as nib
 import re
+import numpy as np
 # Internal libraries/scripts
 from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 
@@ -136,8 +137,10 @@ class NIFTI_interface(Abstract_IO):
     #---------------------------------------------#
     # Parse slice thickness
     def load_details(self, i):
-        # Access spacing from previous loaded image
-        spacing = self.cache[i]
+        # Access spacing from previous loaded image and parse it
+        spacing = self.cache[i][np.nonzero(self.cache[i])]
+        # Turn it into positive values and flip it to represent z,x,y structure
+        spacing = np.flip(spacing[0:-1]) * -1
         # Delete cached spacing
         del self.cache[i]
         # Return detail dictionary
