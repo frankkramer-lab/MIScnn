@@ -72,14 +72,15 @@ class Abstract_Subfunction(ABC):
     #                postprocessing               #
     #---------------------------------------------#
     """ Transform the prediction according to the subfunction during postprocessing (prediction).
-        This is an in-place transformation of the prediction, therefore nothing is returned.
+        This is NOT an in-place transformation of the prediction, therefore it is REQUIRED to
+        return the processed prediction array.
         It is possible to pass configurations through the initialization function of this class.
 
         Parameter:
             prediction (numpy array):   Numpy array of the predicted segmentation
         Return:
-            None
+            prediction (numpy array):   Numpy array of processed predicted segmentation
     """
     @abstractmethod
     def postprocessing(self, prediction):
-        pass
+        return prediction

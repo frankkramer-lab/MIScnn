@@ -91,3 +91,5 @@ class Resampling(Abstract_Subfunction):
                                          cval=0)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
+        # Return postprocessed prediction
+        return prediction

@@ -159,7 +159,7 @@ class Neural_Network:
             pred_seg = np.argmax(pred_seg, axis=-1)
             # Run Subfunction postprocessing on the prediction
             for sf in self.preprocessor.subfunctions:
-                sf.postprocessing(pred_seg)
+                pred_seg = sf.postprocessing(pred_seg)
             # Backup predicted segmentation
             if direct_output : results.append(pred_seg)
             else : self.preprocessor.data_io.save_prediction(pred_seg, sample)

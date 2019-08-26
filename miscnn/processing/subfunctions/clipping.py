@@ -58,4 +58,4 @@ class Clipping(Abstract_Subfunction):
     #               Postprocessing                #
     #---------------------------------------------#
     def postprocessing(self, prediction):
-        pass
+        return prediction
