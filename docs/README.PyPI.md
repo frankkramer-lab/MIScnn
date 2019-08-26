@@ -20,8 +20,8 @@ Create a Data I/O instance with an already provided interface for your specific 
 format.
 
 ```python
-from data_loading.data_io import Data_IO
-from data_loading.interfaces.nifti_io import NIFTI_interface
+from miscnn.data_loading.data_io import Data_IO
+from miscnn.data_loading.interfaces.nifti_io import NIFTI_interface
 
 # Create an interface for kidney tumor CT scans in NIfTI format
 interface = NIFTI_interface(pattern="case_0000[0-2]", channels=1, classes=3)
@@ -33,7 +33,7 @@ data_io = Data_IO(interface, data_path)
 Create a Preprocessor instance to configure how to preprocess the data into batches.
 
 ```python
-from processing.preprocessor import Preprocessor
+from miscnn.processing.preprocessor import Preprocessor
 
 pp = Preprocessor(data_io, batch_size=16, analysis="patchwise-crop", patch_shape=(128,128,128))
 ```
@@ -41,7 +41,7 @@ pp = Preprocessor(data_io, batch_size=16, analysis="patchwise-crop", patch_shape
 Create a deep learning neural network model with a standard U-Net architecture.
 
 ```python
-from neural_network.model import Neural_Network
+from miscnn.neural_network.model import Neural_Network
 from miscnn.neural_network.architecture.unet.standard import Architecture
 
 unet_standard = Architecture()
