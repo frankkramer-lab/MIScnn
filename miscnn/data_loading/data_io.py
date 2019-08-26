@@ -148,7 +148,7 @@ class Data_IO:
         return batch
 
     # Clean up all temporary npz files
-    def batch_npz_cleanup(self, pointer=None):
+    def batch_cleanup(self, pointer=None):
         # If a specific pointer is provided -> only delete this batch
         if pointer != None:
             # Define path to image file

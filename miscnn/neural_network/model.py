@@ -115,9 +115,9 @@ class Neural_Network:
         self.model.fit_generator(generator=dataGen,
                                  epochs=self.epochs,
                                  max_queue_size=self.batch_queue_size)
-        # Clean up temporary npz files if necessary
-        if self.preprocessor.prepare_batches:
-            self.preprocessor.data_io.batch_npz_cleanup()
+        # Clean up temporary files if necessary
+        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
+            self.preprocessor.data_io.batch_cleanup()
 
     #---------------------------------------------#
     #                 Prediction                  #
@@ -163,9 +163,9 @@ class Neural_Network:
             # Backup predicted segmentation
             if direct_output : results.append(pred_seg)
             else : self.preprocessor.data_io.save_prediction(pred_seg, sample)
-            # Clean up temporary npz files if necessary
-            if self.preprocessor.prepare_batches:
-                self.preprocessor.data_io.batch_npz_cleanup()
+            # Clean up temporary files if necessary
+            if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
+                self.preprocessor.data_io.batch_cleanup()
         # Output predictions results if direct output modus is active
         if direct_output : return results
 
@@ -201,9 +201,9 @@ class Neural_Network:
                                  callbacks=callbacks,
                                  epochs=self.epochs,
                                  max_queue_size=self.batch_queue_size)
-        # Clean up temporary npz files if necessary
-        if self.preprocessor.prepare_batches:
-            self.preprocessor.data_io.batch_npz_cleanup()
+        # Clean up temporary files if necessary
+        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
+            self.preprocessor.data_io.batch_cleanup()
         # Return the training & validation history
         return history
 
