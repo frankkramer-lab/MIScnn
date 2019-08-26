@@ -55,6 +55,7 @@ Let's run a model training on our data set. Afterwards, predict the segmentation
 # Training the model with all except one sample for 500 epochs
 sample_list = data_io.get_indiceslist()
 model.train(sample_list[0:-1], epochs=500)
+
 # Predict the one remaining sample
 pred = model.predict([sample_list[-1]], direct_output=True)
 ```
