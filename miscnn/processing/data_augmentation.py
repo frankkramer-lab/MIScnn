@@ -170,7 +170,7 @@ class Data_Augmentation:
         # Data structure channel-first 3D:  (batch, channel, x, y, z)
         # Data structure channel-last 3D:   (batch, x, y, z, channel)
         aug_img_data = np.moveaxis(aug_img_data, 1, -1)
-        aug_seg_data = np.array(np.moveaxis(aug_seg_data, 1, -1))
+        aug_seg_data = np.moveaxis(aug_seg_data, 1, -1)
         # Return augmentated image and segmentation data
         return aug_img_data, aug_seg_data
 
@@ -187,7 +187,7 @@ class DataParser:
         # Data structure channel-last 3D:   (batch, x, y, z, channel)
         # Data structure channel-first 3D:  (batch, channel, x, y, z)
         self.img_data = np.moveaxis(img_data, -1, 1)
-        self.seg_data = np.array(np.moveaxis(seg_data, -1, 1))
+        self.seg_data = np.moveaxis(seg_data, -1, 1)
         # Define starting thread id
         self.thread_id = 0
     # Iterator

@@ -24,7 +24,7 @@ import numpy as np
 import math
 # Internal libraries/scripts
 from miscnn.data_loading.data_io import create_directories, backup_history
-from miscnn.evaluation.plotting import plot_validation
+from miscnn.utils.plotting import plot_validation
 from miscnn.evaluation.detailed_validation import detailed_validation
 
 #-----------------------------------------------------#
