@@ -25,6 +25,7 @@ from re import match
 import numpy as np
 import random
 import shutil
+import pickle
 # Internal libraries/scripts
 import miscnn.data_loading.sample as MIScnn_sample
 
@@ -80,7 +81,9 @@ class Data_IO:
     #                Sample Loader                #
     #---------------------------------------------#
     # Load a sample from the data set
-    def sample_loader(self, index, load_seg=True, load_pred=False):
+    def sample_loader(self, index, load_seg=True, load_pred=False, backup=False):
+        # If sample is a backup -> load it from pickle
+        if backup : return self.load_sample_pickle(index)
         # Load the image with the I/O interface
         image = self.interface.load_image(index)
         # Create a Sample object
@@ -120,13 +123,13 @@ class Data_IO:
             os.mkdir(self.batch_path)
         # Backup image batch
         if batch_img is not None:
-            batch_img_path = os.path.join(self.batch_path, "batch_img." + \
-                                          str(self.seed) + "." + str(pointer))
+            batch_img_path = os.path.join(self.batch_path, str(self.seed) + \
+                                          ".batch_img" + "." + str(pointer))
             np.savez(batch_img_path, data=batch_img)
         # Backup segmentation batch
         if batch_seg is not None:
-            batch_seg_path = os.path.join(self.batch_path, "batch_seg." + \
-                                          str(self.seed) + "." + str(pointer))
+            batch_seg_path = os.path.join(self.batch_path, str(self.seed) + \
+                                          ".batch_seg" + "." + str(pointer))
             np.savez_compressed(batch_seg_path, data=batch_seg)
 
     # Load a batch from a npz file for fast access
@@ -137,8 +140,8 @@ class Data_IO:
         else:
             batch_type = "batch_seg"
         # Set up file path
-        in_path = os.path.join(self.batch_path, batch_type + "." + \
-                               str(self.seed) + "." + str(pointer) + ".npz")
+        in_path = os.path.join(self.batch_path, str(self.seed) + "." + \
+                               batch_type + "." + str(pointer) + ".npz")
         # Load numpy array from file
         batch = np.load(in_path)["data"]
         # Return loaded batch
@@ -149,15 +152,15 @@ class Data_IO:
         # If a specific pointer is provided -> only delete this batch
         if pointer != None:
             # Define path to image file
-            img_file = os.path.join(self.batch_path, "batch_img." + \
-                                    str(self.seed) + "." + str(pointer) + \
+            img_file = os.path.join(self.batch_path, str(self.seed) + \
+                                    ".batch_img" + "." + str(pointer) + \
                                     ".npz")
             # Delete image file
             if os.path.exists(img_file):
                 os.remove(img_file)
             # Define path to segmentation file
-            seg_file = os.path.join(self.batch_path, "batch_seg." + \
-                                    str(self.seed) + "." + str(pointer) + \
+            seg_file = os.path.join(self.batch_path, str(self.seed) + \
+                                    ".batch_seg" + "." + str(pointer) + \
                                     ".npz")
             # Delete segmentation file
             if os.path.exists(seg_file):
@@ -168,12 +171,31 @@ class Data_IO:
             directory = os.listdir(self.batch_path)
             for file in directory:
                 # IF file matches seed pattern -> delete it
-                if pointer == None and match("batch_[a-z]+\." + \
-                    str(self.seed) + "\.*", file) is not None:
+                if pointer == None and match(str(self.seed) + "\.*", file) is not None:
                     os.remove(os.path.join(self.batch_path, file))
             # Delete complete batch directory
             if self.delete_batchDir:
                 shutil.rmtree(self.batch_path)
+
+    #---------------------------------------------#
+    #                Sample Backup                #
+    #---------------------------------------------#
+    # Backup samples for later access
+    def backup_sample(self, sample):
+        if not os.path.exists(self.batch_path) : os.mkdir(self.batch_path)
+        sample_path = os.path.join(self.batch_path, str(self.seed) + "." + \
+                                   sample.index + ".pickle")
+        if not os.path.exists(sample_path):
+            with open(sample_path, 'wb') as handle:
+                pickle.dump(sample, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # Load a backup sample from pickle
+    def load_sample_pickle(self, index):
+        sample_path = os.path.join(self.batch_path, str(self.seed) + "." + \
+                                   index + ".pickle")
+        with open(sample_path,'rb') as reader:
+            sample = pickle.load(reader)
+        return sample
 
     #---------------------------------------------#
     #               Variable Access               #

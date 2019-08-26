@@ -41,6 +41,9 @@ class DataGenerator(keras.utils.Sequence):
         self.validation = validation
         self.shuffle = shuffle
         self.batch_queue = []
+        # If samples with subroutines should be preprocessed -> do it now
+        if preprocessor.prepare_subfunctions:
+            preprocessor.run_subfunctions(sample_list, training)
         # If batches should be prepared before runtime -> do it now
         if preprocessor.prepare_batches:
             batches_count = preprocessor.run(sample_list, training, validation)

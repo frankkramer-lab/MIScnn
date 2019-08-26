@@ -52,8 +52,10 @@ class Preprocessor:
         data_aug (Data_Augmentation):           Data Augmentation class instance which performs diverse data augmentation techniques.
                                                 If no Data Augmentation is provided, an instance with default settings will be created.
                                                 Use data_aug=None, if you want no data augmentation at all.
-        prepare_batches (boolean):              Should all batches be prepared and backup to disk before starting the trianing (True),
-                                                or should the batches be created during runtime? (False)
+        prepare_subfunctions (boolean):         Should all subfunctions be prepared and backup to disk before starting the batch generation
+                                                (True), or should the subfunctions preprocessing be performed during runtime? (False).
+        prepare_batches (boolean):              Should all batches be prepared and backup to disk before starting the training (True),
+                                                or should the batches be created during runtime? (False).
         analysis (string):                      Modus selection of analysis type. Options:
                                                 - "fullimage":      Analysis of complete image data
                                                 - "patchwise-crop": Analysis of random cropped patches from the image
@@ -64,8 +66,9 @@ class Preprocessor:
                                                 This parameter will be redundant if fullimage or patchwise-crop analysis is selected!!
     """
     def __init__(self, data_io, batch_size, subfunctions=[],
-                 data_aug=Data_Augmentation(), prepare_batches=False,
-                 analysis="patchwise-crop", patch_shape=None):
+                 data_aug=Data_Augmentation(), prepare_subfunctions=False,
+                 prepare_batches=False, analysis="patchwise-crop",
+                 patch_shape=None):
         # Parse Data Augmentation
         if isinstance(data_aug, Data_Augmentation):
             self.data_augmentation = data_aug
@@ -84,6 +87,7 @@ class Preprocessor:
         self.data_io = data_io
         self.batch_size = batch_size
         self.subfunctions = subfunctions
+        self.prepare_subfunctions = prepare_subfunctions
         self.prepare_batches = prepare_batches
         self.analysis = analysis
         self.patch_shape = patch_shape
@@ -111,11 +115,13 @@ class Preprocessor:
         else : all_batches = []                         # List of batches from all samples (can sum up large amount of memory with wrong usage)
         # Iterate over all samples
         for index in indices_list:
-            # Load sample
-            sample = self.data_io.sample_loader(index, load_seg=training)
-            # Run Subfunctions on the image data
-            for sf in self.subfunctions:
-                sf.preprocessing(sample, training=training)
+            # Load sample and process provided subfunctions on image data
+            if not self.prepare_subfunctions:
+                sample = self.data_io.sample_loader(index, load_seg=training)
+                for sf in self.subfunctions:
+                    sf.preprocessing(sample, training=training)
+            # Load sample from file with already processed subfunctions
+            else : sample = self.data_io.sample_loader(index, backup=True)
             # Transform digit segmentation classes into categorical
             if training:
                 sample.seg_data = to_categorical(sample.seg_data,
@@ -165,6 +171,21 @@ class Preprocessor:
         # Return prepared batches
         if self.prepare_batches : return batchpointer
         else : return all_batches
+
+    #---------------------------------------------#
+    #               Run Subfunctions              #
+    #---------------------------------------------#
+    # Preprocess data through subfunctions and backup samples
+    def run_subfunctions(self, indices_list, training=True):
+        # Iterate over all samples
+        for index in indices_list:
+            # Load sample
+            sample = self.data_io.sample_loader(index, load_seg=training)
+            # Run provided subfunctions on imaging data
+            for sf in self.subfunctions:
+                sf.preprocessing(sample, training=training)
+            # Backup sample as pickle to disk
+            self.data_io.backup_sample(sample)
 
     #---------------------------------------------#
     #           Patch-wise grid Analysis          #
