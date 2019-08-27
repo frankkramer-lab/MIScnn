@@ -49,6 +49,8 @@ model = Neural_Network(preprocessor=pp, architecture=unet_standard)
 ```
 Congratulations to your ready-to-use Medical Image Segmentation pipeline including data I/O, preprocessing and data augmentation with default setting.
 
+
+
 Let's run a model training on our data set. Afterwards, predict the segmentation of a sample using the fitted model.
 
 ```python

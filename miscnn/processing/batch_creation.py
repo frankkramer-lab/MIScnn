@@ -39,9 +39,10 @@ def create_batches(img_queue, batch_size, incomplete_batches=True,
         start = i * batch_size
         end = start + batch_size
         # Gather images and combine them into a batch
-        batch = collect_batch(img_queue, start, end)
+        try : batch = collect_batch(img_queue, start, end)
+        except : batch = None
         # Add batch to finished batches list
-        batches.append(batch)
+        if batch is not None : batches.append(batch)
     # Handle remaining images in the image queue
     if len(img_queue) % batch_size != 0:
         # Create a batch which is smaller than provided batch size
@@ -50,9 +51,10 @@ def create_batches(img_queue, batch_size, incomplete_batches=True,
             start = batch_number * batch_size
             end = len(img_queue)
             # Gather images and combine them into a batch
-            batch = collect_batch(img_queue, start, end)
+            try : batch = collect_batch(img_queue, start, end)
+            except : batch = None
             # Add batch to finished batches list
-            batches.append(batch)
+            if batch is not None : batches.append(batch)
         # Stock up the last batch in the epoch with already batched images
         elif last_index:
             # Identify images which will be relocated in the next batch
@@ -60,9 +62,10 @@ def create_batches(img_queue, batch_size, incomplete_batches=True,
             if (end - batch_size) >= 0 : start = end - batch_size
             else : start = 0
             # Gather images and combine them into a batch
-            batch = collect_batch(img_queue, start, end)
+            try : batch = collect_batch(img_queue, start, end)
+            except : batch = None
             # Add batch to finished batches list
-            batches.append(batch)
+            if batch is not None : batches.append(batch)
     # Update image queue by removing already batched images
     update_queue(img_queue, batch_size, incomplete_batches, last_index)
     # Return list of created batches

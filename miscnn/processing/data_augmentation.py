@@ -34,7 +34,8 @@ from batchgenerators.transforms import BrightnessMultiplicativeTransform, GammaT
 # Class to perform diverse data augmentation techniques
 class Data_Augmentation:
     # Configurations for the data augmentation techniques
-    config_p_per_sample = 1.0                     # Percentage per sample
+    config_p_per_sample = 0.15                      # Probability a data augmentation technique
+                                                    # will be performed on the sample
     config_mirror_axes = (0, 1, 2)
     config_contrast_range = (0.3, 3.0)
     config_brightness_range = (0.5, 2)
