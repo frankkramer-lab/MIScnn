@@ -35,7 +35,6 @@ class DataGenerator(keras.utils.Sequence):
                  validation=False, shuffle=False):
         # Create a working environment from the handed over variables
         self.sample_list = sample_list.copy()
-        self.sample_list_backup = sample_list.copy()
         self.preprocessor = preprocessor
         self.training = training
         self.validation = validation
@@ -84,8 +83,6 @@ class DataGenerator(keras.utils.Sequence):
                 np.random.shuffle(self.batchpointers)
             else:
                 np.random.shuffle(self.sample_list)
-        if not self.preprocessor.prepare_batches:
-            self.sample_list = self.sample_list_backup.copy()
 
     #-----------------------------------------------------#
     #                     Subroutines                     #
@@ -128,7 +125,9 @@ class DataGenerator(keras.utils.Sequence):
             sample_size = math.ceil(self.preprocessor.batch_size / cycles)
             # access samples
             samples = self.sample_list[:sample_size]
+            # move samples from top to bottom in the sample queue
             del self.sample_list[:sample_size]
+            self.sample_list.extend(samples)
             # create a new batch
             self.batch_queue.extend(self.preprocessor.run(samples,
                                                           self.training,
