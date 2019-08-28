@@ -105,13 +105,14 @@ class Neural_Network:
         sample_list (list of indices):  A list of sample indicies which will be used for training
         epochs (integer):               Number of epochs. A single epoch is defined as one iteration through the complete data set.
     """
-    def train(self, sample_list, epochs=20):
+    def train(self, sample_list, epochs=20, callbacks=[]):
         # Initialize Keras Data Generator for generating batches
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
                                 validation=False, shuffle=self.shuffle_batches)
         # Run training process with Keras fit_generator
         self.model.fit_generator(generator=dataGen,
                                  epochs=epochs,
+                                 callbacks=callbacks,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
