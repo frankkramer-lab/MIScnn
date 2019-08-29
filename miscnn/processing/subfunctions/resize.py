@@ -20,41 +20,69 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
+from batchgenerators.augmentations.spatial_transformations import augment_resize
+from batchgenerators.augmentations.utils import resize_segmentation
 import numpy as np
 # Internal libraries/scripts
 from miscnn.processing.subfunctions.abstract_subfunction import Abstract_Subfunction
 
 #-----------------------------------------------------#
-#             Subfunction class: Clipping             #
+#              Subfunction class: Resize              #
 #-----------------------------------------------------#
-""" A Clipping Subfunction class which can be used for clipping intensity pixel values on a certain range.
+""" A Resize Subfunction class which resizes an images according to a desired shape.
 
 Methods:
     __init__                Object creation function
-    preprocessing:          Clipping the imaging data
-    postprocessing:         Do nothing
+    preprocessing:          Resize imaging data to the desired shape
+    postprocessing:         Resize a prediction to the desired shape
 """
-class Clipping(Abstract_Subfunction):
+class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, min, max):
-        self.min = min
-        self.max = max
+    def __init__(self, new_shape=(128,128,128)):
+        self.new_shape = new_shape
+        self.original_shape = None
 
     #---------------------------------------------#
     #                Preprocessing                #
     #---------------------------------------------#
     def preprocessing(self, sample, training=True):
-        # Access image
-        image = sample.img_data
-        # Perform clipping
-        image_clipped = np.clip(image, self.min, self.max)
-        # Update the sample with the normalized image
-        sample.img_data = image_clipped
+        # Access data
+        img_data = sample.img_data
+        seg_data = sample.seg_data
+        # Cache current spacing for later postprocessing
+        if not training : self.original_shape = (1,) + img_data.shape[0:-1]
+        # Transform data from channel-last to channel-first structure
+        img_data = np.moveaxis(img_data, -1, 0)
+        if training : seg_data = np.moveaxis(seg_data, -1, 0)
+        # Resize imaging data
+        img_data, seg_data = augment_resize(img_data, seg_data, self.new_shape,
+                                            order=3, order_seg=1, cval_seg=0)
+        # Transform data from channel-first back to channel-last structure
+        img_data = np.moveaxis(img_data, 0, -1)
+        if training : seg_data = np.moveaxis(seg_data, 0, -1)
+        # Save resized imaging data to sample
+        sample.img_data = img_data
+        sample.seg_data = seg_data
 
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
     def postprocessing(self, prediction):
+        # Access original shape of the last sample and reset it
+        original_shape = self.original_shape
+        self.original_shape = None
+        # Transform original shape to one-channel array
+        prediction = np.reshape(prediction, prediction.shape + (1,))
+        # Transform prediction from channel-last to channel-first structure
+        prediction = np.moveaxis(prediction, -1, 0)
+        # Resize imaging data
+        prediction = resize_segmentation(prediction, original_shape, order=1,
+                                         cval=0)
+        # Transform data from channel-first back to channel-last structure
+        prediction = np.moveaxis(prediction, 0, -1)
+        # Transform one-channel array back to original shape
+        prediction = np.reshape(prediction, original_shape[1:])
+        # Return postprocessed prediction
         return prediction

@@ -20,7 +20,6 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from abc import ABC, abstractmethod
 import numpy as np
 # Internal libraries/scripts
 from miscnn.processing.subfunctions.abstract_subfunction import Abstract_Subfunction

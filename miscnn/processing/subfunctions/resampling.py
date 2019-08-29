@@ -20,7 +20,6 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from abc import ABC, abstractmethod
 from batchgenerators.augmentations.spatial_transformations import augment_resize
 from batchgenerators.augmentations.utils import resize_segmentation
 import numpy as np
@@ -94,6 +93,6 @@ class Resampling(Abstract_Subfunction):
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        prediction = np.reshape(prediction, original_shape)
+        prediction = np.reshape(prediction, original_shape[1:])
         # Return postprocessed prediction
         return prediction

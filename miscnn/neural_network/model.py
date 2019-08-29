@@ -157,7 +157,7 @@ class Neural_Network:
             # Transform probabilities to classes
             pred_seg = np.argmax(pred_seg, axis=-1)
             # Run Subfunction postprocessing on the prediction
-            for sf in self.preprocessor.subfunctions:
+            for sf in reversed(self.preprocessor.subfunctions):
                 pred_seg = sf.postprocessing(pred_seg)
             # Backup predicted segmentation
             if direct_output : results.append(pred_seg)
