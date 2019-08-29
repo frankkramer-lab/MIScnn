@@ -36,17 +36,19 @@ Args:
     sample_list (list of indices):          A list of sample indicies which will be used for validation.
     model (Neural Network model):           Instance of a Neural Network model class instance.
     epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
+    iterations (integer):                   Number of iterations (batches) in a single epoch.
     evaluation_path (string):               Path to the evaluation data directory. This directory will be created and
                                             used for storing all kinds of evaluation results during the validation processes.
 """
-def split_validation(sample_list, model, epochs=20,
-                     evaluation_path="evaluation"):
+def leave_one_out(sample_list, model, epochs=20, iterations=None, callbacks=[],
+                  evaluation_path="evaluation"):
     # Choose a random sample
     loo = sample_list.pop(np.random.choice(len(sample_list)))
     # Reset Neural Network model weights
     model.reset_weights()
     # Train the model with the remaining samples
-    model.train(sample_list, epochs=epochs)
+    model.train(sample_list, epochs=epochs, iterations=iterations,
+                callbacks=callbacks)
     # Initialize evaluation directory
     create_directories(evaluation_path)
     # Make a detailed validation on the LOO sample

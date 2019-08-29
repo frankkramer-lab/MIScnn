@@ -102,13 +102,17 @@ class Neural_Network:
     """ Fitting function for the Neural Network model using the provided list of sample indices.
 
     Args:
-        sample_list (list of indices):  A list of sample indicies which will be used for training
-        epochs (integer):               Number of epochs. A single epoch is defined as one iteration through the complete data set.
+        sample_list (list of indices):          A list of sample indicies which will be used for training
+        epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through
+                                                the complete data set.
+        iterations (integer):                   Number of iterations (batches) in a single epoch.
+        callbacks (list of Callback classes):   A list of Callback classes for custom evaluation
     """
-    def train(self, sample_list, epochs=20, callbacks=[]):
+    def train(self, sample_list, epochs=20, iterations=None, callbacks=[]):
         # Initialize Keras Data Generator for generating batches
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
-                                validation=False, shuffle=self.shuffle_batches)
+                                validation=False, shuffle=self.shuffle_batches,
+                                iterations=iterations)
         # Run training process with Keras fit_generator
         self.model.fit_generator(generator=dataGen,
                                  epochs=epochs,
@@ -138,7 +142,7 @@ class Neural_Network:
             # Initialize Keras Data Generator for generating batches
             dataGen = DataGenerator([sample], self.preprocessor,
                                     training=False, validation=False,
-                                    shuffle=False)
+                                    shuffle=False, iterations=None)
             # Run prediction process with Keras predict_generator
             pred_seg = self.model.predict_generator(
                                      generator=dataGen,
@@ -179,18 +183,19 @@ class Neural_Network:
         training_samples (list of indices):     A list of sample indicies which will be used for training
         validation_samples (list of indices):   A list of sample indicies which will be used for validation
         epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
+        iterations (integer):                   Number of iterations (batches) in a single epoch.
         callbacks (list of Callback classes):   A list of Callback classes for custom evaluation
-
     Return:
         history (Keras history object):         Gathered fitting information and evaluation results of the validation
     """
     # Evaluate the Neural Network model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, epochs=20,
-                 callbacks=[]):
+                 iterations=None, callbacks=[]):
         # Initialize a Keras Data Generator for generating Training data
         dataGen_training = DataGenerator(training_samples, self.preprocessor,
                                          training=True, validation=False,
-                                         shuffle=self.shuffle_batches)
+                                         shuffle=self.shuffle_batches,
+                                         iterations=iterations)
         # Initialize a Keras Data Generator for generating Validation data
         dataGen_validation = DataGenerator(validation_samples,
                                            self.preprocessor,

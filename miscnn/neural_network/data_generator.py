@@ -32,13 +32,18 @@ import numpy as np
 class DataGenerator(keras.utils.Sequence):
     # Class Initialization
     def __init__(self, sample_list, preprocessor, training=False,
-                 validation=False, shuffle=False):
+                 validation=False, shuffle=False, iterations=None):
+        # Parse sample list
+        if isinstance(sample_list, list) : self.sample_list = sample_list.copy()
+        elif type(sample_list).__module__ == np.__name__ :
+            self.sample_list = sample_list.tolist()
+        else : raise ValueError("Sample list have to be a list or numpy array!")
         # Create a working environment from the handed over variables
-        self.sample_list = sample_list.copy()
         self.preprocessor = preprocessor
         self.training = training
         self.validation = validation
         self.shuffle = shuffle
+        self.iterations = iterations
         self.batch_queue = []
         # If samples with subroutines should be preprocessed -> do it now
         if preprocessor.prepare_subfunctions:
@@ -63,18 +68,25 @@ class DataGenerator(keras.utils.Sequence):
 
     # Return the number of batches for one epoch
     def __len__(self):
+        # Number of batches is the number of preprocessed batch files
         if self.preprocessor.prepare_batches:
             return len(self.batchpointers)
+        # Number of batches is preprocessed for the single sample to predict
         elif not self.training:
             return len(self.batch_queue)
+        # Else number of samples is dynamic
         else:
-            if self.preprocessor.data_augmentation is not None and not \
-                self.validation:
-                cycles = self.preprocessor.data_augmentation.cycles
+            # IF number of samples is specified in the parameters take it
+            if self.iterations is not None : return self.iterations
+            # ELSE calculate it by yourself
             else:
-                cycles = 1
-            return math.ceil((len(self.sample_list) * cycles) / \
-                             self.preprocessor.batch_size)
+                if self.preprocessor.data_augmentation is not None and not \
+                    self.validation:
+                    cycles = self.preprocessor.data_augmentation.cycles
+                else:
+                    cycles = 1
+                return math.ceil((len(self.sample_list) * cycles) / \
+                                 self.preprocessor.batch_size)
 
     # At every epoch end: Shuffle batchPointer list and reset sample_list
     def on_epoch_end(self):

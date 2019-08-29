@@ -39,6 +39,7 @@ Args:
     percentage (float):                     Split percentage of how big the testing data set should be.
                                             By default, the percentage value is 0.2 -> 20% testing and 80% training
     epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
+    iterations (integer):                   Number of iterations (batches) in a single epoch.
     evaluation_path (string):               Path to the evaluation data directory. This directory will be created and
                                             used for storing all kinds of evaluation results during the validation processes.
     draw_figures (boolean):                 Option if evaluation figures should be automatically plotted in the evaluation
@@ -49,9 +50,9 @@ Args:
                                             if the evaluations will be saved on disk in the evaluation directory.
 """
 def split_validation(sample_list, model, percentage=0.2, epochs=20,
-                     evaluation_path="evaluation", draw_figures=True,
-                     run_detailed_evaluation=True, callbacks=[],
-                     direct_output=False):
+                     iterations=None, evaluation_path="evaluation",
+                     draw_figures=True, run_detailed_evaluation=True,
+                     callbacks=[], direct_output=False):
     # Calculate the number of samples in the validation set
     validation_size = int(math.ceil(float(len(sample_list) * percentage)))
     # Randomly pick samples until %-split percentage
