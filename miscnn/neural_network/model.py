@@ -92,9 +92,6 @@ class Neural_Network:
         self.learninig_rate = learninig_rate
         self.workers = workers
         self.batch_queue_size = batch_queue_size
-        # Parse workers to multiprocessing variable
-        if workers > 1 : self.multiprocessing = True
-        else : self.multiprocessing = False
 
     #---------------------------------------------#
     #               Class variables               #
@@ -124,8 +121,7 @@ class Neural_Network:
                                  epochs=epochs,
                                  callbacks=callbacks,
                                  workers=self.workers,
-                                 max_queue_size=self.batch_queue_size,
-                                 use_multiprocessing=self.multiprocessing)
+                                 max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
             self.preprocessor.data_io.batch_cleanup()
@@ -152,11 +148,7 @@ class Neural_Network:
                                     training=False, validation=False,
                                     shuffle=False, iterations=None)
             # Run prediction process with Keras predict_generator
-            pred_seg = self.model.predict_generator(
-                                     generator=dataGen,
-                                     workers=self.workers,
-                                     max_queue_size=self.batch_queue_size,
-                                     use_multiprocessing=self.multiprocessing)
+            pred_seg = self.model.predict_generator(generator=dataGen)
             # Reassemble patches into original shape for patchwise analysis
             if self.preprocessor.analysis == "patchwise-crop" or \
                 self.preprocessor.analysis == "patchwise-grid":
@@ -217,8 +209,7 @@ class Neural_Network:
                                  callbacks=callbacks,
                                  epochs=epochs,
                                  workers=self.workers,
-                                 max_queue_size=self.batch_queue_size,
-                                 use_multiprocessing=self.multiprocessing)
+                                 max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
             self.preprocessor.data_io.batch_cleanup()

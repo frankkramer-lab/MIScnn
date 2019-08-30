@@ -23,6 +23,7 @@
 import keras
 import math
 import numpy as np
+import threading
 
 #-----------------------------------------------------#
 #                 Keras Data Generator                #
@@ -45,6 +46,7 @@ class DataGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.iterations = iterations
         self.batch_queue = []
+        self.thread_lock = threading.Lock()
         # If samples with subroutines should be preprocessed -> do it now
         if preprocessor.prepare_subfunctions:
             preprocessor.run_subfunctions(sample_list, training)
@@ -135,11 +137,13 @@ class DataGenerator(keras.utils.Sequence):
             else:
                 cycles = 1
             sample_size = math.ceil(self.preprocessor.batch_size / cycles)
-            # access samples
-            samples = self.sample_list[:sample_size]
-            # move samples from top to bottom in the sample queue
-            del self.sample_list[:sample_size]
-            self.sample_list.extend(samples)
+            # Create threading lock to avoid parallel access
+            with self.thread_lock:
+                # access samples
+                samples = self.sample_list[:sample_size]
+                # move samples from top to bottom in the sample queue
+                del self.sample_list[:sample_size]
+                self.sample_list.extend(samples)
             # create a new batch
             self.batch_queue.extend(self.preprocessor.run(samples,
                                                           self.training,
