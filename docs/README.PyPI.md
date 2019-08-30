@@ -35,7 +35,7 @@ Create a Preprocessor instance to configure how to preprocess the data into batc
 ```python
 from miscnn.processing.preprocessor import Preprocessor
 
-pp = Preprocessor(data_io, batch_size=16, analysis="patchwise-crop", patch_shape=(128,128,128))
+pp = Preprocessor(data_io, batch_size=4, analysis="patchwise-crop", patch_shape=(128,128,128))
 ```
 
 Create a deep learning neural network model with a standard U-Net architecture.
