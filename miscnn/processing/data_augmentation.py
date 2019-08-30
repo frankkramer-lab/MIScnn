@@ -21,7 +21,7 @@
 #-----------------------------------------------------#
 # External libraries
 import numpy as np
-from batchgenerators.dataloading import MultiThreadedAugmenter
+from batchgenerators.dataloading import SingleThreadedAugmenter
 from batchgenerators.transforms import Compose
 from batchgenerators.transforms import MirrorTransform, SpatialTransform
 from batchgenerators.transforms import ContrastAugmentationTransform, GaussianNoiseTransform
@@ -47,9 +47,6 @@ class Data_Augmentation:
     config_rotations_angleY = (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi)
     config_rotations_angleZ = (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi)
     config_scaling_range = (0.85, 1.25)
-    # Configurations for the multi-threading augmenter of batchgenerators
-    config_mta_workers = 4
-    config_mta_queue = 2
     # Cropping settings
     cropping = False
     cropping_patch_shape = None
@@ -146,11 +143,8 @@ class Data_Augmentation:
         # Compose the batchgenerators transforms
         all_transforms = Compose(transforms)
         # Assemble transforms into a augmentation generator
-        augmentation_generator = MultiThreadedAugmenter(data_generator,
-                                                        all_transforms,
-                                                        self.config_mta_workers,
-                                                        self.config_mta_queue,
-                                                        seeds=None)
+        augmentation_generator = SingleThreadedAugmenter(data_generator,
+                                                         all_transforms)
         # Perform the data augmentation x times (x = cycles)
         aug_img_data = None
         aug_seg_data = None

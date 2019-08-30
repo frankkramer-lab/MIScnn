@@ -256,10 +256,17 @@ class Preprocessor:
     #             Full-Image Analysis             #
     #---------------------------------------------#
     def analysis_fullimage(self, sample, training, data_aug):
-        #-> optional data_aug
-
-        # # Expand image dimension to simulate a batch with one image
-        # self.image = np.expand_dims(self.image, axis=0)
-        # self.segmentation = np.expand_dims(self.segmentation, axis=0)
-
-        return None
+        # Access image and segmentation data
+        img = sample.img_data
+        if training : seg = sample.seg_data
+        # Expand image dimension to simulate a batch with one image
+        img_data = np.expand_dims(img, axis=0)
+        if training : seg_data = np.expand_dims(seg, axis=0)
+        # Run data augmentation
+        if data_aug:
+            img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
+        # Create tuple of preprocessed data
+        if training : ready_data = list(zip(img_data, seg_data))
+        else : ready_data = list(zip(img_data))
+        # Return preprocessed data tuple
+        return ready_data
