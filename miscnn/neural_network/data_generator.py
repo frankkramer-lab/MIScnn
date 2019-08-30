@@ -23,7 +23,7 @@
 import keras
 import math
 import numpy as np
-import threading
+from miscnn.utils.visualizer import visualize_sample
 
 #-----------------------------------------------------#
 #                 Keras Data Generator                #
@@ -46,7 +46,6 @@ class DataGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.iterations = iterations
         self.batch_queue = []
-        self.thread_lock = threading.Lock()
         # If samples with subroutines should be preprocessed -> do it now
         if preprocessor.prepare_subfunctions:
             preprocessor.run_subfunctions(sample_list, training)
@@ -64,6 +63,10 @@ class DataGenerator(keras.utils.Sequence):
         else : batch = self.generate_batch(idx)
         # Return the batch containing only an image or an image and segmentation
         if self.training:
+            seg = np.argmax(batch[1], axis=-1)
+            seg = np.reshape(seg, seg.shape + (1,))
+            print(str(batch[0].shape) + "\t" + str(seg.shape) + "\t"  + str(batch[1].shape))
+            #visualize_sample(batch[0], seg, str(idx) + "_batch1", "visualization")
             return batch[0], batch[1]
         else:
             return batch[0]
@@ -136,19 +139,15 @@ class DataGenerator(keras.utils.Sequence):
             else:
                 cycles = 1
             sample_size = math.ceil(self.preprocessor.batch_size / cycles)
-            # Create threading lock to avoid parallel access
-            with self.thread_lock:
-                # access samples
-                samples = self.sample_list[:sample_size]
-                # move samples from top to bottom in the sample queue
-                del self.sample_list[:sample_size]
-                self.sample_list.extend(samples)
+            # access samples
+            samples = self.sample_list[:sample_size]
+            # move samples from top to bottom in the sample queue
+            del self.sample_list[:sample_size]
+            self.sample_list.extend(samples)
             # create a new batch
             batches = self.preprocessor.run(samples, self.training,
                                             self.validation)
-            # Create threading lock to avoid parallel access
-            with self.thread_lock:
-                # add created batches to batch queue
-                self.batch_queue.extend(batches)
-                # output a created batch
-                return self.batch_queue.pop(0)
+            # add created batches to batch queue
+            self.batch_queue.extend(batches)
+            # output a created batch
+            return self.batch_queue.pop(0)

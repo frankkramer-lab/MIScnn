@@ -53,13 +53,12 @@ class Neural_Network:
                                                 Any Metric Function defined in Keras, in miscnn.neural_network.metrics or any custom
                                                 metric function, which follows the Keras metric guidelines, can be used.
         learning_rate (float):                  Learning rate in which weights of the neural network will be updated.
-        Number of workers (integer):            Number of workers/threads which preprocess batches during runtime.
         batch_queue_size (integer):             The batch queue size is the number of previously prepared batches in the cache during runtime.
         gpu_number (integer):                   Number of GPUs, which will be used for training.
     """
     def __init__(self, preprocessor, architecture=Architecture(),
                  loss=tversky_loss, metrics=[dice_classwise],
-                 learninig_rate=0.0001, workers=1, batch_queue_size=2,
+                 learninig_rate=0.0001, batch_queue_size=2,
                  gpu_number=1):
         # Identify data parameters
         three_dim = preprocessor.data_io.interface.three_dim
@@ -90,7 +89,6 @@ class Neural_Network:
         self.loss = loss
         self.metrics = metrics
         self.learninig_rate = learninig_rate
-        self.workers = workers
         self.batch_queue_size = batch_queue_size
 
     #---------------------------------------------#
@@ -120,7 +118,6 @@ class Neural_Network:
         self.model.fit_generator(generator=dataGen,
                                  epochs=epochs,
                                  callbacks=callbacks,
-                                 workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
@@ -208,7 +205,6 @@ class Neural_Network:
                                  validation_data=dataGen_validation,
                                  callbacks=callbacks,
                                  epochs=epochs,
-                                 workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
