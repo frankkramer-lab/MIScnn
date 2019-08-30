@@ -126,8 +126,7 @@ class DataGenerator(keras.utils.Sequence):
     # Generate a batch during runtime
     def generate_batch(self, idx):
         # output an already generated batch if there are still batches in the queue
-        if self.batch_queue:
-            return self.batch_queue.pop(0)
+        if self.batch_queue : return self.batch_queue.pop(0)
         # otherwise generate a new batch
         else:
             # identify number of images required for a single batch
@@ -145,8 +144,11 @@ class DataGenerator(keras.utils.Sequence):
                 del self.sample_list[:sample_size]
                 self.sample_list.extend(samples)
             # create a new batch
-            self.batch_queue.extend(self.preprocessor.run(samples,
-                                                          self.training,
-                                                          self.validation))
-            # output a created batch
-            return self.batch_queue.pop(0)
+            batches = self.preprocessor.run(samples, self.training,
+                                            self.validation)
+            # Create threading lock to avoid parallel access
+            with self.thread_lock:
+                # add created batches to batch queue
+                self.batch_queue.extend(batches)
+                # output a created batch
+                return self.batch_queue.pop(0)

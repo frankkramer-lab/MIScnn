@@ -145,8 +145,6 @@ class Preprocessor:
                 if not training: self.shape_cache[index] = sample.img_data.shape
                 ready_data = self.analysis_patchwise_grid(sample, training,
                                                           data_aug)
-            # Put the preprocessed data at the image queue end
-            self.img_queue.extend(ready_data)
             # Identify if current index is the last one
             if index == indices_list[-1]: last_index = True
             else : last_index = False
@@ -155,6 +153,8 @@ class Preprocessor:
             else : incomplete_batches = True
             # Create threading lock to avoid parallel access
             with self.thread_lock:
+                # Put the preprocessed data at the image queue end
+                self.img_queue.extend(ready_data)
                 # Create batches by gathering images from the img_queue
                 batches = create_batches(self.img_queue, self.batch_size,
                                          incomplete_batches, last_index)
