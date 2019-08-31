@@ -227,26 +227,31 @@ class Preprocessor:
     #           Patch-wise crop Analysis          #
     #---------------------------------------------#
     def analysis_patchwise_crop(self, sample, data_aug):
-        # Access image and segmentation data
-        img = sample.img_data
-        seg = sample.seg_data
-        # If no data augmentation should be performed
-        # -> create Data Augmentation instance without augmentation methods
-        if not data_aug or self.data_augmentation is None:
-            cropping_data_aug = Data_Augmentation(cycles=1,
-                                        scaling=False, rotations=False,
-                                        elastic_deform=False, mirror=False,
-                                        brightness=False, contrast=False,
-                                        gamma=False, gaussian_noise=False)
-        else : cropping_data_aug = self.data_augmentation
-        # Configure the Data Augmentation instance to cropping
-        cropping_data_aug.cropping = True
-        cropping_data_aug.cropping_patch_shape = self.patch_shape
+        # Slice image and segmentation into patches
+        patches_img = slice_3Dmatrix(sample.img_data,
+                                     self.patch_shape,
+                                     self.patchwise_grid_overlap)
+        patches_seg = slice_3Dmatrix(sample.seg_data,
+                                     self.patch_shape,
+                                     self.patchwise_grid_overlap)
+        # Skip blank patches (only background)
+        if self.patchwise_grid_skip_blanks:
+            # Iterate over each patch
+            for i in reversed(range(0, len(patches_seg))):
+                # IF patch DON'T contain any non background class -> remove it
+                if not np.any(patches_seg[i][...,self.patchwise_grid_skip_class] != 1):
+                    del patches_img[i]
+                    del patches_seg[i]
+        # Select a random patch
+        pointer = np.random.randint(0, len(patches_img))
+        img = patches_img[pointer]
+        seg = patches_seg[pointer]
         # Expand image dimension to simulate a batch with one image
         img_data = np.expand_dims(img, axis=0)
         seg_data = np.expand_dims(seg, axis=0)
-        # Run data augmentation and cropping
-        img_data, seg_data = cropping_data_aug.run(img_data, seg_data)
+        # Run data augmentation
+        if data_aug:
+            img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
         # Create tuple of preprocessed data
         ready_data = list(zip(img_data, seg_data))
         # Return preprocessed data tuple
