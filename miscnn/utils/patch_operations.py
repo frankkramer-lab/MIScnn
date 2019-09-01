@@ -37,14 +37,17 @@ def slice_3Dmatrix(array, window, overlap):
                     x_start = len(array) - window[0]
                     x_end = len(array)
                     # Fix for MRIs which are smaller than patch size
-                    if x_start < 0:
-                        x_start = 0
+                    if x_start < 0 : x_start = 0
                 if(y_end > len(array[0])):
                     y_start = len(array[0]) - window[1]
                     y_end = len(array[0])
+                    # Fix for MRIs which are smaller than patch size
+                    if y_start < 0 : y_start = 0
                 if(z_end > len(array[0][0])):
                     z_start = len(array[0][0]) - window[2]
                     z_end = len(array[0][0])
+                    # Fix for MRIs which are smaller than patch size
+                    if z_start < 0 : z_start = 0
                 # Cut window
                 window_cut = array[x_start:x_end,y_start:y_end,z_start:z_end]
                 # Add to result list

@@ -65,7 +65,6 @@ class DataGenerator(keras.utils.Sequence):
         if self.training:
             seg = np.argmax(batch[1], axis=-1)
             seg = np.reshape(seg, seg.shape + (1,))
-            print(str(batch[0].shape) + "\t" + str(seg.shape) + "\t"  + str(batch[1].shape))
             #visualize_sample(batch[0], seg, str(idx) + "_batch1", "visualization")
             return batch[0], batch[1]
         else:
