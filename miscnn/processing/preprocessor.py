@@ -25,7 +25,7 @@ from keras.utils import to_categorical
 # Internal libraries/scripts
 from miscnn.processing.data_augmentation import Data_Augmentation
 from miscnn.processing.batch_creation import create_batches
-from miscnn.utils.patch_operations import slice_3Dmatrix
+from miscnn.utils.patch_operations import slice_matrix, concat_matrices, pad_patch
 
 #-----------------------------------------------------#
 #                 Preprocessor class                  #
@@ -103,7 +103,7 @@ class Preprocessor:
     patchwise_grid_skip_class = 0           # Class, which will be skipped if patchwise_grid_skip_blanks is True
     img_queue = []                          # Intern queue of already processed and data augmentated images or segmentations.
                                             # The function create_batches will use this queue to create batches
-    shape_cache = dict()                    # Cache the shape of an image for patch assembling after patchwise prediction
+    cache = dict()                          # Cache additional information and data for patch assembling after patchwise prediction
 
     #---------------------------------------------#
     #               Prepare Batches               #
@@ -140,7 +140,8 @@ class Preprocessor:
                 ready_data = self.analysis_patchwise_crop(sample, data_aug)
             # Run patchwise grid analysis
             else:
-                if not training: self.shape_cache[index] = sample.img_data.shape
+                if not training:
+                    self.cache["shape_" + str(index)] = sample.img_data.shape
                 ready_data = self.analysis_patchwise_grid(sample, training,
                                                           data_aug)
             # Identify if current index is the last one
@@ -173,6 +174,33 @@ class Preprocessor:
         else : return all_batches
 
     #---------------------------------------------#
+    #          Prediction Postprocessing          #
+    #---------------------------------------------#
+    # Postprocess prediction data
+    def postprocessing(self, sample, prediction):
+        # Reassemble patches into original shape for patchwise analysis
+        if self.analysis == "patchwise-crop" or \
+            self.analysis == "patchwise-grid":
+            # Check if patch was padded
+            slice_key = "slicer_" + str(sample)
+            if slice_key in self.cache:
+                prediction = crop_patch(prediction, self.cache[slice_key])
+            # Load cached shape & Concatenate patches into original shape
+            seg_shape = self.cache.pop("shape_" + str(sample))
+            prediction = concat_matrices(patches=prediction,
+                                    image_size=seg_shape,
+                                    window=self.patch_shape,
+                                    overlap=self.patchwise_grid_overlap,
+                                    three_dim=self.data_io.interface.three_dim)
+        # Transform probabilities to classes
+        prediction = np.argmax(prediction, axis=-1)
+        # Run Subfunction postprocessing on the prediction
+        for sf in reversed(self.subfunctions):
+            prediction = sf.postprocessing(prediction)
+        # Return postprocessed prediction
+        return prediction
+
+    #---------------------------------------------#
     #               Run Subfunctions              #
     #---------------------------------------------#
     # Preprocess data through subfunctions and backup samples
@@ -192,14 +220,14 @@ class Preprocessor:
     #---------------------------------------------#
     def analysis_patchwise_grid(self, sample, training, data_aug):
         # Slice image into patches
-        patches_img = slice_3Dmatrix(sample.img_data,
-                                     self.patch_shape,
-                                     self.patchwise_grid_overlap)
+        patches_img = slice_matrix(sample.img_data, self.patch_shape,
+                                   self.patchwise_grid_overlap,
+                                   self.data_io.interface.three_dim)
         if training:
             # Slice segmentation into patches
-            patches_seg = slice_3Dmatrix(sample.seg_data,
-                                         self.patch_shape,
-                                         self.patchwise_grid_overlap)
+            patches_seg = slice_matrix(sample.seg_data, self.patch_shape,
+                                       self.patchwise_grid_overlap,
+                                       self.data_io.interface.three_dim)
         else : patches_seg = None
         # Skip blank patches (only background)
         if training and self.patchwise_grid_skip_blanks:
@@ -212,6 +240,14 @@ class Preprocessor:
         # Concatenate a list of patches into a single numpy array
         img_data = np.stack(patches_img, axis=0)
         if training : seg_data = np.stack(patches_seg, axis=0)
+        # Pad patches if necessary
+        if img_data.shape[1:-1] != self.patch_shape and training:
+            img_data = pad_patch(img_data, self.patch_shape,return_slicer=False)
+            seg_data = pad_patch(seg_data, self.patch_shape,return_slicer=False)
+        elif img_data.shape[1:-1] != self.patch_shape and not training:
+            img_data, slicer = pad_patch(img_data, self.patch_shape,
+                                         return_slicer=True)
+            self.cache["slicer_" + str(sample.index)] = slicer
         # Run data augmentation
         if data_aug:
             img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
@@ -228,12 +264,12 @@ class Preprocessor:
     #---------------------------------------------#
     def analysis_patchwise_crop(self, sample, data_aug):
         # Slice image and segmentation into patches
-        patches_img = slice_3Dmatrix(sample.img_data,
-                                     self.patch_shape,
-                                     self.patchwise_grid_overlap)
-        patches_seg = slice_3Dmatrix(sample.seg_data,
-                                     self.patch_shape,
-                                     self.patchwise_grid_overlap)
+        patches_img = slice_matrix(sample.img_data, self.patch_shape,
+                                   self.patchwise_grid_overlap,
+                                   self.data_io.interface.three_dim)
+        patches_seg = slice_matrix(sample.seg_data, self.patch_shape,
+                                   self.patchwise_grid_overlap,
+                                   self.data_io.interface.three_dim)
         # Skip blank patches (only background)
         if self.patchwise_grid_skip_blanks:
             # Iterate over each patch
@@ -249,6 +285,10 @@ class Preprocessor:
         # Expand image dimension to simulate a batch with one image
         img_data = np.expand_dims(img, axis=0)
         seg_data = np.expand_dims(seg, axis=0)
+        # Pad patches if necessary
+        if img_data.shape[1:-1] != self.patch_shape:
+            img_data = pad_patch(img_data, self.patch_shape,return_slicer=False)
+            seg_data = pad_patch(seg_data, self.patch_shape,return_slicer=False)
         # Run data augmentation
         if data_aug:
             img_data, seg_data = self.data_augmentation.run(img_data, seg_data)

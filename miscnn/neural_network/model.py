@@ -28,7 +28,6 @@ import numpy as np
 from miscnn.neural_network.metrics import dice_classwise, tversky_loss
 from miscnn.neural_network.architecture.unet.standard import Architecture
 from miscnn.neural_network.data_generator import DataGenerator
-from miscnn.utils.patch_operations import concat_3Dmatrices
 
 #-----------------------------------------------------#
 #            Neural Network (model) class             #
@@ -61,21 +60,21 @@ class Neural_Network:
                  learninig_rate=0.0001, batch_queue_size=2,
                  gpu_number=1):
         # Identify data parameters
-        three_dim = preprocessor.data_io.interface.three_dim
-        channels = preprocessor.data_io.interface.channels
-        classes = preprocessor.data_io.interface.classes
+        self.three_dim = preprocessor.data_io.interface.three_dim
+        self.channels = preprocessor.data_io.interface.channels
+        self.classes = preprocessor.data_io.interface.classes
         # Assemble the input shape
         input_shape = (None,)
         # Initialize model for 3D data
-        if three_dim:
-            input_shape = (None, None, None, channels)
+        if self.three_dim:
+            input_shape = (None, None, None, self.channels)
             self.model = architecture.create_model_3D(input_shape=input_shape,
-                                                      n_labels=classes)
+                                                      n_labels=self.classes)
          # Initialize model for 2D data
         else:
-             input_shape = (None, None, channels)
+             input_shape = (None, None, self.channels)
              self.model = architecture.create_model_2D(input_shape=input_shape,
-                                                       n_labels=classes)
+                                                       n_labels=self.classes)
         # Transform to Keras multi GPU model
         if gpu_number > 1:
             self.model = multi_gpu_model(self.model, gpu_number)
@@ -146,22 +145,8 @@ class Neural_Network:
                                     shuffle=False, iterations=None)
             # Run prediction process with Keras predict_generator
             pred_seg = self.model.predict_generator(generator=dataGen)
-            # Reassemble patches into original shape for patchwise analysis
-            if self.preprocessor.analysis == "patchwise-crop" or \
-                self.preprocessor.analysis == "patchwise-grid":
-                # Load cached shape
-                seg_shape = self.preprocessor.shape_cache.pop(sample)
-                # Concatenate patches into original shape
-                pred_seg = concat_3Dmatrices(
-                               patches=pred_seg,
-                               image_size=seg_shape,
-                               window=self.preprocessor.patch_shape,
-                               overlap=self.preprocessor.patchwise_grid_overlap)
-            # Transform probabilities to classes
-            pred_seg = np.argmax(pred_seg, axis=-1)
-            # Run Subfunction postprocessing on the prediction
-            for sf in reversed(self.preprocessor.subfunctions):
-                pred_seg = sf.postprocessing(pred_seg)
+            # Postprocess prediction
+            pred_seg = self.preprocessor.postprocessing(sample, pred_seg)
             # Backup predicted segmentation
             if direct_output : results.append(pred_seg)
             else : self.preprocessor.data_io.save_prediction(pred_seg, sample)
