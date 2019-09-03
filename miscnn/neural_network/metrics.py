@@ -54,16 +54,17 @@ def dice_classwise_loss(y_true, y_pred):
 #              Weighted Dice coefficient              #
 #-----------------------------------------------------#
 def dice_weighted(weights):
-    weights = K.variable(weights
-        def weighted_loss(y_true, y_pred, smooth=0.00001):
-            axis = identify_axis(y_true.get_shape())
-            intersection = y_true * y_pred
-            intersection = K.sum(intersection, axis=axis)
-            y_true = K.sum(y_true, axis=axis)
-            y_pred = K.sum(y_pred, axis=axis)
-            dice = ((2 * intersection) + smooth) / (y_true + y_pred + smooth)
-            dice = dice * weights
-            return -dice)
+    weights = K.variable(weights)
+
+    def weighted_loss(y_true, y_pred, smooth=0.00001):
+        axis = identify_axis(y_true.get_shape())
+        intersection = y_true * y_pred
+        intersection = K.sum(intersection, axis=axis)
+        y_true = K.sum(y_true, axis=axis)
+        y_pred = K.sum(y_pred, axis=axis)
+        dice = ((2 * intersection) + smooth) / (y_true + y_pred + smooth)
+        dice = dice * weights
+        return -dice
     return weighted_loss
 
 #-----------------------------------------------------#
