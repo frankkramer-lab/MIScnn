@@ -22,10 +22,11 @@
 # External libraries
 import numpy as np
 from keras.utils import to_categorical
+import threading
 # Internal libraries/scripts
 from miscnn.processing.data_augmentation import Data_Augmentation
 from miscnn.processing.batch_creation import create_batches
-from miscnn.utils.patch_operations import slice_matrix, concat_matrices, pad_patch
+from miscnn.utils.patch_operations import slice_matrix, concat_matrices, pad_patch, crop_patch
 
 #-----------------------------------------------------#
 #                 Preprocessor class                  #
@@ -104,6 +105,7 @@ class Preprocessor:
     img_queue = []                          # Intern queue of already processed and data augmentated images or segmentations.
                                             # The function create_batches will use this queue to create batches
     cache = dict()                          # Cache additional information and data for patch assembling after patchwise prediction
+    thread_lock = threading.Lock()          # Create a threading lock for multiprocessing
 
     #---------------------------------------------#
     #               Prepare Batches               #
@@ -150,11 +152,13 @@ class Preprocessor:
             # Identify if incomplete_batches are allowed for batch creation
             if training : incomplete_batches = False
             else : incomplete_batches = True
-            # Put the preprocessed data at the image queue end
-            self.img_queue.extend(ready_data)
-            # Create batches by gathering images from the img_queue
-            batches = create_batches(self.img_queue, self.batch_size,
-                                     incomplete_batches, last_index)
+            # Create threading lock to avoid parallel access
+            with self.thread_lock:
+                # Put the preprocessed data at the image queue end
+                self.img_queue.extend(ready_data)
+                # Create batches by gathering images from the img_queue
+                batches = create_batches(self.img_queue, self.batch_size,
+                                         incomplete_batches, last_index)
             # Backup batches to disk
             if self.prepare_batches:
                 for batch in batches:

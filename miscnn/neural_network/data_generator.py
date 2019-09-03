@@ -137,16 +137,22 @@ class DataGenerator(keras.utils.Sequence):
                 cycles = self.preprocessor.data_augmentation.cycles
             else:
                 cycles = 1
-            sample_size = math.ceil(self.preprocessor.batch_size / cycles)
-            # access samples
-            samples = self.sample_list[:sample_size]
-            # move samples from top to bottom in the sample queue
-            del self.sample_list[:sample_size]
-            self.sample_list.extend(samples)
+            # Create threading lock to avoid parallel access
+            with self.preprocessor.thread_lock:
+                sample_size = math.ceil(self.preprocessor.batch_size / cycles)
+                # access samples
+                samples = self.sample_list[:sample_size]
+                # move samples from top to bottom in the sample queue
+                del self.sample_list[:sample_size]
+                self.sample_list.extend(samples)
             # create a new batch
             batches = self.preprocessor.run(samples, self.training,
                                             self.validation)
-            # add created batches to batch queue
-            self.batch_queue.extend(batches)
+            # Create threading lock to avoid parallel access
+            with self.preprocessor.thread_lock:
+                # Access a newly created batch
+                next_batch = batches.pop(0)
+                # Add remaining batches to batch queue
+                if len(batches) > 0 : self.batch_queue.extend(batches)
             # output a created batch
-            return self.batch_queue.pop(0)
+            return next_batch
