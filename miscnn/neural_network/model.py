@@ -25,7 +25,7 @@ from keras.optimizers import Adam
 from keras.models import model_from_json
 import numpy as np
 # Internal libraries/scripts
-from miscnn.neural_network.metrics import dice_classwise, tversky_loss
+from miscnn.neural_network.metrics import dice_soft, tversky_loss
 from miscnn.neural_network.architecture.unet.standard import Architecture
 from miscnn.neural_network.data_generator import DataGenerator
 
@@ -57,7 +57,7 @@ class Neural_Network:
         gpu_number (integer):                   Number of GPUs, which will be used for training.
     """
     def __init__(self, preprocessor, architecture=Architecture(),
-                 loss=tversky_loss, metrics=[dice_classwise],
+                 loss=tversky_loss, metrics=[dice_soft],
                  learninig_rate=0.0001, batch_queue_size=2,
                  workers=1, gpu_number=1):
         # Identify data parameters

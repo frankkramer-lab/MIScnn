@@ -63,34 +63,29 @@ class DataGenerator(keras.utils.Sequence):
         else : batch = self.generate_batch(idx)
         # Return the batch containing only an image or an image and segmentation
         if self.training:
-            seg = np.argmax(batch[1], axis=-1)
-            seg = np.reshape(seg, seg.shape + (1,))
-            #visualize_sample(batch[0], seg, str(idx) + "_batch1", "visualization")
             return batch[0], batch[1]
         else:
             return batch[0]
 
     # Return the number of batches for one epoch
     def __len__(self):
-        # Number of batches is the number of preprocessed batch files
-        if self.preprocessor.prepare_batches:
-            return len(self.batchpointers)
         # Number of batches is preprocessed for the single sample to predict
-        elif not self.training:
+        if not self.training:
             return len(self.batch_queue)
-        # Else number of samples is dynamic
+        # IF number of samples is specified in the parameters take it
+        elif self.iterations is not None : return self.iterations
+        # Number of batches is the number of preprocessed batch files
+        elif self.preprocessor.prepare_batches:
+            return len(self.batchpointers)
+        # Else number of samples is dynamic -> calculate it
         else:
-            # IF number of samples is specified in the parameters take it
-            if self.iterations is not None : return self.iterations
-            # ELSE calculate it by yourself
+            if self.preprocessor.data_augmentation is not None and not \
+                self.validation:
+                cycles = self.preprocessor.data_augmentation.cycles
             else:
-                if self.preprocessor.data_augmentation is not None and not \
-                    self.validation:
-                    cycles = self.preprocessor.data_augmentation.cycles
-                else:
-                    cycles = 1
-                return math.ceil((len(self.sample_list) * cycles) / \
-                                 self.preprocessor.batch_size)
+                cycles = 1
+            return math.ceil((len(self.sample_list) * cycles) / \
+                             self.preprocessor.batch_size)
 
     # At every epoch end: Shuffle batchPointer list and reset sample_list
     def on_epoch_end(self):
@@ -105,6 +100,8 @@ class DataGenerator(keras.utils.Sequence):
     #-----------------------------------------------------#
     # Load an already prepared batch from disk
     def load_batch(self, idx):
+        # Handle index adjustment for iterations > number of batches
+        if idx >= len(self.batchpointers) : idx = idx % len(self.batchpointers)
         # Identify batch address
         if not self.training:
             batch_address = "prediction" + "." + str(self.batchpointers[idx])

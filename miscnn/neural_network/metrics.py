@@ -36,9 +36,9 @@ def dice_coefficient_loss(y_true, y_pred):
     return -dice_coefficient(y_true, y_pred)
 
 #-----------------------------------------------------#
-#             Class-wise Dice coefficient             #
+#                Soft Dice coefficient                #
 #-----------------------------------------------------#
-def dice_classwise(y_true, y_pred, smooth=0.00001):
+def dice_soft(y_true, y_pred, smooth=0.00001):
     axis = identify_axis(y_true.get_shape())
     intersection = y_true * y_pred
     intersection = K.sum(intersection, axis=axis)
@@ -47,8 +47,8 @@ def dice_classwise(y_true, y_pred, smooth=0.00001):
     dice = ((2 * intersection) + smooth) / (y_true + y_pred + smooth)
     return dice
 
-def dice_classwise_loss(y_true, y_pred):
-    return -dice_classwise(y_true, y_pred)
+def dice_soft_loss(y_true, y_pred):
+    return -dice_soft(y_true, y_pred)
 
 #-----------------------------------------------------#
 #              Weighted Dice coefficient              #
@@ -66,6 +66,13 @@ def dice_weighted(weights):
         dice = dice * weights
         return -dice
     return weighted_loss
+
+#-----------------------------------------------------#
+#              Dice & Crossentropy loss               #
+#-----------------------------------------------------#
+def dice_crossentropy(y_truth, y_pred):
+    return K.mean(dice_soft_loss(y_truth, y_pred)) + \
+           K.mean(K.categorical_crossentropy(y_truth, y_pred))
 
 #-----------------------------------------------------#
 #                    Tversky loss                     #
