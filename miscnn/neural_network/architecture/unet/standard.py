@@ -31,6 +31,7 @@ from keras.models import Model
 from keras.layers import Input, concatenate
 from keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
+from keras.layers import BatchNormalization
 # Internal libraries/scripts
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
@@ -48,10 +49,15 @@ class Architecture(Abstract_Architecture):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, n_filters=32, depth=4, activation='sigmoid'):
+    def __init__(self, n_filters=32, depth=4, activation='sigmoid',
+                 batch_normalization=True):
+        # Parse parameter
         self.n_filters = n_filters
         self.depth = depth
         self.activation = activation
+        self.ba_norm = batch_normalization
+        # Initialize other configurations
+        self.momentum = 0.99
 
     #---------------------------------------------#
     #               Create 2D Model               #
@@ -131,14 +137,18 @@ class Architecture(Abstract_Architecture):
 # Create a contracting layer
 def contracting_layer_2D(input, neurons):
     conv1 = Conv2D(neurons, (3,3), activation='relu', padding='same')(input)
+    if self.ba_norm : conv1 = BatchNormalization(momentum=self.momentum)(conv1)
     conv2 = Conv2D(neurons, (3,3), activation='relu', padding='same')(conv1)
+    if self.ba_norm : conv2 = BatchNormalization(momentum=self.momentum)(conv2)
     pool = MaxPooling2D(pool_size=(2, 2))(conv2)
     return pool, conv2
 
 # Create the middle layer between the contracting and expanding layers
 def middle_layer_2D(input, neurons):
     conv_m1 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(input)
+    if self.ba_norm : conv_m1 = BatchNormalization(momentum=self.momentum)(conv_m1)
     conv_m2 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(conv_m1)
+    if self.ba_norm : conv_m2 = BatchNormalization(momentum=self.momentum)(conv_m2)
     return conv_m2
 
 # Create an expanding layer
@@ -146,7 +156,9 @@ def expanding_layer_2D(input, neurons, concatenate_link):
     up = concatenate([Conv2DTranspose(neurons, (2, 2), strides=(2, 2),
                      padding='same')(input), concatenate_link], axis=-1)
     conv1 = Conv2D(neurons, (3, 3,), activation='relu', padding='same')(up)
+    if self.ba_norm : conv1 = BatchNormalization(momentum=self.momentum)(conv1)
     conv2 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(conv1)
+    if self.ba_norm : conv2 = BatchNormalization(momentum=self.momentum)(conv2)
     return conv2
 
 #-----------------------------------------------------#
@@ -155,14 +167,18 @@ def expanding_layer_2D(input, neurons, concatenate_link):
 # Create a contracting layer
 def contracting_layer_3D(input, neurons):
     conv1 = Conv3D(neurons, (3,3,3), activation='relu', padding='same')(input)
+    if self.ba_norm : conv1 = BatchNormalization(momentum=self.momentum)(conv1)
     conv2 = Conv3D(neurons, (3,3,3), activation='relu', padding='same')(conv1)
+    if self.ba_norm : conv2 = BatchNormalization(momentum=self.momentum)(conv2)
     pool = MaxPooling3D(pool_size=(2, 2, 2))(conv2)
     return pool, conv2
 
 # Create the middle layer between the contracting and expanding layers
 def middle_layer_3D(input, neurons):
     conv_m1 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(input)
+    if self.ba_norm : conv_m1 = BatchNormalization(momentum=self.momentum)(conv_m1)
     conv_m2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conv_m1)
+    if self.ba_norm : conv_m2 = BatchNormalization(momentum=self.momentum)(conv_m2)
     return conv_m2
 
 # Create an expanding layer
@@ -170,5 +186,7 @@ def expanding_layer_3D(input, neurons, concatenate_link):
     up = concatenate([Conv3DTranspose(neurons, (2, 2, 2), strides=(2, 2, 2),
                      padding='same')(input), concatenate_link], axis=4)
     conv1 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(up)
+    if self.ba_norm : conv1 = BatchNormalization(momentum=self.momentum)(conv1)
     conv2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conv1)
+    if self.ba_norm : conv2 = BatchNormalization(momentum=self.momentum)(conv2)
     return conv2
