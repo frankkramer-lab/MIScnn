@@ -279,10 +279,11 @@ def calculate_overlap(pointer, steps, overlap, image_size, window, axis):
             return current_overlap
 
 # Handle the overlap of two overlapping matrices
-def handle_overlap(matrixA, matrixB, overlap, axis=0):
+def handle_overlap(matrixA, matrixB, overlap, axis):
     # Access overllaping slice from matrix A
     idxA = [slice(None)] * matrixA.ndim
-    idxA[axis] = range(len(matrixA)-overlap, len(matrixA))
+    matrixA_shape = matrixA.shape
+    idxA[axis] = range(matrixA_shape[axis] - overlap, matrixA_shape[axis])
     sliceA = matrixA[tuple(idxA)]
     # Access overllaping slice from matrix B
     idxB = [slice(None)] * matrixB.ndim
@@ -290,7 +291,7 @@ def handle_overlap(matrixA, matrixB, overlap, axis=0):
     sliceB = matrixB[tuple(idxB)]
     # Calculate Average prediction values between the two matrices
     # and save them in matrix A
-    matrixA[tuple(idxA)] = np.mean((sliceA, sliceB), axis=0)
+    matrixA[tuple(idxA)] = np.mean(np.array([sliceA, sliceB]), axis=0)
     # Remove overlap from matrix B
     matrixB = np.delete(matrixB, [range(0, overlap)], axis=axis)
     # Return processed matrices

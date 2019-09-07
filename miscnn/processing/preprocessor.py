@@ -97,7 +97,7 @@ class Preprocessor:
     #               Class variables               #
     #---------------------------------------------#
     patchwise_overlap = (0,0,0)             # In patchwise_analysis, an overlap can be defined between adjuncted patches.
-    patchwise_skip_blanks = True            # In patchwise_analysis, patches, containing only the background annotation,
+    patchwise_skip_blanks = False           # In patchwise_analysis, patches, containing only the background annotation,
                                             # can be skipped with this option. This result into only
                                             # training on relevant patches and ignore patches without any information.
     patchwise_skip_class = 0                # Class, which will be skipped if patchwise_skip_blanks is True
