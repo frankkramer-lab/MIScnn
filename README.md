@@ -14,7 +14,7 @@ MIScnn provides several core features:
 
 ![MIScnn workflow](docs/MIScnn.pipeline.png)
 
-## Getting started: 30 seconds to a MIS pipeline
+## Getting started: 60 seconds to a MIS pipeline
 
 Create a Data I/O instance with an already provided interface for your specific data
 format.
@@ -28,28 +28,19 @@ interface = NIFTI_interface(pattern="case_0000[0-2]", channels=1, classes=3)
 # Initialize data path and create the Data I/O instance
 data_path = "/home/mudomini/projects/KITS_challenge2019/kits19/data.original/"
 data_io = Data_IO(interface, data_path)
-```
 
-Create a Preprocessor instance to configure how to preprocess the data into batches.
-
-```python
+# Create a Preprocessor instance to configure how to preprocess the data into batches
 from miscnn.processing.preprocessor import Preprocessor
-
 pp = Preprocessor(data_io, batch_size=4, analysis="patchwise-crop", patch_shape=(128,128,128))
-```
 
-Create a deep learning neural network model with a standard U-Net architecture.
-
-```python
+# Create a deep learning neural network model with a standard U-Net architecture
 from miscnn.neural_network.model import Neural_Network
 from miscnn.neural_network.architecture.unet.standard import Architecture
-
 unet_standard = Architecture()
 model = Neural_Network(preprocessor=pp, architecture=unet_standard)
 ```
+
 Congratulations to your ready-to-use Medical Image Segmentation pipeline including data I/O, preprocessing and data augmentation with default setting.
-
-
 
 Let's run a model training on our data set. Afterwards, predict the segmentation of a sample using the fitted model.
 
@@ -104,11 +95,9 @@ The task of the Kidney Tumor Segmentation challenge 2019 (KITS19) was to compute
 
 MIScnn was used on the KITS19 training data set in order to perform a 3-fold cross-validation with a 3D standard U-Net model.
 
-![evaluation plots](docs/all.png)
+![evaluation plots](docs/kits19_evaluation.jpg)
 
-![example gif](docs/visualization.case_00095.gif)
-
-Additionally, MIScnn was used for participation at the Kidney Tumor Segmentation Challenge 2019. The Git repository for this use case can be found here: https://github.com/muellerdo/kits19.MIScnn
+![example gif](docs/visualization.case_case_00044.gif)
 
 ## Coming soon
 
