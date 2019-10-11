@@ -16,15 +16,13 @@ MIScnn provides several core features:
 
 ## Getting started: 60 seconds to a MIS pipeline
 
-Create a Data I/O instance with an already provided interface for your specific data
-format.
-
 ```python
+# Create a Data I/O instance with an already provided interface for your specific data format.
 from miscnn.data_loading.data_io import Data_IO
 from miscnn.data_loading.interfaces.nifti_io import NIFTI_interface
 
 # Create an interface for kidney tumor CT scans in NIfTI format
-interface = NIFTI_interface(pattern="case_0000[0-2]", channels=1, classes=3)
+interface = NIFTI_interface(pattern="case_000[0-9]*", channels=1, classes=3)
 # Initialize data path and create the Data I/O instance
 data_path = "/home/mudomini/projects/KITS_challenge2019/kits19/data.original/"
 data_io = Data_IO(interface, data_path)
@@ -95,7 +93,7 @@ The task of the Kidney Tumor Segmentation challenge 2019 (KITS19) was to compute
 
 MIScnn was used on the KITS19 training data set in order to perform a 3-fold cross-validation with a 3D standard U-Net model.
 
-![evaluation plots](docs/kits19_evaluation.jpg)
+![evaluation plots](docs/kits19_evaluation.png)
 
 ![example gif](docs/visualization.case_case_00044.gif)
 
@@ -117,6 +115,16 @@ Bavaria, Germany
 
 Dominik Müller and Frank Kramer. (2019)\
 MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning.
+
+```
+Article{miscnn,
+  title={MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning},
+  author={Dominik Müller, Frank Kramer},
+  year={2019}
+}
+```
+
+Thank you for citing our work.
 
 ## License
 
