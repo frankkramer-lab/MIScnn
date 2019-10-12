@@ -1,3 +1,21 @@
+#==============================================================================#
+#  Author:       Dominik Müller                                                #
+#  Copyright:    2019 IT-Infrastructure for Translational Medical Research,    #
+#                University of Augsburg                                        #
+#                                                                              #
+#  This program is free software: you can redistribute it and/or modify        #
+#  it under the terms of the GNU General Public License as published by        #
+#  the Free Software Foundation, either version 3 of the License, or           #
+#  (at your option) any later version.                                         #
+#                                                                              #
+#  This program is distributed in the hope that it will be useful,             #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+#  GNU General Public License for more details.                                #
+#                                                                              #
+#  You should have received a copy of the GNU General Public License           #
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#==============================================================================#
 #-----------------------------------------------------#
 #               Source Code is based on:              #
 # https://github.com/mrkolarik/3D-brain-segmentation  #
@@ -11,73 +29,190 @@
 #-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
+# External libraries
 from keras.models import Model
-from keras.layers import Input, concatenate, Conv3D, MaxPooling3D, Conv3DTranspose
+from keras.layers import Input, concatenate
+from keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
+from keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
+from keras.layers import BatchNormalization
+# Internal libraries/scripts
+from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
 #-----------------------------------------------------#
-#                    Core Function                    #
+#         Architecture class: U-Net Standard          #
 #-----------------------------------------------------#
-def Unet(input_shape, n_labels, activation='sigmoid'):
-    inputs = Input(input_shape)
-    conv11 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(inputs)
-    conc11 = concatenate([inputs, conv11], axis=4)
-    conv12 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(conc11)
-    conc12 = concatenate([inputs, conv12], axis=4)
-    pool1 = MaxPooling3D(pool_size=(2, 2, 2))(conc12)
+""" The Dense variant of the popular U-Net architecture.
+    It uses additional concatenate layers after each convolutional layer.
 
-    conv21 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(pool1)
-    conc21 = concatenate([pool1, conv21], axis=4)
-    conv22 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(conc21)
-    conc22 = concatenate([pool1, conv22], axis=4)
-    pool2 = MaxPooling3D(pool_size=(2, 2, 2))(conc22)
+Methods:
+    __init__                Object creation function
+    create_model_2D:        Creating the 2D U-Net Dense model using Keras
+    create_model_3D:        Creating the 3D U-Net Dense model using Keras
+"""
+class Architecture(Abstract_Architecture):
+    #---------------------------------------------#
+    #                Initialization               #
+    #---------------------------------------------#
+    def __init__(self, n_filters=32, depth=4, activation='sigmoid',
+                 batch_normalization=True):
+        # Parse parameter
+        self.n_filters = n_filters
+        self.depth = depth
+        self.activation = activation
+        # Batch normalization settings
+        self.ba_norm = batch_normalization
+        self.ba_norm_momentum = 0.99
 
-    conv31 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(pool2)
-    conc31 = concatenate([pool2, conv31], axis=4)
-    conv32 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(conc31)
-    conc32 = concatenate([pool2, conv32], axis=4)
-    pool3 = MaxPooling3D(pool_size=(2, 2, 2))(conc32)
+    #---------------------------------------------#
+    #               Create 2D Model               #
+    #---------------------------------------------#
+    def create_model_2D(self, input_shape, n_labels=2):
+        # Input layer
+        inputs = Input(input_shape)
+        # Start the CNN Model chain with adding the inputs as first tensor
+        cnn_chain = inputs
+        # Cache contracting normalized conv layers
+        # for later copy & concatenate links
+        contracting_convs = []
 
-    conv41 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(pool3)
-    conc41 = concatenate([pool3, conv41], axis=4)
-    conv42 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(conc41)
-    conc42 = concatenate([pool3, conv42], axis=4)
-    pool4 = MaxPooling3D(pool_size=(2, 2, 2))(conc42)
+        # Contracting Layers
+        for i in range(0, self.depth):
+            neurons = self.n_filters * 2**i
+            cnn_chain, last_conv = contracting_layer_2D(cnn_chain, neurons,
+                                                        self.ba_norm,
+                                                        self.ba_norm_momentum)
+            contracting_convs.append(last_conv)
 
-    conv51 = Conv3D(512, (3, 3, 3), activation='relu', padding='same')(pool4)
-    conc51 = concatenate([pool4, conv51], axis=4)
-    conv52 = Conv3D(512, (3, 3, 3), activation='relu', padding='same')(conc51)
-    conc52 = concatenate([pool4, conv52], axis=4)
+        # Middle Layer
+        neurons = self.n_filters * 2**self.depth
+        cnn_chain = middle_layer_2D(cnn_chain, neurons, self.ba_norm,
+                                    self.ba_norm_momentum)
 
-    up6 = concatenate([Conv3DTranspose(256, (2, 2, 2), strides=(2, 2, 2),
-                      padding='same')(conc52), conc42], axis=4)
-    conv61 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(up6)
-    conc61 = concatenate([up6, conv61], axis=4)
-    conv62 = Conv3D(256, (3, 3, 3), activation='relu', padding='same')(conc61)
-    conc62 = concatenate([up6, conv62], axis=4)
+        # Expanding Layers
+        for i in reversed(range(0, self.depth)):
+            neurons = self.n_filters * 2**i
+            cnn_chain = expanding_layer_2D(cnn_chain, neurons,
+                                           contracting_convs[i], self.ba_norm,
+                                           self.ba_norm_momentum)
 
-    up7 = concatenate([Conv3DTranspose(128, (2, 2, 2), strides=(2, 2, 2),
-                      padding='same')(conc62), conv32], axis=4)
-    conv71 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(up7)
-    conc71 = concatenate([up7, conv71], axis=4)
-    conv72 = Conv3D(128, (3, 3, 3), activation='relu', padding='same')(conc71)
-    conc72 = concatenate([up7, conv72], axis=4)
+        # Output Layer
+        conv_out = Conv2D(n_labels, (1, 1),
+                   activation=self.activation)(cnn_chain)
+        # Create Model with associated input and output layers
+        model = Model(inputs=[inputs], outputs=[conv_out])
+        # Return model
+        return model
 
-    up8 = concatenate([Conv3DTranspose(64, (2, 2, 2), strides=(2, 2, 2),
-                      padding='same')(conc72), conv22], axis=4)
-    conv81 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(up8)
-    conc81 = concatenate([up8, conv81], axis=4)
-    conv82 = Conv3D(64, (3, 3, 3), activation='relu', padding='same')(conc81)
-    conc82 = concatenate([up8, conv82], axis=4)
+    #---------------------------------------------#
+    #               Create 3D Model               #
+    #---------------------------------------------#
+    def create_model_3D(self, input_shape, n_labels=2):
+        # Input layer
+        inputs = Input(input_shape)
+        # Start the CNN Model chain with adding the inputs as first tensor
+        cnn_chain = inputs
+        # Cache contracting normalized conv layers
+        # for later copy & concatenate links
+        contracting_convs = []
 
-    up9 = concatenate([Conv3DTranspose(32, (2, 2, 2), strides=(2, 2, 2),
-                      padding='same')(conc82), conv12], axis=4)
-    conv91 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(up9)
-    conc91 = concatenate([up9, conv91], axis=4)
-    conv92 = Conv3D(32, (3, 3, 3), activation='relu', padding='same')(conc91)
-    conc92 = concatenate([up9, conv92], axis=4)
+        # Contracting Layers
+        for i in range(0, self.depth):
+            neurons = self.n_filters * 2**i
+            cnn_chain, last_conv = contracting_layer_3D(cnn_chain, neurons,
+                                                        self.ba_norm,
+                                                        self.ba_norm_momentum)
+            contracting_convs.append(last_conv)
 
-    conv10 = Conv3D(n_labels, (1, 1, 1), activation=activation)(conc92)
+        # Middle Layer
+        neurons = self.n_filters * 2**self.depth
+        cnn_chain = middle_layer_3D(cnn_chain, neurons, self.ba_norm,
+                                    self.ba_norm_momentum)
 
-    model = Model(inputs=[inputs], outputs=[conv10])
+        # Expanding Layers
+        for i in reversed(range(0, self.depth)):
+            neurons = self.n_filters * 2**i
+            cnn_chain = expanding_layer_3D(cnn_chain, neurons,
+                                           contracting_convs[i], self.ba_norm,
+                                           self.ba_norm_momentum)
 
-    return model
+        # Output Layer
+        conv_out = Conv3D(n_labels, (1, 1, 1),
+                   activation=self.activation)(cnn_chain)
+        # Create Model with associated input and output layers
+        model = Model(inputs=[inputs], outputs=[conv_out])
+        # Return model
+        return model
+
+#-----------------------------------------------------#
+#                   Subroutines 2D                    #
+#-----------------------------------------------------#
+# Create a contracting layer
+def contracting_layer_2D(input, neurons, ba_norm, ba_norm_momentum):
+    conv1 = Conv2D(neurons, (3,3), activation='relu', padding='same')(input)
+    if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
+    conc1 = concatenate([input, conv1], axis=-1)
+    conv2 = Conv2D(neurons, (3,3), activation='relu', padding='same')(conc1)
+    if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
+    conc2 = concatenate([input, conv2], axis=-1)
+    pool = MaxPooling2D(pool_size=(2, 2))(conc2)
+    return pool, conc2
+
+# Create the middle layer between the contracting and expanding layers
+def middle_layer_2D(input, neurons, ba_norm, ba_norm_momentum):
+    conv_m1 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(input)
+    if ba_norm : conv_m1 = BatchNormalization(momentum=ba_norm_momentum)(conv_m1)
+    conc1 = concatenate([input, conv_m1], axis=-1)
+    conv_m2 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(conc1)
+    if ba_norm : conv_m2 = BatchNormalization(momentum=ba_norm_momentum)(conv_m2)
+    conc2 = concatenate([input, conv_m2], axis=-1)
+    return conc2
+
+# Create an expanding layer
+def expanding_layer_2D(input, neurons, concatenate_link, ba_norm,
+                       ba_norm_momentum):
+    up = concatenate([Conv2DTranspose(neurons, (2, 2), strides=(2, 2),
+                     padding='same')(input), concatenate_link], axis=-1)
+    conv1 = Conv2D(neurons, (3, 3,), activation='relu', padding='same')(up)
+    if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
+    conc1 = concatenate([up, conv1], axis=-1)
+    conv2 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(conc1)
+    if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
+    conc2 = concatenate([up, conv2], axis=-1)
+    return conc2
+
+#-----------------------------------------------------#
+#                   Subroutines 3D                    #
+#-----------------------------------------------------#
+# Create a contracting layer
+def contracting_layer_3D(input, neurons, ba_norm, ba_norm_momentum):
+    conv1 = Conv3D(neurons, (3,3,3), activation='relu', padding='same')(input)
+    if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
+    conc1 = concatenate([input, conv1], axis=-1)
+    conv2 = Conv3D(neurons, (3,3,3), activation='relu', padding='same')(conc1)
+    if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
+    conc2 = concatenate([input, conv2], axis=-1)
+    pool = MaxPooling3D(pool_size=(2, 2, 2))(conc2)
+    return pool, conc2
+
+# Create the middle layer between the contracting and expanding layers
+def middle_layer_3D(input, neurons, ba_norm, ba_norm_momentum):
+    conv_m1 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(input)
+    if ba_norm : conv_m1 = BatchNormalization(momentum=ba_norm_momentum)(conv_m1)
+    conc1 = concatenate([input, conv_m1], axis=-1)
+    conv_m2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conc1)
+    if ba_norm : conv_m2 = BatchNormalization(momentum=ba_norm_momentum)(conv_m2)
+    conc2 = concatenate([input, conv_m2], axis=-1)
+    return conc2
+
+# Create an expanding layer
+def expanding_layer_3D(input, neurons, concatenate_link, ba_norm,
+                       ba_norm_momentum):
+    up = concatenate([Conv3DTranspose(neurons, (2, 2, 2), strides=(2, 2, 2),
+                     padding='same')(input), concatenate_link], axis=4)
+    conv1 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(up)
+    if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
+    conc1 = concatenate([up, conv1], axis=-1)
+    conv2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conc1)
+    if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
+    conc2 = concatenate([up, conv2], axis=-1)
+    return conc2
