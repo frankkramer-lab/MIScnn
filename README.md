@@ -100,8 +100,8 @@ MIScnn was used on the KITS19 training data set in order to perform a 3-fold cro
 ## Coming soon
 
 - Complete documentation/wiki
-- Examples (kits19, BraTS, ...)
 - Tutorials on Basics, custom Data I/O interfaces, custom models, ...
+- Examples (kits19, BraTS, ...)
 
 ## Author
 
