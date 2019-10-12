@@ -21,8 +21,8 @@
 #-----------------------------------------------------#
 # External libraries
 from keras.utils import multi_gpu_model
+from keras.models import load_model
 from keras.optimizers import Adam
-from keras.models import model_from_json
 import numpy as np
 # Internal libraries/scripts
 from miscnn.neural_network.metrics import dice_soft, tversky_loss
@@ -210,28 +210,12 @@ class Neural_Network:
 
     # Dump model to file
     def dump(self, file_path):
-        # Create model output path
-        outpath_model = file_path + ".model.json"
-        outpath_weights = file_path + ".weights.h5"
-        # Serialize model to JSON
-        model_json = self.model.to_json()
-        with open(outpath_model, "w") as json_file:
-            json_file.write(model_json)
-        # Serialize weights to HDF5
-        self.model.save_weights(outpath_weights)
+        self.model.save(file_path)
 
     # Load model from file
-    def load(self, file_path):
+    def load(self, file_path, custom_objects={}):
         # Create model input path
-        inpath_model = file_path + ".model.json"
-        inpath_weights = file_path + ".weights.h5"
-        # Load json and create model
-        json_file = open(inpath_model, 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        self.model = model_from_json(loaded_model_json)
-        # Load weights into new model
-        self.model.load_weights(inpath_weights)
+        self.model = load_model(file_path, custom_objects, compile=False)
         # Compile model
         self.model.compile(optimizer=Adam(lr=self.learninig_rate),
                            loss=self.loss, metrics=self.metrics)
