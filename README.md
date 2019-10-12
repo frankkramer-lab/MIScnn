@@ -12,6 +12,8 @@ MIScnn provides several core features:
 - Custom model, data I/O, pre-/postprocessing and metric support
 - Based on Keras with Tensorflow as backend
 
+Read the documentation in the [MIScnn wiki](https://github.com/frankkramer-lab/MIScnn/wiki) here on GitHub.
+
 ![MIScnn workflow](docs/MIScnn.pipeline.png)
 
 ## Getting started: 60 seconds to a MIS pipeline
@@ -59,6 +61,8 @@ from miscnn.evaluation.cross_validation import cross_validation
 cross_validation(sample_list, model, k_fold=5, epochs=100,
                  evaluation_path="evaluation_results", draw_figures=True)
 ```
+
+More detailed examples for popular biomedical data sets ([examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)) or diverse tutorials for MIScnn ([tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)) are available as Jupyter Notebooks in this repository.
 
 ## Installation
 
