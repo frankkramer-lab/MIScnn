@@ -62,7 +62,7 @@ cross_validation(sample_list, model, k_fold=5, epochs=100,
                  evaluation_path="evaluation_results", draw_figures=True)
 ```
 
-More detailed examples for popular biomedical data sets ([examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)) or diverse tutorials for MIScnn ([tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)) are available as Jupyter Notebooks in this repository.
+More detailed [examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples) for popular biomedical data sets or diverse [tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials) for MIScnn are available as Jupyter Notebooks in this repository.
 
 ## Installation
 
