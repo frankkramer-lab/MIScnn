@@ -101,11 +101,15 @@ MIScnn was used on the KITS19 training data set in order to perform a 3-fold cro
 
 ![example gif](docs/visualization.case_case_00044.gif)
 
-## Coming soon
+## Resources
 
-- Complete documentation/wiki
-- Tutorials on Basics, custom Data I/O interfaces, custom models, ...
-- Examples (kits19, BraTS, ...)
+- [MIScnn Documentation](https://github.com/frankkramer-lab/MIScnn/wiki)
+- [MIScnn Tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)
+- [MIScnn Examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)
+
+
+- [MIScnn on GitHub](https://github.com/frankkramer-lab/MIScnn)
+- [MIScnn on PyPI](https://pypi.org/project/miscnn/)
 
 ## Author
 
@@ -117,14 +121,18 @@ Bavaria, Germany
 
 ## How to cite / More information
 
-Dominik Müller and Frank Kramer. (2019)\
-MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning.
+Dominik Müller and Frank Kramer. (2019)  
+MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning.  
+arXiv e-print: [https://arxiv.org/abs/1910.09308](https://arxiv.org/abs/1910.09308)
 
 ```
 Article{miscnn,
   title={MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning},
-  author={Dominik Müller, Frank Kramer},
-  year={2019}
+  author={Dominik Müller and Frank Kramer},
+  year={2019},
+  eprint={1910.09308},
+  archivePrefix={arXiv},
+  primaryClass={eess.IV}
 }
 ```
 
