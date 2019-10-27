@@ -19,25 +19,25 @@ Read the documentation in the [MIScnn wiki](https://github.com/frankkramer-lab/M
 ## Getting started: 60 seconds to a MIS pipeline
 
 ```python
-# Create a Data I/O instance with an already provided interface for your specific data format.
-from miscnn.data_loading.data_io import Data_IO
-from miscnn.data_loading.interfaces.nifti_io import NIFTI_interface
+# Import the MIScnn module
+import miscnn
 
-# Create an interface for kidney tumor CT scans in NIfTI format
+# Create a Data I/O interface for kidney tumor CT scans in NIfTI format
+from miscnn.data_loading.interfaces import NIFTI_interface
 interface = NIFTI_interface(pattern="case_000[0-9]*", channels=1, classes=3)
+
 # Initialize data path and create the Data I/O instance
 data_path = "/home/mudomini/projects/KITS_challenge2019/kits19/data.original/"
-data_io = Data_IO(interface, data_path)
+data_io = miscnn.Data_IO(interface, data_path)
 
 # Create a Preprocessor instance to configure how to preprocess the data into batches
-from miscnn.processing.preprocessor import Preprocessor
-pp = Preprocessor(data_io, batch_size=4, analysis="patchwise-crop", patch_shape=(128,128,128))
+pp = miscnn.Preprocessor(data_io, batch_size=4, analysis="patchwise-crop",
+                         patch_shape=(128,128,128))
 
 # Create a deep learning neural network model with a standard U-Net architecture
-from miscnn.neural_network.model import Neural_Network
 from miscnn.neural_network.architecture.unet.standard import Architecture
 unet_standard = Architecture()
-model = Neural_Network(preprocessor=pp, architecture=unet_standard)
+model = miscnn.Neural_Network(preprocessor=pp, architecture=unet_standard)
 ```
 
 Congratulations to your ready-to-use Medical Image Segmentation pipeline including data I/O, preprocessing and data augmentation with default setting.
@@ -45,18 +45,18 @@ Congratulations to your ready-to-use Medical Image Segmentation pipeline includi
 Let's run a model training on our data set. Afterwards, predict the segmentation of a sample using the fitted model.
 
 ```python
-# Training the model with all except one sample for 500 epochs
+# Training the model with 80 samples for 500 epochs
 sample_list = data_io.get_indiceslist()
-model.train(sample_list[0:-1], epochs=500)
+model.train(sample_list[0:80], epochs=500)
 
-# Predict the one remaining sample
-pred = model.predict([sample_list[-1]], direct_output=True)
+# Predict the segmentation for 20 samples
+pred = model.predict(sample_list[80:100], direct_output=True)
 ```
 
 Now, let's run a 5-fold Cross-Validation with our model, create automatically evaluation figures and save the results into the directory "evaluation_results".
 
 ```python
-from miscnn.evaluation.cross_validation import cross_validation
+from miscnn.evaluation import cross_validation
 
 cross_validation(sample_list, model, k_fold=5, epochs=100,
                  evaluation_path="evaluation_results", draw_figures=True)
@@ -103,13 +103,12 @@ MIScnn was used on the KITS19 training data set in order to perform a 3-fold cro
 
 ## Resources
 
-- [MIScnn Documentation](https://github.com/frankkramer-lab/MIScnn/wiki)
-- [MIScnn Tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)
-- [MIScnn Examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)
-
-
-- [MIScnn on GitHub](https://github.com/frankkramer-lab/MIScnn)
-- [MIScnn on PyPI](https://pypi.org/project/miscnn/)
+- MIScnn Documentation: [GitHub wiki - Home](https://github.com/frankkramer-lab/MIScnn/wiki)
+- MIScnn Tutorials: [Overview of Tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)
+- MIScnn Examples: [Overview of Use Cases and Examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)
+- MIScnn Development Tracker: [GitHub project - MIScnn Development](https://github.com/frankkramer-lab/MIScnn/projects/1)
+- MIScnn on GitHub: [GitHub - frankkramer-lab/MIScnn](https://github.com/frankkramer-lab/MIScnn)
+- MIScnn on PyPI: [PyPI - miscnn](https://pypi.org/project/miscnn/)
 
 ## Author
 
