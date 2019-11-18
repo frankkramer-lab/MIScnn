@@ -17,21 +17,20 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
 #-----------------------------------------------------#
-#               Source Code is based on:              #
-# https://github.com/mrkolarik/3D-brain-segmentation  #
-#                                                     #
 #                     Reference:                      #
-#Kolařík, M., Burget, R., Uher, V., Říha, K., & Dutta,#
-#                    M. K. (2019).                    #
-#  Optimized High Resolution 3D Dense-U-Net Network   #
-#          for Brain and Spine Segmentation.          #
-#        Applied Sciences, 9(3), vol. 9, no. 3.       #
+#Zhengxin Zhang†, Qingjie Liu and Yunhong Wang (2017).#
+#       Road Extraction by Deep Residual U-Net.       #
+#    e-print: https://arxiv.org/pdf/1711.10684.pdf    #
+#                                                     #
+# Kaiming HeXiangyu ZhangShaoqing RenJian Sun (2015). #
+#    Deep Residual Learning for Image Recognition.    #
+#    e-print: https://arxiv.org/pdf/1512.03385.pdf    #
 #-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
 from keras.models import Model
-from keras.layers import Input, concatenate
+from keras.layers import Input, concatenate, add
 from keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from keras.layers import BatchNormalization
@@ -152,9 +151,10 @@ def contracting_layer_2D(input, neurons, ba_norm, ba_norm_momentum):
     if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
     conv2 = Conv2D(neurons, (3,3), activation='relu', padding='same')(conv1)
     if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
-    conc = concatenate([input, conv2], axis=-1)
-    pool = MaxPooling2D(pool_size=(2, 2))(conc)
-    return pool, conc
+    shortcut = Conv2D(neurons, (1, 1), activation='relu', padding="same")(input)
+    add_layer = add([shortcut, conv2])
+    pool = MaxPooling2D(pool_size=(2, 2))(add_layer)
+    return pool, add_layer
 
 # Create the middle layer between the contracting and expanding layers
 def middle_layer_2D(input, neurons, ba_norm, ba_norm_momentum):
@@ -162,8 +162,9 @@ def middle_layer_2D(input, neurons, ba_norm, ba_norm_momentum):
     if ba_norm : conv_m1 = BatchNormalization(momentum=ba_norm_momentum)(conv_m1)
     conv_m2 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(conv_m1)
     if ba_norm : conv_m2 = BatchNormalization(momentum=ba_norm_momentum)(conv_m2)
-    conc = concatenate([input, conv_m2], axis=-1)
-    return conc
+    shortcut = Conv2D(neurons, (1, 1), activation='relu', padding="same")(input)
+    add_layer = add([shortcut, conv_m2])
+    return add_layer
 
 # Create an expanding layer
 def expanding_layer_2D(input, neurons, concatenate_link, ba_norm,
@@ -174,8 +175,9 @@ def expanding_layer_2D(input, neurons, concatenate_link, ba_norm,
     if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
     conv2 = Conv2D(neurons, (3, 3), activation='relu', padding='same')(conv1)
     if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
-    conc = concatenate([up, conv2], axis=-1)
-    return conc
+    shortcut = Conv2D(neurons, (1, 1), activation='relu', padding="same")(up)
+    add_layer = add([shortcut, conv2])
+    return add_layer
 
 #-----------------------------------------------------#
 #                   Subroutines 3D                    #
@@ -186,9 +188,10 @@ def contracting_layer_3D(input, neurons, ba_norm, ba_norm_momentum):
     if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
     conv2 = Conv3D(neurons, (3,3,3), activation='relu', padding='same')(conv1)
     if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
-    conc = concatenate([input, conv2], axis=-1)
-    pool = MaxPooling3D(pool_size=(2, 2, 2))(conc)
-    return pool, conc
+    shortcut = Conv3D(neurons, (1, 1, 1), activation='relu', padding="same")(input)
+    add_layer = add([shortcut, conv2])
+    pool = MaxPooling3D(pool_size=(2, 2, 2))(add_layer)
+    return pool, add_layer
 
 # Create the middle layer between the contracting and expanding layers
 def middle_layer_3D(input, neurons, ba_norm, ba_norm_momentum):
@@ -196,8 +199,9 @@ def middle_layer_3D(input, neurons, ba_norm, ba_norm_momentum):
     if ba_norm : conv_m1 = BatchNormalization(momentum=ba_norm_momentum)(conv_m1)
     conv_m2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conv_m1)
     if ba_norm : conv_m2 = BatchNormalization(momentum=ba_norm_momentum)(conv_m2)
-    conc = concatenate([input, conv_m2], axis=-1)
-    return conc
+    shortcut = Conv3D(neurons, (1, 1, 1), activation='relu', padding="same")(input)
+    add_layer = add([shortcut, conv_m2])
+    return add_layer
 
 # Create an expanding layer
 def expanding_layer_3D(input, neurons, concatenate_link, ba_norm,
@@ -208,5 +212,6 @@ def expanding_layer_3D(input, neurons, concatenate_link, ba_norm,
     if ba_norm : conv1 = BatchNormalization(momentum=ba_norm_momentum)(conv1)
     conv2 = Conv3D(neurons, (3, 3, 3), activation='relu', padding='same')(conv1)
     if ba_norm : conv2 = BatchNormalization(momentum=ba_norm_momentum)(conv2)
-    conc = concatenate([up, conv2], axis=-1)
-    return conc
+    shortcut = Conv3D(neurons, (1, 1, 1), activation='relu', padding="same")(up)
+    add_layer = add([shortcut, conv2])
+    return add_layer
