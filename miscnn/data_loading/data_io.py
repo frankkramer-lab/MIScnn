@@ -105,7 +105,7 @@ class Data_IO:
     #---------------------------------------------#
     #              Prediction Backup              #
     #---------------------------------------------#
-    # Save a segmentation prediction in NIFTI format
+    # Save a segmentation prediction
     def save_prediction(self, pred, index):
         # Create the output directory if not existent
         if not os.path.exists(self.output_path):
