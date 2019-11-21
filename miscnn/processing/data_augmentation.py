@@ -17,6 +17,9 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
 #-----------------------------------------------------#
+#  Data Augmentation utilizes the following package:  #
+#     https://github.com/MIC-DKFZ/batchgenerators     #
+#-----------------------------------------------------#
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
