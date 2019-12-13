@@ -33,22 +33,30 @@ def dice_coefficient(y_true, y_pred, smooth=0.00001):
            (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
 def dice_coefficient_loss(y_true, y_pred):
-    return -dice_coefficient(y_true, y_pred)
+    return 1-dice_coefficient(y_true, y_pred)
 
 #-----------------------------------------------------#
 #                Soft Dice coefficient                #
 #-----------------------------------------------------#
 def dice_soft(y_true, y_pred, smooth=0.00001):
+    # Identify axis
     axis = identify_axis(y_true.get_shape())
+
+    # Calculate required variables
     intersection = y_true * y_pred
     intersection = K.sum(intersection, axis=axis)
     y_true = K.sum(y_true, axis=axis)
     y_pred = K.sum(y_pred, axis=axis)
+
+    # Calculate Soft Dice Similarity Coefficient
     dice = ((2 * intersection) + smooth) / (y_true + y_pred + smooth)
+
+    # Obtain mean of Dice & return result score
+    dice = K.mean(dice)
     return dice
 
 def dice_soft_loss(y_true, y_pred):
-    return -dice_soft(y_true, y_pred)
+    return 1-dice_soft(y_true, y_pred)
 
 #-----------------------------------------------------#
 #              Weighted Dice coefficient              #
@@ -71,8 +79,13 @@ def dice_weighted(weights):
 #              Dice & Crossentropy loss               #
 #-----------------------------------------------------#
 def dice_crossentropy(y_truth, y_pred):
-    return K.mean(dice_soft_loss(y_truth, y_pred)) + \
-           K.mean(K.categorical_crossentropy(y_truth, y_pred))
+    # Obtain Soft DSC
+    dice = dice_soft_loss(y_truth, y_pred)
+    # Obtain Crossentropy
+    crossentropy = K.categorical_crossentropy(y_truth, y_pred)
+    crossentropy = K.mean(crossentropy)
+    # Return sum
+    return dice + crossentropy
 
 #-----------------------------------------------------#
 #                    Tversky loss                     #
