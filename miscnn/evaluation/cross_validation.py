@@ -35,8 +35,8 @@ from miscnn.evaluation.detailed_validation import detailed_validation
 Args:
     sample_list (list of indices):          A list of sample indicies which will be used for validation.
     model (Neural Network model):           Instance of a Neural Network model class instance.
-    k_fold (integer):                       The number of k-folds for the Cross-Validationself. By default, a
-                                            3-fold Cross-Validation is performed.                        
+    k_fold (integer):                       The number of k-folds for the Cross-Validation. By default, a
+                                            3-fold Cross-Validation is performed.
     epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
     iterations (integer):                   Number of iterations (batches) in a single epoch.
     evaluation_path (string):               Path to the evaluation data directory. This directory will be created and
