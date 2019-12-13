@@ -117,6 +117,18 @@ def tversky_loss(y_true, y_pred, smooth=0.000001):
     return n-tversky
 
 #-----------------------------------------------------#
+#             Tversky & Crossentropy loss             #
+#-----------------------------------------------------#
+def tversky_crossentropy(y_truth, y_pred):
+    # Obtain Tversky Loss
+    tversky = tversky_loss(y_truth, y_pred)
+    # Obtain Crossentropy
+    crossentropy = K.categorical_crossentropy(y_truth, y_pred)
+    crossentropy = K.mean(crossentropy)
+    # Return sum
+    return tversky + crossentropy
+
+#-----------------------------------------------------#
 #                     Subroutines                     #
 #-----------------------------------------------------#
 # Identify shape of tensor and return correct axes
