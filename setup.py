@@ -17,7 +17,7 @@ setup(
    long_description_content_type="text/markdown",
    packages=find_packages(),
    install_requires=['numpy==1.16.4',
-                     'tensorflow-gpu==1.13.1',
+                     'tensorflow-gpu==1.15.0',
                      'Keras>=2.2.4',
                      'nibabel>=2.4.0',
                      'matplotlib>=3.0.3',
