@@ -21,6 +21,8 @@
 #-----------------------------------------------------#
 # External libraries
 import numpy as np
+from keras.callbacks import ModelCheckpoint
+import os
 # Internal libraries/scripts
 from miscnn.data_loading.data_io import create_directories, backup_history
 from miscnn.utils.plotting import plot_validation
@@ -45,13 +47,14 @@ Args:
                                             directory.
     run_detailed_evaluation (boolean):      Option if a detailed evaluation (additional prediction) should be performed.
     callbacks (list of Callback classes):   A list of Callback classes for custom evaluation.
+    save_models (boolean):                  Option if fitted models should be stored or thrown away.
     direct_output (boolean):                Option, if computed evaluations will be output as the return of this function or
                                             if the evaluations will be saved on disk in the evaluation directory.
 """
 def cross_validation(sample_list, model, k_fold=3, epochs=20,
                      iterations=None, evaluation_path="evaluation",
                      draw_figures=True, run_detailed_evaluation=True,
-                     callbacks=[], direct_output=False):
+                     callbacks=[], save_models=True, direct_output=False):
     # Initialize result cache
     if direct_output : validation_results = []
     # Randomly permute the sample list
@@ -69,9 +72,15 @@ def cross_validation(sample_list, model, k_fold=3, epochs=20,
         validation = folds[i]
         # Initialize evaluation subdirectory for current fold
         subdir = create_directories(evaluation_path, "fold_" + str(i))
+        # Save model for each fold
+        cb_model = ModelCheckpoint(os.path.join(subdir, "model.hdf5"),
+                                   monitor="val_loss", verbose=1,
+                                   save_best_only=True, mode="min")
+        if save_models == True : cb_list = callbacks + [cb_model]
+        else : cb_list = callbacks
         # Run training & validation
         history = model.evaluate(training, validation, epochs=epochs,
-                                 iterations=iterations, callbacks=callbacks)
+                                 iterations=iterations, callbacks=cb_list)
         # Backup current history dictionary
         if direct_output : validation_results.append(history.history)
         else : backup_history(history.history, subdir)
