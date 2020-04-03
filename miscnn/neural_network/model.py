@@ -20,9 +20,9 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from keras.utils import multi_gpu_model
-from keras.models import load_model
-from keras.optimizers import Adam
+from tensorflow.keras.utils import multi_gpu_model
+from tensorflow.keras.models import load_model
+from tensorflow.keras.optimizers import Adam
 import numpy as np
 # Internal libraries/scripts
 from miscnn.neural_network.metrics import dice_soft, tversky_loss
@@ -115,12 +115,12 @@ class Neural_Network:
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
                                 validation=False, shuffle=self.shuffle_batches,
                                 iterations=iterations)
-        # Run training process with Keras fit_generator
-        self.model.fit_generator(generator=dataGen,
-                                 epochs=epochs,
-                                 callbacks=callbacks,
-                                 workers=self.workers,
-                                 max_queue_size=self.batch_queue_size)
+        # Run training process with Keras fit
+        self.model.fit(dataGen,
+                       epochs=epochs,
+                       callbacks=callbacks,
+                       workers=self.workers,
+                       max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
         if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
             self.preprocessor.data_io.batch_cleanup()
@@ -146,8 +146,8 @@ class Neural_Network:
             dataGen = DataGenerator([sample], self.preprocessor,
                                     training=False, validation=False,
                                     shuffle=False, iterations=None)
-            # Run prediction process with Keras predict_generator
-            pred_seg = self.model.predict_generator(generator=dataGen)
+            # Run prediction process with Keras predict
+            pred_seg = self.model.predict_generator(dataGen)
             # Postprocess prediction
             pred_seg = self.preprocessor.postprocessing(sample, pred_seg)
             # Backup predicted segmentation

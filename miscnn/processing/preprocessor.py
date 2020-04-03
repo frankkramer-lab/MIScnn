@@ -21,7 +21,7 @@
 #-----------------------------------------------------#
 # External libraries
 import numpy as np
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 import threading
 # Internal libraries/scripts
 from miscnn.processing.data_augmentation import Data_Augmentation

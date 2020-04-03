@@ -20,7 +20,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 #-----------------------------------------------------#
 #              Standard Dice coefficient              #

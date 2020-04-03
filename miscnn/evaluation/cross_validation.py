@@ -21,7 +21,7 @@
 #-----------------------------------------------------#
 # External libraries
 import numpy as np
-from keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 # Internal libraries/scripts
 from miscnn.data_loading.data_io import create_directories, backup_history

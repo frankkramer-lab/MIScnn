@@ -2,14 +2,14 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 #External libraries
-import keras
+from tensorflow.keras.callbacks import Callback
 #Internal libraries
 from miscnn.data_io import save_evaluation
 
 #-----------------------------------------------------#
 #                Keras Callback Class                 #
 #-----------------------------------------------------#
-class TrainingCallback(keras.callbacks.Callback):
+class TrainingCallback(Callback):
     # Initialize variables
     current_epoch = None
     eval_path = None

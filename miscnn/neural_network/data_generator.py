@@ -20,7 +20,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 #External libraries
-import keras
+from tensorflow.keras.utils import Sequence as Keras_Sequence
 import math
 import numpy as np
 from miscnn.utils.visualizer import visualize_sample
@@ -30,7 +30,7 @@ from miscnn.utils.visualizer import visualize_sample
 #-----------------------------------------------------#
 # Data Generator for generating batches (WITH-/OUT segmentation)
 ## Returns a batch containing one or multiple images for training/prediction
-class DataGenerator(keras.utils.Sequence):
+class DataGenerator(Keras_Sequence):
     # Class Initialization
     def __init__(self, sample_list, preprocessor, training=False,
                  validation=False, shuffle=False, iterations=None):
