@@ -53,6 +53,8 @@ class Data_Augmentation:
     # Cropping settings
     cropping = False
     cropping_patch_shape = None
+    # Segmentation map augmentation
+    seg_augmentation = True
 
     #---------------------------------------------#
     #                Initialization               #
@@ -75,8 +77,11 @@ class Data_Augmentation:
     #            Run data augmentation            #
     #---------------------------------------------#
     def run(self, img_data, seg_data):
+        # Define label for segmentation for segmentation augmentation
+        if self.seg_augmentation : seg_label = "seg"
+        else : seg_label = "class"
         # Create a parser for the batchgenerators module
-        data_generator = DataParser(img_data, seg_data)
+        data_generator = DataParser(img_data, seg_data, seg_label)
         # Initialize empty transform list
         transforms = []
         # Add mirror augmentation
@@ -157,12 +162,12 @@ class Data_Augmentation:
             # Access augmentated data from the batchgenerators data structure
             if aug_img_data is None and aug_seg_data is None:
                 aug_img_data = augmentation["data"]
-                aug_seg_data = augmentation["seg"]
+                aug_seg_data = augmentation[seg_label]
             # Concatenate the new data augmentated data with the cached data
             else:
                 aug_img_data = np.concatenate((augmentation["data"],
                                               aug_img_data), axis=0)
-                aug_seg_data = np.concatenate((augmentation["seg"],
+                aug_seg_data = np.concatenate((augmentation[seg_label],
                                               aug_seg_data), axis=0)
         # Transform data from channel-first back to channel-last structure
         # Data structure channel-first 3D:  (batch, channel, x, y, z)
@@ -180,12 +185,14 @@ class Data_Augmentation:
 # The generator is requried for data loading in the batchgenerators module
 class DataParser:
     # Initialization
-    def __init__(self, img_data, seg_data):
+    def __init__(self, img_data, seg_data, seg_label):
         # Transform data from channel-last to channel-first structure
         # Data structure channel-last 3D:   (batch, x, y, z, channel)
         # Data structure channel-first 3D:  (batch, channel, x, y, z)
         self.img_data = np.moveaxis(img_data, -1, 1)
         self.seg_data = np.moveaxis(seg_data, -1, 1)
+        # Cache segmentation label
+        self.seg_label = seg_label
         # Define starting thread id
         self.thread_id = 0
     # Iterator
@@ -194,7 +201,7 @@ class DataParser:
     # Next functionality: Return the img and seg in batchgenerators format
     def __next__(self):
         bg_dict = {'data':self.img_data.astype(np.float32),
-                   'seg':self.seg_data.astype(np.float32)}
+                   self.seg_label:self.seg_data.astype(np.float32)}
         return bg_dict
     # Batchgenerators thread functionality for multi-threading
     def set_thread_id(self, thread_id):
