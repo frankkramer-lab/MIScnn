@@ -147,7 +147,11 @@ class Neural_Network:
                                     training=False, validation=False,
                                     shuffle=False, iterations=None)
             # Run prediction process with Keras predict
-            pred_seg = self.model.predict_generator(dataGen)
+            pred_list = []
+            for batch in dataGen:
+                pred_batch = self.model.predict_on_batch(batch)
+                pred_list.append(pred_batch)
+            pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
             pred_seg = self.preprocessor.postprocessing(sample, pred_seg)
             # Backup predicted segmentation
@@ -188,8 +192,8 @@ class Neural_Network:
                                            self.preprocessor,
                                            training=True, validation=True,
                                            shuffle=self.shuffle_batches)
-        # Run training & validation process with the Keras fit_generator
-        history = self.model.fit_generator(generator=dataGen_training,
+        # Run training & validation process with the Keras fit
+        history = self.model.fit(dataGen_training,
                                  validation_data=dataGen_validation,
                                  callbacks=callbacks,
                                  epochs=epochs,
