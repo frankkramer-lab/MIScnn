@@ -16,3 +16,19 @@
 #  You should have received a copy of the GNU General Public License           #
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
+#-----------------------------------------------------#
+#                   Library imports                   #
+#-----------------------------------------------------#
+#External libraries
+import unittest
+#Internal libraries
+
+#-----------------------------------------------------#
+#                  Unittest: Data IO                  #
+#-----------------------------------------------------#
+class DataIO(unittest.TestCase):
+# use tf/keras data sets and dictionary interface
+
+    # Create a Data IO object
+    def test_create(self):
+        self.assertEqual(0 % 2, 0)

@@ -16,3 +16,16 @@
 #  You should have received a copy of the GNU General Public License           #
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
+#-----------------------------------------------------#
+#                   Library imports                   #
+#-----------------------------------------------------#
+#External libraries
+import unittest
+#Internal libraries
+from test_dataio import *
+
+#-----------------------------------------------------#
+#                     Main Method                     #
+#-----------------------------------------------------#
+if __name__ == '__main__':
+    unittest.main()
