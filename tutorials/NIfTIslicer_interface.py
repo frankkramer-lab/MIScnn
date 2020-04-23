@@ -5,11 +5,13 @@
 ## images for using specific 2D models
 ##
 ## Based on the KITS 19 data set (Kidney Tumor Segmentation Challenge 2019)
+## Data Set: https://github.com/neheller/kits19
 
 # Import all libraries we need
 from miscnn import Data_IO, Preprocessor, Neural_Network
 from miscnn.data_loading.interfaces import NIFTIslicer_interface
 from miscnn.processing.subfunctions import Resize
+import numpy as np
 
 # Initialize the NIfTI interface IO slicer variant
 interface = NIFTIslicer_interface(pattern="case_0000[0-3]", channels=1, classes=3)
@@ -26,8 +28,7 @@ samples_list.sort()
 # Let's test out, if the the NIfTI slicer interface works like we want
 # and output the image and segmentation shape of a random slice
 sample = data_io.sample_loader("case_00002:#:42", load_seg=True)
-print(sample.img_data.shape)
-print(sample.seg_data.shape)
+print(sample.img_data.shape, sample.seg_data.shape)
 
 ## As you hopefully noted, the index of a slice is defined
 ## as the volume file name and the slice number separated with a ":#:"
@@ -52,7 +53,20 @@ model.train(samples_list[30:50], epochs=3, iterations=10, callbacks=[])
 
 # Predict a generic slice with direct output
 pred = model.predict(["case_00002:#:42"], direct_output=True)
-print(pred.shape)
+print(np.asarray(pred).shape)
+## Be aware that the direct prediction output, has a additional batch axis
 
-# Predict a generic slice and save it as grayscale JPEG on disk
+# Predict a generic slice and save it as a NumPy pickle on disk
 model.predict(["case_00002:#:42"], direct_output=False)
+
+# Load the slice via sample-loader and output also the new prediction, now
+sample = data_io.sample_loader("case_00000:#:89", load_seg=True, load_pred=True)
+print(sample.img_data.shape, sample.seg_data.shape, sample.pred_data.shape)
+
+
+## Final words
+# I hope that this usage example / tutorial on the new NIfTI slicer IO
+# interface, helps on understanding how it works and how you can use it
+#
+# If you have any questions or feedback, please do not hesitate to write me an
+# email or create an issue on GitHub!
