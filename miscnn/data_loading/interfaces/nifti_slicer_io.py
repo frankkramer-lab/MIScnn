@@ -144,8 +144,7 @@ class NIFTIslicer_interface(Abstract_IO):
                 "Data path, {}, could not be resolved".format(str(output_path))
             )
         # Parse the provided index to the prediction file name
-        pred_file = str(index) + ".jpg"
-        pred_path = os.path.join(output_path, pred_file)
+        pred_path = os.path.join(output_path, str(index) + ".npy")
         # Make sure that prediction file exists under the prediction directory
         if not os.path.exists(pred_path):
             raise ValueError(
@@ -153,9 +152,7 @@ class NIFTIslicer_interface(Abstract_IO):
             )
 
         # Load prediction from file
-        pred = Image.open(pred_path)
-        # Transform PIL object to numpy array
-        pred_data = np.array(pred)
+        pred_data = np.load(pred_path, allow_pickle=True)
         # Return prediction
         return pred_data
 
@@ -168,15 +165,13 @@ class NIFTIslicer_interface(Abstract_IO):
     #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
-    # Write a segmentation prediction into in the JPEG file format
+    # Write a segmentation prediction into in the NPY file format
     def save_prediction(self, pred, index, output_path):
         # Resolve location where data should be written
         if not os.path.exists(output_path):
             raise IOError(
                 "Data path, {}, could not be resolved".format(output_path)
             )
-        # Convert numpy array to PIL
-        pred_img = Image.fromarray(pred, mode="L")
-        # Save segmentation to disk
-        pred_file = str(index) + ".jpg"
-        pred_img.save(os.path.join(output_path, pred_file))
+        # Save segmentation to disk as a NumPy pickle
+        pred_path = os.path.join(output_path, str(index) + ".npy")
+        np.save(pred_path, pred, allow_pickle=True)
