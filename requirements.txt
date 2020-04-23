@@ -1,6 +1,5 @@
 numpy==1.18.2
 tensorflow==2.1.0
 nibabel==2.4.0
-Pillow==6.2.1
 matplotlib==3.0.3
 batchgenerators==0.19.3
