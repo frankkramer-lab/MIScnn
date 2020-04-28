@@ -86,32 +86,24 @@ class Padding(Abstract_Subfunction):
         if training : seg_data = np.moveaxis(seg_data, 0, -1)
         # Save resampled imaging data to sample
         sample.img_data = img_data
-        print(img_data.shape)
         sample.seg_data = seg_data
 
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
     def postprocessing(self, prediction):
-        print("slice", self.original_coords)
-        print("pred", prediction.shape)
-
-
-
-        pass
-        # # Access original shape of the last sample and reset it
-        # original_shape = self.original_shape
-        # self.original_shape = None
-        # # Transform original shape to one-channel array for resampling
-        # prediction = np.reshape(prediction, prediction.shape + (1,))
-        # # Transform prediction from channel-last to channel-first structure
-        # prediction = np.moveaxis(prediction, -1, 0)
-        # # Resample imaging data
-        # prediction = resize_segmentation(prediction, original_shape, order=1,
-        #                                  cval=0)
-        # # Transform data from channel-first back to channel-last structure
-        # prediction = np.moveaxis(prediction, 0, -1)
-        # # Transform one-channel array back to original shape
-        # prediction = np.reshape(prediction, original_shape[1:])
-        # # Return postprocessed prediction
-        # return prediction
+        # Access original coordinates of the last sample and reset it
+        original_coords = self.original_coords
+        self.original_coords = None
+        # Transform original shape to one-channel array for cropping
+        prediction = np.reshape(prediction, prediction.shape + (1,))
+        # Transform prediction from channel-last to channel-first structure
+        prediction = np.moveaxis(prediction, -1, 0)
+        # Crop prediction data according to original coordinates
+        prediction = prediction[tuple(original_coords)]
+        # Transform data from channel-first back to channel-last structure
+        prediction = np.moveaxis(prediction, 0, -1)
+        # Transform one-channel array back to original shape
+        prediction = np.reshape(prediction, prediction.shape[:-1])
+        # Return postprocessed prediction
+        return prediction
