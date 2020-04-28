@@ -54,7 +54,7 @@ class Padding(Abstract_Subfunction):
         self.pad_mode = pad_mode
         self.pad_value_img = pad_value_img
         self.pad_value_seg = pad_value_seg
-        self.shape_must_be_divisible_by = None
+        self.shape_must_be_divisible_by = shape_must_be_divisible_by
         self.original_coords = None
 
     #---------------------------------------------#
@@ -86,12 +86,18 @@ class Padding(Abstract_Subfunction):
         if training : seg_data = np.moveaxis(seg_data, 0, -1)
         # Save resampled imaging data to sample
         sample.img_data = img_data
+        print(img_data.shape)
         sample.seg_data = seg_data
 
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
     def postprocessing(self, prediction):
+        print("slice", self.original_coords)
+        print("pred", prediction.shape)
+
+
+
         pass
         # # Access original shape of the last sample and reset it
         # original_shape = self.original_shape
