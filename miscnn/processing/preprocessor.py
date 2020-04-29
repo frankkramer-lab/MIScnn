@@ -195,6 +195,8 @@ class Preprocessor:
                                     window=self.patch_shape,
                                     overlap=self.patchwise_overlap,
                                     three_dim=self.data_io.interface.three_dim)
+        # For fullimages remove the batch axis
+        else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
         prediction = np.argmax(prediction, axis=-1)
         # Run Subfunction postprocessing on the prediction
