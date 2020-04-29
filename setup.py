@@ -6,7 +6,7 @@ with open("docs/README.PyPI.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-   name='miscnn',
+   name='miscnn_TF-2.0',
    version='0.31',
    description='Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning',
    url='https://github.com/frankkramer-lab/MIScnn',
