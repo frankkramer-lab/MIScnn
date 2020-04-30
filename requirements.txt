@@ -1,5 +1,5 @@
 numpy==1.18.2
-tensorflow==2.0.1
+tensorflow-gpu==2.0.1
 nibabel==2.4.0
 matplotlib==3.0.3
 batchgenerators==0.19.3
