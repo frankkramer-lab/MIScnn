@@ -24,6 +24,7 @@ import os
 import nibabel as nib
 import re
 import numpy as np
+import warnings
 # Internal libraries/scripts
 from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 
@@ -137,10 +138,19 @@ class NIFTI_interface(Abstract_IO):
     #---------------------------------------------#
     # Parse slice thickness
     def load_details(self, i):
-        # Access spacing from previous loaded image and parse it
-        spacing = self.cache[i][np.nonzero(self.cache[i])]
-        # Turn it into positive values and flip it to represent z,x,y structure
-        spacing = np.flip(spacing[0:-1]) * -1
+        # Parse voxel spacing from affinity matrix of NIfTI
+        spacing_matrix = self.cache[i][:3,:3]
+        # Identify correct spacing diagonal
+        diagonal_negative = np.diag(spacing_matrix)
+        diagonal_positive = np.diag(spacing_matrix[::-1,:])
+        if np.count_nonzero(diagonal_negative) != 1:
+            spacing = diagonal_negative
+        elif np.count_nonzero(diagonal_positive) != 1:
+            spacing = diagonal_positive
+        else:
+            warnings.warn("Affinity matrix of NIfTI volume can not be parsed.")
+        # Calculate absolute values for voxel spacing
+        spacing = np.absolute(spacing)
         # Delete cached spacing
         del self.cache[i]
         # Return detail dictionary
