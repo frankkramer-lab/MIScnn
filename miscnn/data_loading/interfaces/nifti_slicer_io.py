@@ -24,7 +24,6 @@ import os
 import nibabel as nib
 import re
 import numpy as np
-import warnings
 # Internal libraries/scripts
 from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 
@@ -35,18 +34,20 @@ from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
     is designed to contain brain images from e.g. magnetic resonance tomography. Nevertheless, it is
     currently broadly used for any 3D medical image data.
 
-Code source heavily modified from the Kidney Tumor Segmentation Challenge 2019 git repository:
-https://github.com/neheller/kits19
+    In contrast to the normal NIfTI IO interface, the NIfTI slicer IO interface splits the 3D volumes
+    into separate 2D images (slices).
+    This can be useful if it is desired to apply specific 2D architectures.
+
+    Be aware that this interface defines slices on the first axis.
 """
-class NIFTI_interface(Abstract_IO):
+class NIFTIslicer_interface(Abstract_IO):
     # Class variable initialization
-    def __init__(self, channels=1, classes=2, three_dim=True, pattern=None):
+    def __init__(self, channels=1, classes=2, pattern=None):
         self.data_directory = None
         self.channels = channels
         self.classes = classes
-        self.three_dim = three_dim
+        self.three_dim = False
         self.pattern = pattern
-        self.cache = dict()
 
     #---------------------------------------------#
     #                  initialize                 #
@@ -61,42 +62,64 @@ class NIFTI_interface(Abstract_IO):
         # Cache data directory
         self.data_directory = input_path
         # Identify samples
-        sample_list = os.listdir(input_path)
+        volume_list = os.listdir(input_path)
         # IF pattern provided: Remove every file which does not match
         if self.pattern != None and isinstance(self.pattern, str):
-            for i in reversed(range(0, len(sample_list))):
-                if not re.fullmatch(self.pattern, sample_list[i]):
-                    del sample_list[i]
+            for i in reversed(range(0, len(volume_list))):
+                if not re.fullmatch(self.pattern, volume_list[i]):
+                    del volume_list[i]
+        # Open each volume and obtain the number of slices
+        sample_list = []
+        for index in volume_list:
+            # Make sure that the image file exists in the data set directory
+            img_path = os.path.join(self.data_directory, index)
+            if not os.path.exists(img_path):
+                raise ValueError(
+                    "Image could not be found \"{}\"".format(img_path)
+                )
+            # Load volume from NIFTI file
+            vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
+            # Transform NIFTI object to numpy array
+            vol_data = vol.get_data()
+            # Obtain number of slices
+            for slice in range(0, vol_data.shape[0]):
+                sample_list.append(index + ":#:" + str(slice))
         # Return sample list
         return sample_list
 
     #---------------------------------------------#
     #                  load_image                 #
     #---------------------------------------------#
-    # Read a volume NIFTI file from the data directory
+    # Read a slice from the data directory
     def load_image(self, index):
+        # Identify volume and slice index
+        ind_vol = index.split(":#:")[0]
+        ind_slice = index.split(":#:")[1]
         # Make sure that the image file exists in the data set directory
-        img_path = os.path.join(self.data_directory, index)
+        img_path = os.path.join(self.data_directory, ind_vol)
         if not os.path.exists(img_path):
             raise ValueError(
-                "Image could not be found \"{}\"".format(img_path)
+                "Volume could not be found \"{}\"".format(img_path)
             )
         # Load volume from NIFTI file
         vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
         # Transform NIFTI object to numpy array
         vol_data = vol.get_data()
-        # Save spacing in cache
-        self.cache[index] = vol.affine
+        # Obtain slice from volume
+        img_data = vol_data[int(ind_slice)]
         # Return volume
-        return vol_data
+        return img_data
 
     #---------------------------------------------#
     #              load_segmentation              #
     #---------------------------------------------#
     # Read a segmentation NIFTI file from the data directory
     def load_segmentation(self, index):
+        # Identify volume and slice index
+        ind_vol = index.split(":#:")[0]
+        ind_slice = index.split(":#:")[1]
         # Make sure that the segmentation file exists in the data set directory
-        seg_path = os.path.join(self.data_directory, index)
+        seg_path = os.path.join(self.data_directory, ind_vol)
         if not os.path.exists(seg_path):
             raise ValueError(
                 "Segmentation could not be found \"{}\"".format(seg_path)
@@ -104,14 +127,16 @@ class NIFTI_interface(Abstract_IO):
         # Load segmentation from NIFTI file
         seg = nib.load(os.path.join(seg_path, "segmentation.nii.gz"))
         # Transform NIFTI object to numpy array
-        seg_data = seg.get_data()
+        seg_vol_data = seg.get_data()
+        # Obtain slice from volume
+        seg_data = seg_vol_data[int(ind_slice)]
         # Return segmentation
         return seg_data
 
     #---------------------------------------------#
     #               load_prediction               #
     #---------------------------------------------#
-    # Read a prediction NIFTI file from the MIScnn output directory
+    # Read a prediction file from the MIScnn output directory
     def load_prediction(self, index, output_path):
         # Resolve location where data should be living
         if not os.path.exists(output_path):
@@ -119,56 +144,34 @@ class NIFTI_interface(Abstract_IO):
                 "Data path, {}, could not be resolved".format(str(output_path))
             )
         # Parse the provided index to the prediction file name
-        pred_file = str(index) + ".nii.gz"
-        pred_path = os.path.join(output_path, pred_file)
+        pred_path = os.path.join(output_path, str(index) + ".npy")
         # Make sure that prediction file exists under the prediction directory
         if not os.path.exists(pred_path):
             raise ValueError(
                 "Prediction could not be found \"{}\"".format(pred_path)
             )
-        # Load prediction from NIFTI file
-        pred = nib.load(pred_path)
-        # Transform NIFTI object to numpy array
-        pred_data = pred.get_data()
+
+        # Load prediction from file
+        pred_data = np.load(pred_path, allow_pickle=True)
         # Return prediction
         return pred_data
 
     #---------------------------------------------#
     #                 load_details                #
     #---------------------------------------------#
-    # Parse slice thickness
     def load_details(self, i):
-        # Parse voxel spacing from affinity matrix of NIfTI
-        spacing_matrix = self.cache[i][:3,:3]
-        # Identify correct spacing diagonal
-        diagonal_negative = np.diag(spacing_matrix)
-        diagonal_positive = np.diag(spacing_matrix[::-1,:])
-        if np.count_nonzero(diagonal_negative) != 1:
-            spacing = diagonal_negative
-        elif np.count_nonzero(diagonal_positive) != 1:
-            spacing = diagonal_positive
-        else:
-            warnings.warn("Affinity matrix of NIfTI volume can not be parsed.")
-        # Calculate absolute values for voxel spacing
-        spacing = np.absolute(spacing)
-        # Delete cached spacing
-        del self.cache[i]
-        # Return detail dictionary
-        return {"spacing":spacing}
+        pass
 
     #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
-    # Write a segmentation prediction into in the NIFTI file format
+    # Write a segmentation prediction into in the NPY file format
     def save_prediction(self, pred, index, output_path):
         # Resolve location where data should be written
         if not os.path.exists(output_path):
             raise IOError(
                 "Data path, {}, could not be resolved".format(output_path)
             )
-        # Convert numpy array to NIFTI
-        nifti = nib.Nifti1Image(pred, None)
-        #nifti.get_data_dtype() == pred.dtype
-        # Save segmentation to disk
-        pred_file = str(index) + ".nii.gz"
-        nib.save(nifti, os.path.join(output_path, pred_file))
+        # Save segmentation to disk as a NumPy pickle
+        pred_path = os.path.join(output_path, str(index) + ".npy")
+        np.save(pred_path, pred, allow_pickle=True)

@@ -49,7 +49,7 @@ class Architecture(Abstract_Architecture):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, n_filters=32, depth=4, activation='sigmoid',
+    def __init__(self, n_filters=32, depth=4, activation='softmax',
                  batch_normalization=True):
         # Parse parameter
         self.n_filters = n_filters
