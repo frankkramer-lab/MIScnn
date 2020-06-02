@@ -123,7 +123,7 @@ class Image_interface(Abstract_IO):
     #---------------------------------------------#
     #               load_prediction               #
     #---------------------------------------------#
-    def load_prediction(self, i, output_path):
+    def load_prediction(self, index, output_path):
         # Resolve location where data should be living
         if not os.path.exists(output_path):
             raise IOError(
