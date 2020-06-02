@@ -124,7 +124,26 @@ class Image_interface(Abstract_IO):
     #               load_prediction               #
     #---------------------------------------------#
     def load_prediction(self, i, output_path):
-        pass
+        # Resolve location where data should be living
+        if not os.path.exists(output_path):
+            raise IOError(
+                "Data path, {}, could not be resolved".format(str(output_path))
+            )
+        # Parse the provided index to the prediction file name
+        pred_file = str(index) + "." + self.img_format
+        pred_path = os.path.join(output_path, pred_file)
+        # Make sure that prediction file exists under the prediction directory
+        if not os.path.exists(pred_path):
+            raise ValueError(
+                "Prediction could not be found \"{}\"".format(pred_path)
+            )
+        # Load prediction from file
+        pred_pil = Image.open(pred_path)
+        # Convert segmentation from Pillow image to numpy matrix
+        pred = np.array(pred_pil)
+        # Return segmentation
+        return pred
+
     #---------------------------------------------#
     #                 load_details                #
     #---------------------------------------------#
