@@ -142,8 +142,10 @@ class Image_interface(Abstract_IO):
         # Convert segmentation from Pillow image to numpy matrix
         pred_pil = pred_raw.convert("LA")
         pred = np.array(pred_pil)
-        # Return segmentation
-        return pred
+        # Keep only intensity and remove maximum intensitiy range
+        pred_data = pred[:,:,0]
+        # Return prediction
+        return pred_data
 
     #---------------------------------------------#
     #                 load_details                #
