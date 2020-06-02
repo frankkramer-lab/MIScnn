@@ -103,20 +103,22 @@ class Image_interface(Abstract_IO):
     #              load_segmentation              #
     #---------------------------------------------#
     def load_segmentation(self, index):
-        # Make sure that the classification file exists in the data set directory
-        path_metadata = os.path.join(self.data_directory, "metadata.csv")
-        if not os.path.exists(path_metadata):
+        # Make sure that the segmentation file exists in the data set directory
+        seg_path = os.path.join(self.data_directory, index)
+        if not os.path.exists(seg_path):
             raise ValueError(
-                "metadata.csv could not be found \"{}\"".format(class_path)
+                "Segmentation could not be found \"{}\"".format(seg_path)
             )
-        # Load classification from metadata.csv
-        metadata = pd.read_csv(path_metadata)
-        classification = metadata.loc[metadata["filename"]==index]["class"]
-        # Transform classes from strings to integers
-        class_string = classification.to_string(header=False, index=False)
-        diagnosis = self.class_dict[class_string.lstrip()]
-        # Return classification
-        return np.array([diagnosis])
+        # Load segmentation from file
+        seg_raw = Image.open(os.path.join(seg_path, "segmentation" + "." + \
+                                          self.img_format))
+        # Convert segmentation from Pillow image to numpy matrix
+        seg_pil = seg_raw.convert("LA")
+        seg = np.array(seg_pil)
+        # Keep only intensity and remove maximum intensitiy range
+        seg_data = seg[:,:,0]
+        # Return segmentation
+        return seg_data
 
     #---------------------------------------------#
     #               load_prediction               #
@@ -131,6 +133,15 @@ class Image_interface(Abstract_IO):
     #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
-    def save_prediction(self, pred, i, output_path):
-        # Debugging
-        print(i, pred)
+    def save_prediction(self, pred, index, output_path):
+        # Resolve location where data should be written
+        if not os.path.exists(output_path):
+            raise IOError(
+                "Data path, {}, could not be resolved".format(output_path)
+            )
+
+        # Transform numpy array to a Pillow image
+        pred_pillow = Image.fromarray(pred)
+        # Save segmentation to disk
+        pred_file = str(index) + "." + self.img_format
+        pred_pillow.save(os.path.join(output_path, pred_file))
