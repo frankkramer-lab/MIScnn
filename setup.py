@@ -20,6 +20,7 @@ setup(
                      'numpy>=1.18.2',
                      'nibabel>=2.4.0',
                      'matplotlib==3.0.3',
+                     'Pillow==6.2.1',
                      'batchgenerators>=0.19.3'],
    classifiers=["Programming Language :: Python :: 3",
                 "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
