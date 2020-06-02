@@ -138,8 +138,9 @@ class Image_interface(Abstract_IO):
                 "Prediction could not be found \"{}\"".format(pred_path)
             )
         # Load prediction from file
-        pred_pil = Image.open(pred_path)
+        pred_raw = Image.open(pred_path)
         # Convert segmentation from Pillow image to numpy matrix
+        pred_pil = pred_raw.convert("LA")
         pred = np.array(pred_pil)
         # Return segmentation
         return pred
@@ -160,7 +161,7 @@ class Image_interface(Abstract_IO):
             )
 
         # Transform numpy array to a Pillow image
-        pred_pillow = Image.fromarray(pred)
+        pred_pillow = Image.fromarray(pred.astype(np.uint8))
         # Save segmentation to disk
         pred_file = str(index) + "." + self.img_format
         pred_pillow.save(os.path.join(output_path, pred_file))
