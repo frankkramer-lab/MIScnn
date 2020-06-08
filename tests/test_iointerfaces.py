@@ -28,7 +28,8 @@ import numpy as np
 import nibabel as nib
 from PIL import Image
 #Internal libraries
-from miscnn.data_loading.interfaces import Image_interface, NIFTI_interface
+from miscnn.data_loading.interfaces import Image_interface, NIFTI_interface, \
+                                           NIFTIslicer_interface
 
 #-----------------------------------------------------#
 #             Unittest: Data IO Interfaces            #
@@ -121,6 +122,35 @@ class IO_interfaces(unittest.TestCase):
         interface.save_prediction(self.seg, "pred.nifti", self.tmp_data.name)
         pred = interface.load_prediction("pred.nifti", self.tmp_data.name)
         self.assertTrue(np.array_equal(pred, self.seg))
+
+    #-------------------------------------------------#
+    #              NIfTI slicer Interface             #
+    #-------------------------------------------------#
+    # Class Creation
+    def test_NIFTIslicer_creation(self):
+        interface = NIFTIslicer_interface()
+    # Initialization
+    def test_NIFTIslicer_initialize(self):
+        interface = NIFTIslicer_interface(pattern="nifti")
+        sample_list = interface.initialize(self.tmp_data.name)
+        self.assertEqual(len(sample_list), self.img.shape[2])
+        self.assertEqual(sample_list[0], "nifti:#:0")
+    # Loading Images and Segmentations
+    def test_NIFTIslicer_loading(self):
+        interface = NIFTIslicer_interface(pattern="nifti")
+        sample_list = interface.initialize(self.tmp_data.name)
+        img = interface.load_image(sample_list[-1])
+        seg = interface.load_segmentation(sample_list[-1])
+        self.assertTrue(np.array_equal(img, self.img[-1]))
+        self.assertTrue(np.array_equal(seg, self.seg[-1]))
+    # NIFTI_interface - Loading and Storage of Predictions
+    def test_NIFTIslicer_predictionhandling(self):
+        interface = NIFTIslicer_interface(pattern="nifti")
+        sample_list = interface.initialize(self.tmp_data.name)
+        seg = interface.load_segmentation(sample_list[-1])
+        interface.save_prediction(seg, "pred.NIIslice", self.tmp_data.name)
+        pred = interface.load_prediction("pred.NIIslice", self.tmp_data.name)
+        self.assertTrue(np.array_equal(pred, seg))
 
 #-----------------------------------------------------#
 #               Unittest: Main Function               #
