@@ -1,0 +1,14 @@
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+release.sh
+
+# MIScnn
+batches/
+
+# Testing
+reinstall.sh
+debugging/
+
+# Documentation
