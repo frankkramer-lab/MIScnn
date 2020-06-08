@@ -26,8 +26,9 @@ import os
 from os.path import join as opj
 import numpy as np
 import nibabel as nib
+from PIL import Image
 #Internal libraries
-from miscnn.data_loading.interfaces import NIFTI_interface
+from miscnn.data_loading.interfaces import Image_interface, NIFTI_interface
 
 #-----------------------------------------------------#
 #             Unittest: Data IO Interfaces            #
@@ -45,6 +46,13 @@ class IO_interfaces(unittest.TestCase):
         # Initialize temporary directory
         self.tmp_data = tempfile.TemporaryDirectory(prefix="tmp.miscnn.",
                                                     suffix=".data")
+        # Write PNG sample with image and segmentation
+        path_sample_image = opj(self.tmp_data.name, "image")
+        os.mkdir(path_sample_image)
+        img_pillow = Image.fromarray(img[:,:,0].astype(np.uint8))
+        img_pillow.save(opj(path_sample_image, "imaging.png"))
+        seg_pillow = Image.fromarray(seg[:,:,0].astype(np.uint8))
+        seg_pillow.save(opj(path_sample_image, "segmentation.png"))
         # Write NIfTI sample with image and segmentation
         path_sample_nifti = opj(self.tmp_data.name, "nifti")
         os.mkdir(path_sample_nifti)
@@ -52,6 +60,36 @@ class IO_interfaces(unittest.TestCase):
                                                      "imaging.nii.gz"))
         nib.save(nib.Nifti1Image(self.seg, None), opj(path_sample_nifti,
                                                       "segmentation.nii.gz"))
+
+    #-------------------------------------------------#
+    #                 Image Interface                 #
+    #-------------------------------------------------#
+    # Class Creation
+    def test_IMAGE_creation(self):
+        interface = Image_interface()
+    # Initialization
+    def test_IMAGE_initialize(self):
+        interface = Image_interface(pattern="image")
+        sample_list = interface.initialize(self.tmp_data.name)
+        print(sample_list)
+        self.assertEqual(len(sample_list), 1)
+        self.assertEqual(sample_list[0], "image")
+    # Loading Images and Segmentations
+    def test_IMAGE_loading(self):
+        interface = Image_interface(pattern="image")
+        sample_list = interface.initialize(self.tmp_data.name)
+        img = interface.load_image(sample_list[0])
+        seg = interface.load_segmentation(sample_list[0])
+        self.assertTrue(np.array_equal(img, self.img[:,:,0]))
+        self.assertTrue(np.array_equal(seg, self.seg[:,:,0]))
+    # NIFTI_interface - Loading and Storage of Predictions
+    def test_IMAGE_predictionhandling(self):
+        interface = Image_interface(pattern="image")
+        sample_list = interface.initialize(self.tmp_data.name)
+        interface.save_prediction(self.seg[:,:,0], "pred.nifti",
+                                  self.tmp_data.name)
+        pred = interface.load_prediction("pred.nifti", self.tmp_data.name)
+        self.assertTrue(np.array_equal(pred, self.seg[:,:,0]))
 
     #-------------------------------------------------#
     #                 NIfTI Interface                 #
