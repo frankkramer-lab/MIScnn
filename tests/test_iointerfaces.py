@@ -22,6 +22,8 @@
 #External libraries
 import unittest
 import tempfile
+import os
+from os.path import join as opj
 import numpy as np
 import nibabel as nib
 #Internal libraries
@@ -36,14 +38,20 @@ class IO_interfaces(unittest.TestCase):
     def setUpClass(self):
         # Create image and segmentation
         np.random.seed(1234)
-        data = np.random.rand(16, 16, 16) * 255
-        data = data.astype(int)
+        img = np.random.rand(16, 16, 16) * 255
+        self.img = img.astype(int)
+        seg = np.random.rand(16, 16, 16) * 3
+        self.seg = seg.astype(int)
         # Initialize temporary directory
-        self.tmp_dir = tempfile.TemporaryDirectory() as tmpdirname
-        self.tmp_nifti = tempfile.NamedTemporaryFile(prefix="tmp.miscnn.",
-                                                     suffix=".nii")
-        # Write image and segmentation to temporary files
-        nib.save(nib.Nifti1Image(data, None), self.tmp_nifti.name)
+        self.tmp_data = tempfile.TemporaryDirectory(prefix="tmp.miscnn.",
+                                                    suffix=".data")
+        # Write NIfTI sample with image and segmentation
+        path_sample_nifti = opj(self.tmp_data.name, "nifti")
+        os.mkdir(path_sample_nifti)
+        nib.save(nib.Nifti1Image(self.img, None), opj(path_sample_nifti,
+                                                     "imaging.nii.gz"))
+        nib.save(nib.Nifti1Image(self.seg, None), opj(path_sample_nifti,
+                                                      "segmentation.nii.gz"))
 
     #-------------------------------------------------#
     #                 NIfTI Interface                 #
@@ -53,60 +61,33 @@ class IO_interfaces(unittest.TestCase):
         interface = NIFTI_interface()
     # Initialization
     def test_NIFTI_initialize(self):
-        interface = NIFTI_interface()
-        sample_list = interface.initialize(".")
+        interface = NIFTI_interface(pattern="nifti")
+        sample_list = interface.initialize(self.tmp_data.name)
+        self.assertEqual(len(sample_list), 1)
+        self.assertEqual(sample_list[0], "nifti")
     # Loading Images and Segmentations
     def test_NIFTI_loading(self):
-        interface = NIFTI_interface()
+        interface = NIFTI_interface(pattern="nifti")
+        sample_list = interface.initialize(self.tmp_data.name)
+        img = interface.load_image(sample_list[0])
+        seg = interface.load_segmentation(sample_list[0])
+        self.assertTrue(np.array_equal(img, self.img))
+        self.assertTrue(np.array_equal(seg, self.seg))
     # NIFTI_interface - Loading and Storage of Predictions
     def test_NIFTI_predictionhandling(self):
-        interface = NIFTI_interface()
-
-    # Initialize Data IO interface: NIFTI_interface
-    def test_debug(self):
-        self.assertEqual(0 % 2, 0)
-
+        interface = NIFTI_interface(pattern="nifti")
+        sample_list = interface.initialize(self.tmp_data.name)
+        interface.save_prediction(self.seg, "pred.nifti", self.tmp_data.name)
+        pred = interface.load_prediction("pred.nifti", self.tmp_data.name)
+        self.assertTrue(np.array_equal(pred, self.seg))
 
     # Delete all temporary files
     @classmethod
     def tearDownClass(self):
-        self.tmp_nifti.close()
+        self.tmp_data.cleanup()
 
-
-# # Initialize Data IO Interface for NIfTI data
-# interface = NIFTI_interface(channels=1, classes=3)
-#
-# # Create Data IO object to load and write samples in the file structure
-# data_io = Data_IO(interface, path_data, delete_batchDir=True)
-#
-# # Access all available samples in our file structure
-# sample_list = data_io.get_indiceslist()
-# sample_list.sort()
-#
-# # Print out the sample list
-# print("Sample list:", sample_list)
-#
-# # Now let's load each sample and obtain collect diverse information from them
-# sample_data = {}
-# for index in tqdm(sample_list):
-#     # Sample loading
-#     sample = data_io.sample_loader(index, load_seg=True)
-#     # Create an empty list for the current asmple in our data dictionary
-#     sample_data[index] = []
-#     # Store the volume shape
-#     sample_data[index].append(sample.img_data.shape)
-#     # Identify minimum and maximum volume intensity
-#     sample_data[index].append(sample.img_data.min())
-#     sample_data[index].append(sample.img_data.max())
-#     # Store voxel spacing
-#     sample_data[index].append(sample.details["spacing"])
-#     # Identify and store class distribution
-#     unique_data, unique_counts = np.unique(sample.seg_data, return_counts=True)
-#     class_freq = unique_counts / np.sum(unique_counts)
-#     class_freq = np.around(class_freq, decimals=6)
-#     sample_data[index].append(tuple(class_freq))
-
-    #
-
+#-----------------------------------------------------#
+#               Unittest: Main Function               #
+#-----------------------------------------------------#
 if __name__ == '__main__':
     unittest.main()
