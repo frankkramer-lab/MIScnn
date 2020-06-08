@@ -22,38 +22,44 @@
 #External libraries
 import unittest
 import tempfile
+import numpy as np
+import nibabel as nib
 #Internal libraries
-from miscnn.data_loading.interfaces.nifti_io import NIFTI_interface
-from miscnn.data_loading.interfaces.dictionary_io import Dictionary_interface
-from miscnn.data_loading.interfaces.nifti_slicer_io import NIFTIslicer_interface
+from miscnn.data_loading.interfaces import NIFTI_interface
 
 #-----------------------------------------------------#
-#             Unittest: Dat IO Interfaces             #
+#             Unittest: Data IO Interfaces            #
 #-----------------------------------------------------#
 class IO_interfaces(unittest.TestCase):
-    # Setup
+    # Create random imaging and segmentation data
     @classmethod
     def setUpClass(self):
-        # create temporary file
-        print("setUpClass")
+        # Create image and segmentation
+        np.random.seed(1234)
+        data = np.random.rand(16, 16, 16) * 255
+        data = data.astype(int)
+        # Initialize temporary directory
+        self.tmp_dir = tempfile.TemporaryDirectory() as tmpdirname
+        self.tmp_nifti = tempfile.NamedTemporaryFile(prefix="tmp.miscnn.",
+                                                     suffix=".nii")
+        # Write image and segmentation to temporary files
+        nib.save(nib.Nifti1Image(data, None), self.tmp_nifti.name)
 
-    # NIFTI_interface - Creation
+    #-------------------------------------------------#
+    #                 NIfTI Interface                 #
+    #-------------------------------------------------#
+    # Class Creation
     def test_NIFTI_creation(self):
         interface = NIFTI_interface()
-
-    # NIFTI_interface - Initialization
+    # Initialization
     def test_NIFTI_initialize(self):
         interface = NIFTI_interface()
-
         sample_list = interface.initialize(".")
-        print(sample_list)
-
-    # NIFTI_interface - Loading
+    # Loading Images and Segmentations
     def test_NIFTI_loading(self):
         interface = NIFTI_interface()
-
-    # NIFTI_interface - Storage
-    def test_NIFTI_storage(self):
+    # NIFTI_interface - Loading and Storage of Predictions
+    def test_NIFTI_predictionhandling(self):
         interface = NIFTI_interface()
 
     # Initialize Data IO interface: NIFTI_interface
@@ -61,11 +67,10 @@ class IO_interfaces(unittest.TestCase):
         self.assertEqual(0 % 2, 0)
 
 
-    # Tear down
+    # Delete all temporary files
     @classmethod
     def tearDownClass(self):
-        print("end")
-        pass
+        self.tmp_nifti.close()
 
 
 # # Initialize Data IO Interface for NIfTI data

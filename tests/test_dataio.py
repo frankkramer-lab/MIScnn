@@ -16,53 +16,6 @@
 #  You should have received a copy of the GNU General Public License           #
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
-#-----------------------------------------------------#
-#                   Library imports                   #
-#-----------------------------------------------------#
-#External libraries
-import unittest
-import tempfile
-#Internal libraries
-from miscnn.data_loading.interfaces.nifti_io import NIFTI_interface
-from miscnn.data_loading.interfaces.dictionary_io import Dictionary_interface
-from miscnn.data_loading.interfaces.nifti_slicer_io import NIFTIslicer_interface
-
-#-----------------------------------------------------#
-#             Unittest: Dat IO Interfaces             #
-#-----------------------------------------------------#
-class IO_interfaces(unittest.TestCase):
-    # Setup
-    @classmethod
-    def setUpClass(self):
-        # create temporary file
-        print("setUpClass")
-
-    # NIFTI_interface - Creation
-    def test_NIFTI_creation(self):
-        interface = NIFTI_interface()
-
-    # NIFTI_interface - Initialization
-    def test_NIFTI_initialize(self):
-        interface = NIFTI_interface()
-
-    # NIFTI_interface - Loading
-    def test_NIFTI_loading(self):
-        interface = NIFTI_interface()
-
-    # NIFTI_interface - Storage
-    def test_NIFTI_storage(self):
-        interface = NIFTI_interface()
-
-    # Initialize Data IO interface: NIFTI_interface
-    def test_debug(self):
-        self.assertEqual(0 % 2, 0)
-
-
-    # Tear down
-    @classmethod
-    def tearDownClass(self):
-        print("end")
-        pass
 
 
 # # Initialize Data IO Interface for NIfTI data
@@ -97,8 +50,3 @@ class IO_interfaces(unittest.TestCase):
 #     class_freq = unique_counts / np.sum(unique_counts)
 #     class_freq = np.around(class_freq, decimals=6)
 #     sample_data[index].append(tuple(class_freq))
-
-    #
-
-if __name__ == '__main__':
-    unittest.main()
