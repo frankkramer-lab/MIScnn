@@ -18,9 +18,16 @@ MIScnn provides several core features:
 - Custom model, data I/O, pre-/postprocessing and metric support
 - Based on Keras with Tensorflow as backend
 
-Read the documentation in the [MIScnn wiki](https://github.com/frankkramer-lab/MIScnn/wiki) here on GitHub.
-
 ![MIScnn workflow](docs/MIScnn.pipeline.png)
+
+## Resources
+
+- MIScnn Documentation: [GitHub wiki - Home](https://github.com/frankkramer-lab/MIScnn/wiki)
+- MIScnn Tutorials: [Overview of Tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)
+- MIScnn Examples: [Overview of Use Cases and Examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)
+- MIScnn Development Tracker: [GitHub project - MIScnn Development](https://github.com/frankkramer-lab/MIScnn/projects/1)
+- MIScnn on GitHub: [GitHub - frankkramer-lab/MIScnn](https://github.com/frankkramer-lab/MIScnn)
+- MIScnn on PyPI: [PyPI - miscnn](https://pypi.org/project/miscnn/)
 
 ## Getting started: 60 seconds to a MIS pipeline
 
@@ -106,15 +113,6 @@ MIScnn was used on the KITS19 training data set in order to perform a 3-fold cro
 ![evaluation plots](docs/kits19_evaluation.png)
 
 ![example gif](docs/visualization.case_case_00044.gif)
-
-## Resources
-
-- MIScnn Documentation: [GitHub wiki - Home](https://github.com/frankkramer-lab/MIScnn/wiki)
-- MIScnn Tutorials: [Overview of Tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)
-- MIScnn Examples: [Overview of Use Cases and Examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)
-- MIScnn Development Tracker: [GitHub project - MIScnn Development](https://github.com/frankkramer-lab/MIScnn/projects/1)
-- MIScnn on GitHub: [GitHub - frankkramer-lab/MIScnn](https://github.com/frankkramer-lab/MIScnn)
-- MIScnn on PyPI: [PyPI - miscnn](https://pypi.org/project/miscnn/)
 
 ## Author
 
