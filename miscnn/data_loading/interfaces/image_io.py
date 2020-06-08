@@ -45,12 +45,14 @@ Args:
     classes (int):          Number of classes of the segmentation
     img_type (string):      Type of imaging. Options: "grayscale", "rgb"
     img_format (string):    Imaging format: Popular formats: "png", "tif", "jpg"
+    pattern (regex):        Pattern to filter samples
 """
 class Image_interface(Abstract_IO):
     #---------------------------------------------#
     #                   __init__                  #
     #---------------------------------------------#
-    def __init__(self, classes=2, img_type="grayscale", img_format="png"):
+    def __init__(self, classes=2, img_type="grayscale", img_format="png",
+                 pattern=None):
         self.classes = classes
         self.img_type = img_type
         self.img_format = img_format
@@ -71,6 +73,11 @@ class Image_interface(Abstract_IO):
         self.data_directory = input_path
         # Identify samples
         sample_list = os.listdir(input_path)
+        # IF pattern provided: Remove every file which does not match
+        if self.pattern != None and isinstance(self.pattern, str):
+            for i in reversed(range(0, len(sample_list))):
+                if not re.fullmatch(self.pattern, sample_list[i]):
+                    del sample_list[i]
         # Return sample list
         return sample_list
 
