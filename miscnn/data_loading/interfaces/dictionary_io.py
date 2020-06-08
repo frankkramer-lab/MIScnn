@@ -53,7 +53,7 @@ class Dictionary_interface(Abstract_IO):
     # Initialize the interface and return number of samples
     def initialize(self, input_path):
         # Return sample list
-        return self.dictionary.keys()
+        return list(self.dictionary.keys())
 
     #---------------------------------------------#
     #                  load_image                 #
@@ -96,7 +96,7 @@ class Dictionary_interface(Abstract_IO):
         if len(self.dictionary[index]) >= 3:
             self.dictionary[index][2]
         # If not, add the prediction to the sample tuple
-        elif len(self.dictionary[index] == 1):
+        elif len(self.dictionary[index]) == 1:
             self.dictionary[index] = self.dictionary[index] + (None, pred,)
-        elif len(self.dictionary[index] == 2):
+        elif len(self.dictionary[index]) == 2:
             self.dictionary[index] = self.dictionary[index] + (pred,)
