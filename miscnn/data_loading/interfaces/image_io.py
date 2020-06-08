@@ -23,6 +23,7 @@
 import os
 from PIL import Image
 import numpy as np
+import re
 # Internal libraries/scripts
 from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 
