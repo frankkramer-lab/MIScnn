@@ -57,6 +57,7 @@ class Image_interface(Abstract_IO):
         self.img_type = img_type
         self.img_format = img_format
         self.three_dim = False
+        self.pattern = pattern
         if img_type == "grayscale" : self.channels = 1
         elif img_type == "rgb" : self.channels = 3
 
