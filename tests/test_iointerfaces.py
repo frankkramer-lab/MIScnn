@@ -29,7 +29,8 @@ import nibabel as nib
 from PIL import Image
 #Internal libraries
 from miscnn.data_loading.interfaces import Image_interface, NIFTI_interface, \
-                                           NIFTIslicer_interface
+                                           NIFTIslicer_interface, \
+                                           Dictionary_interface
 
 #-----------------------------------------------------#
 #             Unittest: Data IO Interfaces            #
@@ -151,6 +152,42 @@ class IO_interfaces(unittest.TestCase):
         interface.save_prediction(seg, "pred.NIIslice", self.tmp_data.name)
         pred = interface.load_prediction("pred.NIIslice", self.tmp_data.name)
         self.assertTrue(np.array_equal(pred, seg))
+
+    #-------------------------------------------------#
+    #               Dictionary Interface              #
+    #-------------------------------------------------#
+    # Class Creation
+    def test_DICTIONARY_creation(self):
+        my_dict = dict()
+        my_dict["dict_sample"] = (self.img, self.seg)
+        interface = Dictionary_interface(my_dict)
+    # Initialization
+    def test_DICTIONARY_initialize(self):
+        my_dict = dict()
+        my_dict["dict_sample"] = (self.img, self.seg)
+        interface = Dictionary_interface(my_dict)
+        sample_list = interface.initialize("")
+        self.assertEqual(len(sample_list), 1)
+        self.assertEqual(sample_list[0], "dict_sample")
+    # Loading Images and Segmentations
+    def test_DICTIONARY_loading(self):
+        my_dict = dict()
+        my_dict["dict_sample"] = (self.img, self.seg)
+        interface = Dictionary_interface(my_dict)
+        sample_list = interface.initialize("")
+        img = interface.load_image(sample_list[0])
+        seg = interface.load_segmentation(sample_list[0])
+        self.assertTrue(np.array_equal(img, self.img))
+        self.assertTrue(np.array_equal(seg, self.seg))
+    # NIFTI_interface - Loading and Storage of Predictions
+    def test_DICTIONARY_predictionhandling(self):
+        my_dict = dict()
+        my_dict["dict_sample"] = (self.img, self.seg)
+        interface = Dictionary_interface(my_dict)
+        sample_list = interface.initialize("")
+        interface.save_prediction(self.seg, "dict_sample", "")
+        pred = interface.load_prediction("dict_sample", "")
+        self.assertTrue(np.array_equal(pred, self.seg))
 
 #-----------------------------------------------------#
 #               Unittest: Main Function               #
