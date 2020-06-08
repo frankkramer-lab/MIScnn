@@ -60,6 +60,10 @@ class IO_interfaces(unittest.TestCase):
                                                      "imaging.nii.gz"))
         nib.save(nib.Nifti1Image(self.seg, None), opj(path_sample_nifti,
                                                       "segmentation.nii.gz"))
+    # Delete all temporary files
+    @classmethod
+    def tearDownClass(self):
+        self.tmp_data.cleanup()
 
     #-------------------------------------------------#
     #                 Image Interface                 #
@@ -71,7 +75,6 @@ class IO_interfaces(unittest.TestCase):
     def test_IMAGE_initialize(self):
         interface = Image_interface(pattern="image")
         sample_list = interface.initialize(self.tmp_data.name)
-        print(sample_list)
         self.assertEqual(len(sample_list), 1)
         self.assertEqual(sample_list[0], "image")
     # Loading Images and Segmentations
@@ -86,9 +89,9 @@ class IO_interfaces(unittest.TestCase):
     def test_IMAGE_predictionhandling(self):
         interface = Image_interface(pattern="image")
         sample_list = interface.initialize(self.tmp_data.name)
-        interface.save_prediction(self.seg[:,:,0], "pred.nifti",
+        interface.save_prediction(self.seg[:,:,0], "pred.image",
                                   self.tmp_data.name)
-        pred = interface.load_prediction("pred.nifti", self.tmp_data.name)
+        pred = interface.load_prediction("pred.image", self.tmp_data.name)
         self.assertTrue(np.array_equal(pred, self.seg[:,:,0]))
 
     #-------------------------------------------------#
@@ -118,11 +121,6 @@ class IO_interfaces(unittest.TestCase):
         interface.save_prediction(self.seg, "pred.nifti", self.tmp_data.name)
         pred = interface.load_prediction("pred.nifti", self.tmp_data.name)
         self.assertTrue(np.array_equal(pred, self.seg))
-
-    # Delete all temporary files
-    @classmethod
-    def tearDownClass(self):
-        self.tmp_data.cleanup()
 
 #-----------------------------------------------------#
 #               Unittest: Main Function               #
