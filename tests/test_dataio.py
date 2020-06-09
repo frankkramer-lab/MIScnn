@@ -50,13 +50,13 @@ class Data_IO(unittest.TestCase):
         # Initialize Dictionary IO Interface
         self.io_interface = Dictionary_interface(self.dataset)
         # Initialize temporary directory
-        self.tmp_batches = tempfile.TemporaryDirectory(prefix="tmp.miscnn.",
-                                                       suffix=".batches")
+        self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
+        self.tmp_batches = os.path.join(self.tmp_dir.name, "batches")
 
     # Delete all temporary files
     @classmethod
     def tearDownClass(self):
-        pass
+        self.tmp_dir.cleanup()
 
     #-------------------------------------------------#
     #                Base Functionality               #
@@ -127,19 +127,82 @@ class Data_IO(unittest.TestCase):
         self.assertEqual(sample.img_data.shape, sample.seg_data.shape)
         self.assertEqual(sample.seg_data.shape, sample.pred_data.shape)
 
-    # #-------------------------------------------------#
-    # #                 Batch Management                #
-    # #-------------------------------------------------#
-    # # Class Creation
-    # def test_BASE_create(self):
-    #     interface = Image_interface()
-    #
-    # #-------------------------------------------------#
-    # #                Evaluation Backup                #
-    # #-------------------------------------------------#
-    # # Class Creation
-    # def test_EVALUATION_create(self):
-    #     interface = Image_interface()
+    # Prediction storage
+    def test_BASE_savePrediction(self):
+        data_io = DataIO(self.io_interface, input_path="",
+                         output_path=os.path.join(self.tmp_dir.name, "pred"),
+                         batch_path=self.tmp_batches, delete_batchDir=False)
+        sample = data_io.sample_loader("TEST.sample_0", backup=False,
+                                       load_seg=True, load_pred=False)
+        self.assertIsNone(sample.pred_data)
+        data_io.save_prediction(sample.seg_data, sample.index)
+        self.assertTrue(os.path.exists(os.path.join(self.tmp_dir.name, "pred")))
+        sample = data_io.sample_loader("TEST.sample_0", backup=False,
+                                       load_seg=True, load_pred=True)
+        self.assertTrue(np.array_equal(sample.seg_data, sample.pred_data))
+
+    #-------------------------------------------------#
+    #                 Batch Management                #
+    #-------------------------------------------------#
+    # Batch Storage
+    def test_BATCHES_backup(self):
+        data_io = DataIO(self.io_interface, input_path="", output_path="",
+                         batch_path=self.tmp_batches, delete_batchDir=False)
+        sample = data_io.sample_loader("TEST.sample_0", backup=False,
+                                       load_seg=True, load_pred=False)
+        data_io.backup_batches(sample.img_data, sample.seg_data, "abc")
+        self.assertEqual(len(os.listdir(self.tmp_batches)), 2)
+        data_io.batch_cleanup()
+
+    # Batch Loading
+    def test_BATCHES_loading(self):
+        data_io = DataIO(self.io_interface, input_path="", output_path="",
+                         batch_path=self.tmp_batches, delete_batchDir=False)
+        sample = data_io.sample_loader("TEST.sample_0", backup=False,
+                                       load_seg=True, load_pred=False)
+        data_io.backup_batches(sample.img_data, sample.seg_data, "abc")
+        img = data_io.batch_load(pointer="abc", img=True)
+        self.assertTrue(np.array_equal(sample.img_data, img))
+        seg = data_io.batch_load(pointer="abc", img=False)
+        self.assertTrue(np.array_equal(sample.seg_data, seg))
+        data_io.batch_cleanup()
+
+    # Batch Cleanup
+    def test_BATCHES_cleanup(self):
+        data_io = DataIO(self.io_interface, input_path="", output_path="",
+                         batch_path=self.tmp_batches, delete_batchDir=False)
+        sample = data_io.sample_loader("TEST.sample_0", backup=False,
+                                       load_seg=True, load_pred=False)
+        data_io.backup_batches(sample.img_data, sample.seg_data, "abc")
+        data_io.backup_batches(sample.img_data, sample.seg_data, "def")
+        data_io.backup_batches(sample.img_data, None, pointer="ghi")
+        self.assertEqual(len(os.listdir(self.tmp_batches)), 5)
+        data_io.batch_cleanup(pointer="def")
+        self.assertEqual(len(os.listdir(self.tmp_batches)), 3)
+        data_io.batch_cleanup()
+        self.assertEqual(len(os.listdir(self.tmp_batches)), 0)
+
+    # Sample Storage
+    def test_BATCHES_sampleStorage(self):
+        data_io = DataIO(self.io_interface, input_path="", output_path="",
+                         batch_path=self.tmp_batches, delete_batchDir=False)
+        sample = data_io.sample_loader("TEST.sample_0", backup=False,
+                                       load_seg=True, load_pred=False)
+        data_io.backup_sample(sample)
+        self.assertEqual(len(os.listdir(self.tmp_batches)), 1)
+        data_io.batch_cleanup()
+
+    # Sample Loading
+    def test_BATCHES_sampleLoading(self):
+        data_io = DataIO(self.io_interface, input_path="", output_path="",
+                         batch_path=self.tmp_batches, delete_batchDir=False)
+        sample = data_io.sample_loader("TEST.sample_0", backup=False,
+                                       load_seg=True, load_pred=False)
+        data_io.backup_sample(sample)
+        sample_new = data_io.load_sample_pickle(sample.index)
+        data_io.batch_cleanup()
+        self.assertTrue(np.array_equal(sample_new.img_data, sample.img_data))
+        self.assertTrue(np.array_equal(sample_new.seg_data, sample.seg_data))
 
 #-----------------------------------------------------#
 #               Unittest: Main Function               #
