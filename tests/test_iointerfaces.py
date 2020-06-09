@@ -71,16 +71,16 @@ class IO_interfaces(unittest.TestCase):
     #                 Image Interface                 #
     #-------------------------------------------------#
     # Class Creation
-    def test_IMAGE_creation(self):
+    def test_IOI_IMAGE_creation(self):
         interface = Image_interface()
     # Initialization
-    def test_IMAGE_initialize(self):
+    def test_IOI_IMAGE_initialize(self):
         interface = Image_interface(pattern="image")
         sample_list = interface.initialize(self.tmp_data.name)
         self.assertEqual(len(sample_list), 1)
         self.assertEqual(sample_list[0], "image")
     # Loading Images and Segmentations
-    def test_IMAGE_loading(self):
+    def test_IOI_IMAGE_loading(self):
         interface = Image_interface(pattern="image")
         sample_list = interface.initialize(self.tmp_data.name)
         img = interface.load_image(sample_list[0])
@@ -88,7 +88,7 @@ class IO_interfaces(unittest.TestCase):
         self.assertTrue(np.array_equal(img, self.img[:,:,0]))
         self.assertTrue(np.array_equal(seg, self.seg[:,:,0]))
     # NIFTI_interface - Loading and Storage of Predictions
-    def test_IMAGE_predictionhandling(self):
+    def test_IOI_IMAGE_predictionhandling(self):
         interface = Image_interface(pattern="image")
         sample_list = interface.initialize(self.tmp_data.name)
         interface.save_prediction(self.seg[:,:,0], "pred.image",
@@ -100,16 +100,16 @@ class IO_interfaces(unittest.TestCase):
     #                 NIfTI Interface                 #
     #-------------------------------------------------#
     # Class Creation
-    def test_NIFTI_creation(self):
+    def test_IOI_NIFTI_creation(self):
         interface = NIFTI_interface()
     # Initialization
-    def test_NIFTI_initialize(self):
+    def test_IOI_NIFTI_initialize(self):
         interface = NIFTI_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
         self.assertEqual(len(sample_list), 1)
         self.assertEqual(sample_list[0], "nifti")
     # Loading Images and Segmentations
-    def test_NIFTI_loading(self):
+    def test_IOI_NIFTI_loading(self):
         interface = NIFTI_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
         img = interface.load_image(sample_list[0])
@@ -117,7 +117,7 @@ class IO_interfaces(unittest.TestCase):
         self.assertTrue(np.array_equal(img, self.img))
         self.assertTrue(np.array_equal(seg, self.seg))
     # NIFTI_interface - Loading and Storage of Predictions
-    def test_NIFTI_predictionhandling(self):
+    def test_IOI_NIFTI_predictionhandling(self):
         interface = NIFTI_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
         interface.save_prediction(self.seg, "pred.nifti", self.tmp_data.name)
@@ -128,16 +128,16 @@ class IO_interfaces(unittest.TestCase):
     #              NIfTI slicer Interface             #
     #-------------------------------------------------#
     # Class Creation
-    def test_NIFTIslicer_creation(self):
+    def test_IOI_NIFTIslicer_creation(self):
         interface = NIFTIslicer_interface()
     # Initialization
-    def test_NIFTIslicer_initialize(self):
+    def test_IOI_NIFTIslicer_initialize(self):
         interface = NIFTIslicer_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
         self.assertEqual(len(sample_list), self.img.shape[2])
         self.assertEqual(sample_list[0], "nifti:#:0")
     # Loading Images and Segmentations
-    def test_NIFTIslicer_loading(self):
+    def test_IOI_NIFTIslicer_loading(self):
         interface = NIFTIslicer_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
         img = interface.load_image(sample_list[-1])
@@ -145,7 +145,7 @@ class IO_interfaces(unittest.TestCase):
         self.assertTrue(np.array_equal(img, self.img[-1]))
         self.assertTrue(np.array_equal(seg, self.seg[-1]))
     # NIFTI_interface - Loading and Storage of Predictions
-    def test_NIFTIslicer_predictionhandling(self):
+    def test_IOI_NIFTIslicer_predictionhandling(self):
         interface = NIFTIslicer_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
         seg = interface.load_segmentation(sample_list[-1])
@@ -157,12 +157,12 @@ class IO_interfaces(unittest.TestCase):
     #               Dictionary Interface              #
     #-------------------------------------------------#
     # Class Creation
-    def test_DICTIONARY_creation(self):
+    def test_IOI_DICTIONARY_creation(self):
         my_dict = dict()
         my_dict["dict_sample"] = (self.img, self.seg)
         interface = Dictionary_interface(my_dict)
     # Initialization
-    def test_DICTIONARY_initialize(self):
+    def test_IOI_DICTIONARY_initialize(self):
         my_dict = dict()
         my_dict["dict_sample"] = (self.img, self.seg)
         interface = Dictionary_interface(my_dict)
@@ -170,7 +170,7 @@ class IO_interfaces(unittest.TestCase):
         self.assertEqual(len(sample_list), 1)
         self.assertEqual(sample_list[0], "dict_sample")
     # Loading Images and Segmentations
-    def test_DICTIONARY_loading(self):
+    def test_IOI_DICTIONARY_loading(self):
         my_dict = dict()
         my_dict["dict_sample"] = (self.img, self.seg)
         interface = Dictionary_interface(my_dict)
@@ -180,7 +180,7 @@ class IO_interfaces(unittest.TestCase):
         self.assertTrue(np.array_equal(img, self.img))
         self.assertTrue(np.array_equal(seg, self.seg))
     # NIFTI_interface - Loading and Storage of Predictions
-    def test_DICTIONARY_predictionhandling(self):
+    def test_IOI_DICTIONARY_predictionhandling(self):
         my_dict = dict()
         my_dict["dict_sample"] = (self.img, self.seg)
         interface = Dictionary_interface(my_dict)
