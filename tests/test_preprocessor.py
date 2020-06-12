@@ -198,7 +198,73 @@ class PreprocessorTEST(unittest.TestCase):
     #-------------------------------------------------#
     #            Analysis: Patchwise-grid             #
     #-------------------------------------------------#
+    def test_PREPROCESSOR_patchwisegrid_2D(self):
+        sample_list = self.data_io2D.get_indiceslist()
+        pp = Preprocessor(self.data_io2D, data_aug=None, batch_size=1,
+                          analysis="patchwise-grid", patch_shape=(4,4))
+        batches = pp.run(sample_list[0:1], training=False, validation=False)
+        self.assertEqual(len(batches), 16)
+        sample = self.data_io2D.sample_loader(sample_list[0], load_seg=True)
+        sample.seg_data = to_categorical(sample.seg_data,
+                                         num_classes=sample.classes)
+        pp = Preprocessor(self.data_io2D, data_aug=None, batch_size=1,
+                          analysis="patchwise-grid", patch_shape=(5,5))
+        ready_data = pp.analysis_patchwise_grid(sample, data_aug=False,
+                                                training=True)
+        self.assertEqual(len(ready_data), 16)
+        self.assertEqual(ready_data[0][0].shape, (5,5,1))
+        self.assertEqual(ready_data[0][1].shape, (5,5,3))
+
+    def test_PREPROCESSOR_patchwisegrid_3D(self):
+        sample_list = self.data_io3D.get_indiceslist()
+        pp = Preprocessor(self.data_io3D, data_aug=None, batch_size=1,
+                          analysis="patchwise-grid", patch_shape=(4,4,4))
+        batches = pp.run(sample_list[0:1], training=False, validation=False)
+        self.assertEqual(len(batches), 64)
+        sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
+        sample.seg_data = to_categorical(sample.seg_data,
+                                         num_classes=sample.classes)
+        pp = Preprocessor(self.data_io3D, data_aug=None, batch_size=1,
+                          analysis="patchwise-grid", patch_shape=(5,5,5))
+        ready_data = pp.analysis_patchwise_grid(sample, data_aug=False,
+                                                training=True)
+        self.assertEqual(len(ready_data), 64)
+        self.assertEqual(ready_data[0][0].shape, (5,5,5,1))
+        self.assertEqual(ready_data[0][1].shape, (5,5,5,3))
 
     #-------------------------------------------------#
     #               Analysis: Fullimage               #
     #-------------------------------------------------#
+    def test_PREPROCESSOR_fullimage_2D(self):
+        sample_list = self.data_io2D.get_indiceslist()
+        pp = Preprocessor(self.data_io2D, data_aug=None, batch_size=2,
+                          analysis="fullimage")
+        batches = pp.run(sample_list[0:3], training=True, validation=False)
+        self.assertEqual(len(batches), 2)
+        batches = pp.run(sample_list[0:1], training=False, validation=False)
+        self.assertEqual(len(batches), 1)
+        sample = self.data_io2D.sample_loader(sample_list[0], load_seg=True)
+        sample.seg_data = to_categorical(sample.seg_data,
+                                         num_classes=sample.classes)
+        ready_data = pp.analysis_fullimage(sample, data_aug=False,
+                                           training=True)
+        self.assertEqual(len(ready_data), 1)
+        self.assertEqual(ready_data[0][0].shape, (16,16,1))
+        self.assertEqual(ready_data[0][1].shape, (16,16,3))
+
+    def test_PREPROCESSOR_fullimage_3D(self):
+        sample_list = self.data_io3D.get_indiceslist()
+        pp = Preprocessor(self.data_io3D, data_aug=None, batch_size=2,
+                          analysis="fullimage")
+        batches = pp.run(sample_list[0:3], training=True, validation=False)
+        self.assertEqual(len(batches), 2)
+        batches = pp.run(sample_list[0:1], training=False, validation=False)
+        self.assertEqual(len(batches), 1)
+        sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
+        sample.seg_data = to_categorical(sample.seg_data,
+                                         num_classes=sample.classes)
+        ready_data = pp.analysis_fullimage(sample, data_aug=False,
+                                           training=True)
+        self.assertEqual(len(ready_data), 1)
+        self.assertEqual(ready_data[0][0].shape, (16,16,16,1))
+        self.assertEqual(ready_data[0][1].shape, (16,16,16,3))
