@@ -16,6 +16,7 @@ setup(
    long_description=long_description,
    long_description_content_type="text/markdown",
    packages=find_packages(),
+   python_requires='>=3.5',
    install_requires=['tensorflow==2.2.0',
                      'numpy>=1.18.2',
                      'nibabel>=3.1.0',
