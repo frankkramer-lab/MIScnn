@@ -18,7 +18,7 @@ setup(
    packages=find_packages(),
    install_requires=['tensorflow==2.2.0',
                      'numpy>=1.18.2',
-                     'nibabel>=2.4.0',
+                     'nibabel>=3.1.0',
                      'matplotlib==3.0.3',
                      'Pillow==6.2.2',
                      'batchgenerators>=0.19.3'],
