@@ -1,3 +1,6 @@
+# Byte-compiled Python
+__pycache__/
+
 # Distribution / packaging
 build/
 dist/
@@ -6,9 +9,8 @@ release.sh
 
 # MIScnn
 batches/
+predictions/
 
 # Testing
 reinstall.sh
 debugging/
-
-# Documentation
