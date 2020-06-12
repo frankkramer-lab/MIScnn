@@ -84,7 +84,7 @@ class NIFTI_interface(Abstract_IO):
         # Load volume from NIFTI file
         vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
         # Transform NIFTI object to numpy array
-        vol_data = vol.get_data()
+        vol_data = vol.get_fdata()
         # Save spacing in cache
         self.cache[index] = vol.affine
         # Return volume
@@ -104,7 +104,7 @@ class NIFTI_interface(Abstract_IO):
         # Load segmentation from NIFTI file
         seg = nib.load(os.path.join(seg_path, "segmentation.nii.gz"))
         # Transform NIFTI object to numpy array
-        seg_data = seg.get_data()
+        seg_data = seg.get_fdata()
         # Return segmentation
         return seg_data
 
@@ -129,7 +129,7 @@ class NIFTI_interface(Abstract_IO):
         # Load prediction from NIFTI file
         pred = nib.load(pred_path)
         # Transform NIFTI object to numpy array
-        pred_data = pred.get_data()
+        pred_data = pred.get_fdata()
         # Return prediction
         return pred_data
 
