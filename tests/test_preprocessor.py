@@ -26,13 +26,13 @@ import os
 import numpy as np
 from tensorflow.keras.utils import to_categorical
 #Internal libraries
-from miscnn import Data_IO as DataIO, Preprocessor
+from miscnn import Data_IO, Preprocessor
 from miscnn.data_loading.interfaces import Dictionary_interface
 
 #-----------------------------------------------------#
 #                Unittest: Preprocessor               #
 #-----------------------------------------------------#
-class Data_IO(unittest.TestCase):
+class PreprocessorTEST(unittest.TestCase):
     # Create random imaging and segmentation data
     @classmethod
     def setUpClass(self):
@@ -46,15 +46,15 @@ class Data_IO(unittest.TestCase):
             self.seg = seg.astype(int)
             self.dataset2D["TEST.sample_" + str(i)] = (self.img, self.seg)
         # Initialize Dictionary IO Interface
-        io_interface2D = Dictionary_interface(self.dataset2D, classes=3)
+        io_interface2D = Dictionary_interface(self.dataset2D, classes=3,
+                                              three_dim=False)
         # Initialize temporary directory
         self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
         tmp_batches = os.path.join(self.tmp_dir.name, "batches")
         # Initialize Data IO
-        self.data_io2D = DataIO(io_interface2D, input_path="", output_path="",
+        self.data_io2D = Data_IO(io_interface2D, input_path="", output_path="",
                               batch_path=tmp_batches, delete_batchDir=False)
         # Create 3D imgaging and segmentation data set
-        np.random.seed(1234)
         self.dataset3D = dict()
         for i in range(0, 10):
             img = np.random.rand(16, 16, 16) * 255
@@ -65,12 +65,13 @@ class Data_IO(unittest.TestCase):
             else : sample = (self.img, self.seg)
             self.dataset3D["TEST.sample_" + str(i)] = sample
         # Initialize Dictionary IO Interface
-        io_interface3D = Dictionary_interface(self.dataset3D, classes=3)
+        io_interface3D = Dictionary_interface(self.dataset3D, classes=3,
+                                              three_dim=True)
         # Initialize temporary directory
         self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
         tmp_batches = os.path.join(self.tmp_dir.name, "batches")
         # Initialize Data IO
-        self.data_io3D = DataIO(io_interface3D, input_path="", output_path="",
+        self.data_io3D = Data_IO(io_interface3D, input_path="", output_path="",
                               batch_path=tmp_batches, delete_batchDir=False)
 
 
@@ -164,13 +165,35 @@ class Data_IO(unittest.TestCase):
     #-------------------------------------------------#
     def test_PREPROCESSOR_patchwisecrop_2D(self):
         sample_list = self.data_io2D.get_indiceslist()
-        pp = Preprocessor(self.data_io2D, batch_size=1, analysis="patchwise-crop",
-                          data_aug=None, patch_shape=(4, 4))
-        sample = self.data_io2D.sample_loader(sample_list[i], load_seg=True)
+        pp = Preprocessor(self.data_io2D, data_aug=None, batch_size=1,
+                          analysis="patchwise-crop", patch_shape=(4,4))
+        batches = pp.run(sample_list[0:3], training=True, validation=False)
+        self.assertEqual(len(batches), 3)
+        batches = pp.run(sample_list[0:1], training=False, validation=False)
+        self.assertEqual(len(batches), 16)
+        sample = self.data_io2D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
+        ready_data = pp.analysis_patchwise_crop(sample, data_aug=False)
+        self.assertEqual(len(ready_data), 1)
+        self.assertEqual(ready_data[0][0].shape, (4,4,1))
+        self.assertEqual(ready_data[0][1].shape, (4,4,3))
 
-        pp.analysis_patchwise_crop(sample, data_aug)
+    def test_PREPROCESSOR_patchwisecrop_3D(self):
+        sample_list = self.data_io3D.get_indiceslist()
+        pp = Preprocessor(self.data_io3D, data_aug=None, batch_size=1,
+                          analysis="patchwise-crop", patch_shape=(4,4,4))
+        batches = pp.run(sample_list[0:3], training=True, validation=False)
+        self.assertEqual(len(batches), 3)
+        batches = pp.run(sample_list[0:1], training=False, validation=False)
+        self.assertEqual(len(batches), 64)
+        sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
+        sample.seg_data = to_categorical(sample.seg_data,
+                                         num_classes=sample.classes)
+        ready_data = pp.analysis_patchwise_crop(sample, data_aug=False)
+        self.assertEqual(len(ready_data), 1)
+        self.assertEqual(ready_data[0][0].shape, (4,4,4,1))
+        self.assertEqual(ready_data[0][1].shape, (4,4,4,3))
 
     #-------------------------------------------------#
     #            Analysis: Patchwise-grid             #

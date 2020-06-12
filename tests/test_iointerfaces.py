@@ -35,7 +35,7 @@ from miscnn.data_loading.interfaces import Image_interface, NIFTI_interface, \
 #-----------------------------------------------------#
 #             Unittest: Data IO Interfaces            #
 #-----------------------------------------------------#
-class IO_interfaces(unittest.TestCase):
+class IO_interfacesTEST(unittest.TestCase):
     # Create random imaging and segmentation data
     @classmethod
     def setUpClass(self):

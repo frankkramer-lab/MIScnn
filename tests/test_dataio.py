@@ -25,13 +25,13 @@ import tempfile
 import os
 import numpy as np
 #Internal libraries
-from miscnn import Data_IO as DataIO
+from miscnn import Data_IO
 from miscnn.data_loading.interfaces import Dictionary_interface
 
 #-----------------------------------------------------#
 #                  Unittest: Data IO                  #
 #-----------------------------------------------------#
-class Data_IO(unittest.TestCase):
+class Data_IOTEST(unittest.TestCase):
     # Create random imaging and segmentation data
     @classmethod
     def setUpClass(self):
@@ -63,13 +63,13 @@ class Data_IO(unittest.TestCase):
     #-------------------------------------------------#
     # Class Creation
     def test_DATAIO_BASE_create(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
 
 
     # Obtain sample list
     def test_DATAIO_BASE_getSampleList(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample_list = data_io.get_indiceslist()
         self.assertEqual(len(sample_list), 10)
@@ -77,7 +77,7 @@ class Data_IO(unittest.TestCase):
 
     # Prediction storage
     def test_DATAIO_BASE_savePrediction(self):
-        data_io = DataIO(self.io_interface, input_path="",
+        data_io = Data_IO(self.io_interface, input_path="",
                          output_path=os.path.join(self.tmp_dir.name, "pred"),
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
@@ -94,7 +94,7 @@ class Data_IO(unittest.TestCase):
     #-------------------------------------------------#
     # Sample Loader - Imaging
     def test_DATAIO_SampleLoader_Imaging(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=False, load_pred=False)
@@ -104,7 +104,7 @@ class Data_IO(unittest.TestCase):
 
     # Sample Loader - Segmentation
     def test_DATAIO_SampleLoader_Segmentation(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=False)
@@ -119,7 +119,7 @@ class Data_IO(unittest.TestCase):
 
     # Sample Loader - Prediction
     def test_DATAIO_SampleLoader_Prediction(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_5", backup=False,
                                        load_seg=False, load_pred=True)
@@ -134,7 +134,7 @@ class Data_IO(unittest.TestCase):
 
     # Sample Loader - Complete
     def test_DATAIO_SampleLoader_Combined(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_3", backup=False,
                                        load_seg=True, load_pred=True)
@@ -149,7 +149,7 @@ class Data_IO(unittest.TestCase):
     #-------------------------------------------------#
     # Batch Storage
     def test_DATAIO_BATCHES_backup(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=False)
@@ -159,7 +159,7 @@ class Data_IO(unittest.TestCase):
 
     # Batch Loading
     def test_DATAIO_BATCHES_loading(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=False)
@@ -172,7 +172,7 @@ class Data_IO(unittest.TestCase):
 
     # Batch Cleanup
     def test_DATAIO_BATCHES_cleanup(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=False)
@@ -187,7 +187,7 @@ class Data_IO(unittest.TestCase):
 
     # Sample Storage
     def test_DATAIO_BATCHES_sampleStorage(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=False)
@@ -197,7 +197,7 @@ class Data_IO(unittest.TestCase):
 
     # Sample Loading
     def test_DATAIO_BATCHES_sampleLoading(self):
-        data_io = DataIO(self.io_interface, input_path="", output_path="",
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=False)
