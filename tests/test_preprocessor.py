@@ -49,8 +49,8 @@ class PreprocessorTEST(unittest.TestCase):
         io_interface2D = Dictionary_interface(self.dataset2D, classes=3,
                                               three_dim=False)
         # Initialize temporary directory
-        self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
-        tmp_batches = os.path.join(self.tmp_dir.name, "batches")
+        self.tmp_dir2D = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
+        tmp_batches = os.path.join(self.tmp_dir2D.name, "batches")
         # Initialize Data IO
         self.data_io2D = Data_IO(io_interface2D, input_path="", output_path="",
                               batch_path=tmp_batches, delete_batchDir=False)
@@ -68,8 +68,8 @@ class PreprocessorTEST(unittest.TestCase):
         io_interface3D = Dictionary_interface(self.dataset3D, classes=3,
                                               three_dim=True)
         # Initialize temporary directory
-        self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
-        tmp_batches = os.path.join(self.tmp_dir.name, "batches")
+        self.tmp_dir3D = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
+        tmp_batches = os.path.join(self.tmp_dir3D.name, "batches")
         # Initialize Data IO
         self.data_io3D = Data_IO(io_interface3D, input_path="", output_path="",
                               batch_path=tmp_batches, delete_batchDir=False)
@@ -78,7 +78,8 @@ class PreprocessorTEST(unittest.TestCase):
     # Delete all temporary files
     @classmethod
     def tearDownClass(self):
-        self.tmp_dir.cleanup()
+        self.tmp_dir2D.cleanup()
+        self.tmp_dir3D.cleanup()
 
     #-------------------------------------------------#
     #                Base Functionality               #
@@ -148,7 +149,7 @@ class PreprocessorTEST(unittest.TestCase):
     #-------------------------------------------------#
     #                  Postprocessing                 #
     #-------------------------------------------------#
-    def test_PREPROCESSOR_postprocessing(self):
+    def test_PREPROCESSOR_postprocessing_(self):
         sample_list = self.data_io3D.get_indiceslist()
         pp = Preprocessor(self.data_io3D, batch_size=1, analysis="fullimage",
                           data_aug=None)
@@ -159,6 +160,19 @@ class PreprocessorTEST(unittest.TestCase):
             sam = self.data_io3D.sample_loader(sample_list[i], load_seg=True)
             self.assertTrue(np.array_equal(pred_postprec,
                             np.reshape(sam.seg_data, (16,16,16))))
+
+        ## TODO: Add testing for patchwise postprocessing
+        #
+        # pp = Preprocessor(self.data_io3D, batch_size=1, patch_shape=(4,4,4),
+        #                   analysis="patchwise-grid", data_aug=None)
+        # batches = pp.run(sample_list[0:3], training=True, validation=False)
+        # for i in range(0, 3):
+        #     print(batches[i][1].shape)
+        #     pred_postprec = pp.postprocessing(sample_list[i], batches[i][1])
+        #     self.assertEqual(pred_postprec.shape, (16,16,16))
+        #     sam = self.data_io3D.sample_loader(sample_list[i], load_seg=True)
+        #     self.assertTrue(np.array_equal(pred_postprec,
+        #                     np.reshape(sam.seg_data, (16,16,16))))
 
     #-------------------------------------------------#
     #            Analysis: Patchwise-crop             #
