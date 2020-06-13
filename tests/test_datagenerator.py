@@ -25,7 +25,6 @@ import tempfile
 import os
 import numpy as np
 from tensorflow.keras.utils import to_categorical
-from copy import deepcopy
 #Internal libraries
 from miscnn import Data_IO, Preprocessor, Data_Augmentation
 from miscnn.data_loading.interfaces import Dictionary_interface
