@@ -21,3 +21,4 @@ from miscnn.processing.subfunctions.normalization import Normalization
 from miscnn.processing.subfunctions.resampling import Resampling
 from miscnn.processing.subfunctions.resize import Resize
 from miscnn.processing.subfunctions.padding import Padding
+from miscnn.processing.subfunctions.transform_HU import TransformHU
