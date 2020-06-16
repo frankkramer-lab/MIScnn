@@ -25,6 +25,7 @@ import tempfile
 import os
 import numpy as np
 from tensorflow.keras.utils import to_categorical
+from copy import deepcopy
 #Internal libraries
 from miscnn import Data_IO, Preprocessor
 from miscnn.data_loading.interfaces import Dictionary_interface
@@ -162,10 +163,243 @@ class SubfunctionsTEST(unittest.TestCase):
         self.tmp_dir.cleanup()
 
     #-------------------------------------------------#
+    #                    Resizing                     #
+    #-------------------------------------------------#
+    def test_SUBFUNCTIONS_RESIZE_preprocessing(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : new_shape = (7,7)
+            else : new_shape = (7,7,7)
+            sf = Resize(new_shape=new_shape)
+            # Test for training as well as prediction
+            for train in [True, False]:
+                # Create sample object from template
+                varname = "sample" + dim
+                if train : varname += "seg"
+                sample = deepcopy(getattr(self, varname))
+                # Run preprocessing of the subfunction
+                sf.preprocessing(sample, training=train)
+                # Check for correctness
+                self.assertEqual(sample.img_data.shape, new_shape + (1,))
+                if train : self.assertEqual(sample.seg_data.shape,
+                                            new_shape + (1,))
+
+    def test_SUBFUNCTIONS_RESIZE_postprocessing(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : new_shape = (7,7)
+            else : new_shape = (7,7,7)
+            sf = Resize(new_shape=new_shape)
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred.pred_data)
+            # Check for correctness
+            if dim == "2D" : old_shape = (16,16)
+            else : old_shape = (16,16,16)
+            self.assertEqual(pred.shape, old_shape)
+
+    #-------------------------------------------------#
+    #                   Resampling                    #
+    #-------------------------------------------------#
+    def test_SUBFUNCTIONS_RESAMPLING_preprocessing(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : spacing = (1,1)
+            else : spacing = (1,1,1)
+            sf = Resampling(new_spacing=spacing)
+            # Test for training as well as prediction
+            for train in [True, False]:
+                # Create sample object from template
+                varname = "sample" + dim
+                if train : varname += "seg"
+                sample = deepcopy(getattr(self, varname))
+                if dim == "2D" : old_spacing = (1.8, 3.0)
+                else : old_spacing = (1.8, 3.0, 3.0)
+                sample.details = {"spacing":np.array(old_spacing)}
+                # Run preprocessing of the subfunction
+                sf.preprocessing(sample, training=train)
+                # Check for correctness
+                if dim == "2D":
+                    self.assertEqual(sample.img_data.shape, ((28, 48, 1)))
+                    if train:
+                        self.assertEqual(sample.seg_data.shape, ((28, 48, 1)))
+                else:
+                    self.assertEqual(sample.img_data.shape, ((28, 48, 48, 1)))
+                    if train:
+                        self.assertEqual(sample.seg_data.shape,
+                                         ((28, 48, 48, 1)))
+
+    def test_SUBFUNCTIONS_RESAMPLING_postprocessing(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : spacing = (1,1)
+            else : spacing = (1,1,1)
+            sf = Resampling(new_spacing=spacing)
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            if dim == "2D" : old_spacing = (1.8, 3.0)
+            else : old_spacing = (1.8, 3.0, 3.0)
+            sample_pred.details = {"spacing":np.array(old_spacing)}
+            sample_train.details = {"spacing":np.array(old_spacing)}
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred.pred_data)
+            # Check for correctness
+            if dim == "2D" : old_shape = (16,16)
+            else : old_shape = (16,16,16)
+            self.assertEqual(pred.shape, old_shape)
+
+
+    #-------------------------------------------------#
+    #                     Padding                     #
+    #-------------------------------------------------#
+    def test_SUBFUNCTIONS_PADDING_preprocessing(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : size = (32,8)
+            else : size = (8,32,20)
+            sf = Padding(min_size=size)
+            # Test for training as well as prediction
+            for train in [True, False]:
+                # Create sample object from template
+                varname = "sample" + dim
+                if train : varname += "seg"
+                sample = deepcopy(getattr(self, varname))
+                # Run preprocessing of the subfunction
+                sf.preprocessing(sample, training=train)
+                # Check for correctness
+                if dim == "2D" : new_shape = (32,16)
+                else : new_shape = (16,32,20)
+                self.assertEqual(sample.img_data.shape, new_shape + (1,))
+                if train : self.assertEqual(sample.seg_data.shape,
+                                            new_shape + (1,))
+
+    def test_SUBFUNCTIONS_PADDING_postprocessing(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : size = (32,8)
+            else : size = (8,32,20)
+            sf = Padding(min_size=size)
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred.pred_data)
+            # Check for correctness
+            if dim == "2D" : old_shape = (16,16)
+            else : old_shape = (16,16,16)
+            self.assertEqual(pred.shape, old_shape)
+
+    #-------------------------------------------------#
+    #                    Clipping                     #
+    #-------------------------------------------------#
+    def test_SUBFUNCTIONS_CLIPPING_preprocessing(self):
+        # Initialize Subfunction
+        sf = Clipping(min=5, max=10)
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Test for training as well as prediction
+            for train in [True, False]:
+                # Create sample object from template
+                varname = "sample" + dim
+                if train : varname += "seg"
+                sample = deepcopy(getattr(self, varname))
+                # Run preprocessing of the subfunction
+                sf.preprocessing(sample, training=train)
+                # Check for correctness
+                self.assertTrue(np.array_equal(sample.seg_data,
+                                getattr(self, varname).seg_data))
+                self.assertEqual(np.min(sample.img_data), 5)
+                self.assertEqual(np.max(sample.img_data), 10)
+
+    def test_SUBFUNCTIONS_CLIPPING_postprocessing(self):
+        # Initialize Subfunction
+        sf = Clipping(min=5, max=10)
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred.pred_data)
+            # Check for correctness
+            self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
+
+    #-------------------------------------------------#
     #                  Normalization                  #
     #-------------------------------------------------#
     def test_SUBFUNCTIONS_NORMALIZATION_preprocessing(self):
-        pass
+        param_list = ["z-score", "minmax", "grayscale"]
+        for param in param_list:
+            # Initialize Subfunction
+            sf = Normalization(mode=param)
+            # Test for 2D and 3D
+            for dim in ["2D", "3D"]:
+                # Test for training as well as prediction
+                for train in [True, False]:
+                    # Create sample object from template
+                    varname = "sample" + dim
+                    if train : varname += "seg"
+                    sample = deepcopy(getattr(self, varname))
+                    # Run preprocessing of the subfunction
+                    sf.preprocessing(sample, training=train)
+                    # Check for correctness
+                    self.assertTrue(np.array_equal(sample.seg_data,
+                                    getattr(self, varname).seg_data))
+                    if param in ["minmax", "grayscale"]:
+                        self.assertEqual(np.min(sample.img_data), 0)
+                        if param == "minmax":
+                            self.assertEqual(np.max(sample.img_data), 1)
+                        else:
+                            self.assertEqual(np.max(sample.img_data), 255)
+                    else:
+                        self.assertTrue(np.min(sample.img_data) <= -1.0)
+                        self.assertTrue(np.max(sample.img_data) >= +1.0)
 
     def test_SUBFUNCTIONS_NORMALIZATION_postprocessing(self):
-        pass
+        modi_list = ["z-score", "minmax", "grayscale"]
+        for modus in modi_list:
+            # Initialize Subfunction
+            sf = Normalization(mode=modus)
+            # Test for 2D and 3D
+            for dim in ["2D", "3D"]:
+                # Create sample objects
+                sample_pred = deepcopy(getattr(self, "sample" + dim))
+                sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+                # Run preprocessing of the subfunction
+                sf.preprocessing(sample_train, training=True)
+                sf.preprocessing(sample_pred, training=False)
+                # Transform segmentation data to simulate prediction data
+                sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
+                # Run postprocessing of the subfunction
+                pred = sf.postprocessing(sample_pred.pred_data)
+                # Check for correctness
+                self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
