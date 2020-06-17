@@ -54,7 +54,7 @@ Args:
 """
 def cross_validation(sample_list, model, k_fold=3, epochs=20,
                      iterations=None, evaluation_path="evaluation",
-                     draw_figures=True, run_detailed_evaluation=True,
+                     draw_figures=False, run_detailed_evaluation=False,
                      callbacks=[], save_models=True, direct_output=False):
     # Initialize result cache
     if direct_output : validation_results = []

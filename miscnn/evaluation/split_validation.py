@@ -51,7 +51,7 @@ Args:
 """
 def split_validation(sample_list, model, percentage=0.2, epochs=20,
                      iterations=None, evaluation_path="evaluation",
-                     draw_figures=True, run_detailed_evaluation=True,
+                     draw_figures=False, run_detailed_evaluation=False,
                      callbacks=[], direct_output=False):
     # Calculate the number of samples in the validation set
     validation_size = int(math.ceil(float(len(sample_list) * percentage)))
