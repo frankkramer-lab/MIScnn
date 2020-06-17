@@ -1,10 +1,11 @@
 ![MIScnn workflow](docs/logo_long.png)
 
 ![shield_python](https://img.shields.io/pypi/pyversions/miscnn?style=flat-square)
+![shield_travisCI_build](https://img.shields.io/travis/frankkramer-lab/miscnn?style=flat-square)
 ![shield_pypi_version](https://img.shields.io/pypi/v/miscnn?style=flat-square)
 ![shield_pypi_downloads](https://img.shields.io/pypi/dm/miscnn?style=flat-square)
-![shield_license](https://img.shields.io/github/license/frankkramer-lab/miscnn?style=flat-square)
 ![shield_commits](https://img.shields.io/github/commit-activity/y/frankkramer-lab/miscnn?style=flat-square)
+![shield_license](https://img.shields.io/github/license/frankkramer-lab/miscnn?style=flat-square)
 
 The open-source Python library MIScnn is an intuitive API allowing fast setup of medical image segmentation pipelines with state-of-the-art convolutional neural network and deep learning models in just a few lines of code.
 
