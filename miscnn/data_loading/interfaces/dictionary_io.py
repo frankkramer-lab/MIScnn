@@ -85,7 +85,10 @@ class Dictionary_interface(Abstract_IO):
     # Parse additional information
     def load_details(self, index):
         # Return detail dictionary
-        return self.dictionary[index][3]
+        if len(self.dictionary[index]) >= 4:
+            return self.dictionary[index][3]
+        else:
+            return None
 
     #---------------------------------------------#
     #               save_prediction               #
