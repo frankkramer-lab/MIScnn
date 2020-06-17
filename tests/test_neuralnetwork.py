@@ -24,22 +24,21 @@ import unittest
 import tempfile
 import os
 import numpy as np
-from tensorflow.keras.utils import to_categorical
 #Internal libraries
-from miscnn import Data_IO, Preprocessor
+from miscnn import Data_IO, Preprocessor, Neural_Network
 from miscnn.data_loading.interfaces import Dictionary_interface
 
 #-----------------------------------------------------#
 #              Unittest: Neural Network               #
 #-----------------------------------------------------#
-class PreprocessorTEST(unittest.TestCase):
+class NeuralNetworkTEST(unittest.TestCase):
     # Create random imaging and segmentation data
     @classmethod
     def setUpClass(self):
         np.random.seed(1234)
         # Create 2D imgaging and segmentation data set
         self.dataset2D = dict()
-        for i in range(0, 10):
+        for i in range(0, 6):
             img = np.random.rand(16, 16) * 255
             self.img = img.astype(int)
             seg = np.random.rand(16, 16) * 2
@@ -52,18 +51,23 @@ class PreprocessorTEST(unittest.TestCase):
         self.tmp_dir2D = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
         tmp_batches = os.path.join(self.tmp_dir2D.name, "batches")
         # Initialize Data IO
-        self.data_io2D = Data_IO(io_interface2D, input_path="", output_path="",
-                              batch_path=tmp_batches, delete_batchDir=False)
+        self.data_io2D = Data_IO(io_interface2D,
+                                 input_path=os.path.join(self.tmp_dir2D.name),
+                                 output_path=os.path.join(self.tmp_dir2D.name),
+                                 batch_path=tmp_batches, delete_batchDir=False)
+        # Initialize Preprocessor
+        self.pp2D = Preprocessor(self.data_io2D, batch_size=2,
+                                 data_aug=None, analysis="fullimage")
+        # Get sample list
+        self.sample_list2D = self.data_io2D.get_indiceslist()
         # Create 3D imgaging and segmentation data set
         self.dataset3D = dict()
-        for i in range(0, 10):
+        for i in range(0, 6):
             img = np.random.rand(16, 16, 16) * 255
             self.img = img.astype(int)
             seg = np.random.rand(16, 16, 16) * 3
             self.seg = seg.astype(int)
-            if i in range(8,10): sample = (self.img, None)
-            else : sample = (self.img, self.seg)
-            self.dataset3D["TEST.sample_" + str(i)] = sample
+            self.dataset3D["TEST.sample_" + str(i)] = (self.img, self.seg)
         # Initialize Dictionary IO Interface
         io_interface3D = Dictionary_interface(self.dataset3D, classes=3,
                                               three_dim=True)
@@ -71,9 +75,15 @@ class PreprocessorTEST(unittest.TestCase):
         self.tmp_dir3D = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
         tmp_batches = os.path.join(self.tmp_dir3D.name, "batches")
         # Initialize Data IO
-        self.data_io3D = Data_IO(io_interface3D, input_path="", output_path="",
-                              batch_path=tmp_batches, delete_batchDir=False)
-
+        self.data_io3D = Data_IO(io_interface3D,
+                                 input_path=os.path.join(self.tmp_dir3D.name),
+                                 output_path=os.path.join(self.tmp_dir3D.name),
+                                 batch_path=tmp_batches, delete_batchDir=False)
+        # Initialize Preprocessor
+        self.pp3D = Preprocessor(self.data_io3D, batch_size=2,
+                                 data_aug=None, analysis="fullimage")
+        # Get sample list
+        self.sample_list3D = self.data_io3D.get_indiceslist()
 
     # Delete all temporary files
     @classmethod
@@ -84,55 +94,78 @@ class PreprocessorTEST(unittest.TestCase):
     #-------------------------------------------------#
     #                Base Functionality               #
     #-------------------------------------------------#
-# create
+    # Class Creation
+    def test_MODEL_create(self):
+        nn2D = Neural_Network(preprocessor=self.pp2D)
+        self.assertIsInstance(nn2D, Neural_Network)
+        self.assertFalse(nn2D.three_dim)
+        self.assertIsNotNone(nn2D.model)
+        nn3D = Neural_Network(preprocessor=self.pp3D)
+        self.assertIsInstance(nn3D, Neural_Network)
+        self.assertTrue(nn3D.three_dim)
+        self.assertIsNotNone(nn3D.model)
 
-# different parameter like architecture, loss, metric
+    # Model storage
+    def test_MODEL_storage(self):
+        nn = Neural_Network(preprocessor=self.pp3D)
+        model_path = os.path.join(self.tmp_dir3D.name, "my_model.hdf5")
+        nn.dump(model_path)
+        self.assertTrue(os.path.exists(model_path))
+
+    # Model loading
+    def test_MODEL_loading(self):
+        nn = Neural_Network(preprocessor=self.pp3D)
+        model_path = os.path.join(self.tmp_dir3D.name, "my_model.hdf5")
+        nn.dump(model_path)
+        nn_new = Neural_Network(preprocessor=self.pp3D)
+        nn_new.load(model_path)
+
+    # Reseting weights
+    def test_MODEL_resetWeights(self):
+        nn = Neural_Network(preprocessor=self.pp3D)
+        nn.reset_weights()
 
     #-------------------------------------------------#
     #                     Training                    #
     #-------------------------------------------------#
+    def test_MODEL_training2D(self):
+        nn = Neural_Network(preprocessor=self.pp2D)
+        nn.train(self.sample_list2D, epochs=3)
+
+    def test_MODEL_training3D(self):
+        nn = Neural_Network(preprocessor=self.pp3D)
+        nn.train(self.sample_list3D, epochs=3)
 
     #-------------------------------------------------#
     #                    Prediction                   #
     #-------------------------------------------------#
+    def test_MODEL_prediction2D(self):
+        nn = Neural_Network(preprocessor=self.pp2D)
+        nn.predict(self.sample_list2D)
+        for index in self.sample_list2D:
+            sample = self.data_io2D.sample_loader(index, load_seg=True,
+                                                  load_pred=True)
+            self.assertIsNotNone(sample.pred_data)
+
+    def test_MODEL_prediction3D(self):
+        nn = Neural_Network(preprocessor=self.pp3D)
+        nn.predict(self.sample_list3D)
+        for index in self.sample_list3D:
+            sample = self.data_io3D.sample_loader(index, load_seg=True,
+                                                  load_pred=True)
+            self.assertIsNotNone(sample.pred_data)
 
     #-------------------------------------------------#
     #                    Validation                   #
     #-------------------------------------------------#
+    def test_MODEL_validation2D(self):
+        nn = Neural_Network(preprocessor=self.pp2D)
+        history = nn.evaluate(self.sample_list2D[0:4], self.sample_list2D[4:6],
+                              epochs=3)
+        self.assertIsNotNone(history)
 
-    #-------------------------------------------------#
-    #                  Model Storage and Loading                 #
-    #-------------------------------------------------#
-
-# # Initialize Data IO Interface for NIfTI data
-# interface = NIFTI_interface(channels=1, classes=3)
-#
-# # Create Data IO object to load and write samples in the file structure
-# data_io = Data_IO(interface, path_data, delete_batchDir=True)
-#
-# # Access all available samples in our file structure
-# sample_list = data_io.get_indiceslist()
-# sample_list.sort()
-#
-# # Print out the sample list
-# print("Sample list:", sample_list)
-#
-# # Now let's load each sample and obtain collect diverse information from them
-# sample_data = {}
-# for index in tqdm(sample_list):
-#     # Sample loading
-#     sample = data_io.sample_loader(index, load_seg=True)
-#     # Create an empty list for the current asmple in our data dictionary
-#     sample_data[index] = []
-#     # Store the volume shape
-#     sample_data[index].append(sample.img_data.shape)
-#     # Identify minimum and maximum volume intensity
-#     sample_data[index].append(sample.img_data.min())
-#     sample_data[index].append(sample.img_data.max())
-#     # Store voxel spacing
-#     sample_data[index].append(sample.details["spacing"])
-#     # Identify and store class distribution
-#     unique_data, unique_counts = np.unique(sample.seg_data, return_counts=True)
-#     class_freq = unique_counts / np.sum(unique_counts)
-#     class_freq = np.around(class_freq, decimals=6)
-#     sample_data[index].append(tuple(class_freq))
+    def test_MODEL_validation3D(self):
+        nn = Neural_Network(preprocessor=self.pp3D)
+        history = nn.evaluate(self.sample_list3D[0:4], self.sample_list3D[4:6],
+                              epochs=3)
+        self.assertIsNotNone(history)
