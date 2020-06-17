@@ -1,4 +1,12 @@
-# MIScnn: Medical Image Segmentation with Convolutional Neural Networks
+![MIScnn workflow](https://raw.githubusercontent.com/frankkramer-lab/MIScnn/master/docs/logo_long.png)
+
+[![shield_python](https://img.shields.io/pypi/pyversions/miscnn?style=flat-square)](https://www.python.org/)
+[![shield_travisCI_build](https://img.shields.io/travis/frankkramer-lab/miscnn?style=flat-square)](https://travis-ci.org/github/frankkramer-lab/MIScnn)
+[![shield_pypi_version](https://img.shields.io/pypi/v/miscnn?style=flat-square)](https://pypi.org/project/miscnn/)
+[![shield_pypi_downloads](https://img.shields.io/pypi/dm/miscnn?style=flat-square)](https://pypistats.org/packages/miscnn)
+[![shield_commits](https://img.shields.io/github/commit-activity/y/frankkramer-lab/miscnn?style=flat-square)](https://github.com/frankkramer-lab/MIScnn)
+[![shield_license](https://img.shields.io/github/license/frankkramer-lab/miscnn?style=flat-square)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
 
 The open-source Python library MIScnn is an intuitive API allowing fast setup of medical image segmentation pipelines with state-of-the-art convolutional neural network and deep learning models in just a few lines of code.
 
@@ -14,100 +22,41 @@ MIScnn provides several core features:
 
 ![MIScnn workflow](https://raw.githubusercontent.com/frankkramer-lab/MIScnn/master/docs/MIScnn.pipeline.png)
 
-## Getting started: 30 seconds to a MIS pipeline
+## Resources
 
-Create a Data I/O instance with an already provided interface for your specific data
-format.
-
-```python
-from miscnn.data_loading.data_io import Data_IO
-from miscnn.data_loading.interfaces.nifti_io import NIFTI_interface
-
-# Create an interface for kidney tumor CT scans in NIfTI format
-interface = NIFTI_interface(pattern="case_0000[0-2]", channels=1, classes=3)
-# Initialize data path and create the Data I/O instance
-data_path = "/home/mudomini/projects/KITS_challenge2019/kits19/data.original/"
-data_io = Data_IO(interface, data_path)
-```
-
-Create a Preprocessor instance to configure how to preprocess the data into batches.
-
-```python
-from miscnn.processing.preprocessor import Preprocessor
-
-pp = Preprocessor(data_io, batch_size=4, analysis="patchwise-crop", patch_shape=(128,128,128))
-```
-
-Create a deep learning neural network model with a standard U-Net architecture.
-
-```python
-from miscnn.neural_network.model import Neural_Network
-from miscnn.neural_network.architecture.unet.standard import Architecture
-
-unet_standard = Architecture()
-model = Neural_Network(preprocessor=pp, architecture=unet_standard)
-```
-Congratulations to your ready-to-use Medical Image Segmentation pipeline including data I/O, preprocessing and data augmentation with default setting.
-
-Let's run a model training on our data set. Afterwards, predict the segmentation of a sample using the fitted model.
-
-```python
-# Training the model with all except one sample for 500 epochs
-sample_list = data_io.get_indiceslist()
-model.train(sample_list[0:-1], epochs=500)
-
-# Predict the one remaining sample
-pred = model.predict([sample_list[-1]], direct_output=True)
-```
-
-Now, let's run a 5-fold Cross-Validation with our model, create automatically evaluation figures and save the results into the directory "evaluation_results".
-
-```python
-from miscnn.evaluation.cross_validation import cross_validation
-
-cross_validation(sample_list, model, k_fold=5, epochs=100,
-                 evaluation_path="evaluation_results", draw_figures=True)
-```
-
-## Installation
-
-There are two ways to install MIScnn:
-
-- **Install MIScnn from PyPI (recommended):**
-
-Note: These installation steps assume that you are on a Linux or Mac environment. If you are on Windows or in a virtual environment without root, you will need to remove sudo to run the commands below.
-
-```sh
-sudo pip install miscnn
-```
-
-- **Alternatively: install MIScnn from the GitHub source:**
-
-First, clone MIScnn using git:
-
-```sh
-git clone https://github.com/frankkramer-lab/MIScnn.git
-```
-
-Then, cd to the MIScnn folder and run the install command:
-
-```sh
-cd MIScnn
-sudo python setup.py install
-```
+- MIScnn Documentation: [GitHub wiki - Home](https://github.com/frankkramer-lab/MIScnn/wiki)
+- MIScnn Tutorials: [Overview of Tutorials](https://github.com/frankkramer-lab/MIScnn/wiki/Tutorials)
+- MIScnn Examples: [Overview of Use Cases and Examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)
+- MIScnn Development Tracker: [GitHub project - MIScnn Development](https://github.com/frankkramer-lab/MIScnn/projects/1)
+- MIScnn on GitHub: [GitHub - frankkramer-lab/MIScnn](https://github.com/frankkramer-lab/MIScnn)
+- MIScnn on PyPI: [PyPI - miscnn](https://pypi.org/project/miscnn/)
 
 ## Author
 
-Dominik Müller\
-Email: dominik.mueller@informatik.uni-augsburg.de\
-IT-Infrastructure for Translational Medical Research\
-University Augsburg\
-Bavaria, Germany
+Dominik Müller  
+Email: dominik.mueller@informatik.uni-augsburg.de  
+IT-Infrastructure for Translational Medical Research  
+University Augsburg  
+Augsburg, Bavaria, Germany
 
 ## How to cite / More information
 
-Dominik Müller and Frank Kramer. (2019)\
-MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning.
+Dominik Müller and Frank Kramer. (2019)  
+MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning.  
+arXiv e-print: [https://arxiv.org/abs/1910.09308](https://arxiv.org/abs/1910.09308)
+
+```
+Article{miscnn,
+  title={MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning},
+  author={Dominik Müller and Frank Kramer},
+  year={2019},
+  eprint={1910.09308},
+  archivePrefix={arXiv},
+  primaryClass={eess.IV}
+}
+```
+
+Thank you for citing our work.
 
 ## License
 
