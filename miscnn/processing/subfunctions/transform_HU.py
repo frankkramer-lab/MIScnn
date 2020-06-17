@@ -42,13 +42,14 @@ class TransformHU(Abstract_Subfunction):
     #---------------------------------------------#
     def __init__(self, normalize = True, slope = 1, intercept = -1024,
                  clipScan_value = -2000, minmaxBound = (-1000, 400)):
-"""     Args:
-            normalize (bool):       Normalizes HU units between 0-1 if True.
-            slope (float):          slope value derived from DICOM files.
-            intercept (float):      intercept value derived from DICOM files.
-            ClipScan_value (int):   sets scan values at clipping value to 0 (used for out of scan values).
-            minmaxBound (tuple):    Normalization boundaries.
-"""
+        """
+            Args:
+                    normalize (bool):       Normalizes HU units between 0-1 if True.
+                    slope (float):          slope value derived from DICOM files.
+                    intercept (float):      intercept value derived from DICOM files.
+                    ClipScan_value (int):   sets scan values at clipping value to 0 (used for out of scan values).
+                    minmaxBound (tuple):    Normalization boundaries.
+        """
         self.normalize = normalize
         self.slope = slope
         self.intercept = intercept
@@ -90,12 +91,12 @@ class TransformHU(Abstract_Subfunction):
 
 
     def normalize_HU(self, image):
-"""     Normalizes an image given in HU units between 0-1
-            Inputs:
-                image (array):              Images in the HU range
-            Returns:
-                img_normalized ( array):    Normalized images
-"""
+        """     Normalizes an image given in HU units between 0-1
+                    Inputs:
+                        image (array):              Images in the HU range
+                    Returns:
+                        img_normalized ( array):    Normalized images
+        """
         img_normalized = (image - self.BOUND_MIN) / (self.BOUND_MAX - self.BOUND_MIN)
         img_normalized[img_normalized>1] = 1.
         img_normalized[img_normalized<0] = 0.
