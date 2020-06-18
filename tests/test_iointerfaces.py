@@ -114,6 +114,7 @@ class IO_interfacesTEST(unittest.TestCase):
         sample_list = interface.initialize(self.tmp_data.name)
         img = interface.load_image(sample_list[0])
         seg = interface.load_segmentation(sample_list[0])
+        details = interface.load_details(sample_list[0])
         self.assertTrue(np.array_equal(img, self.img))
         self.assertTrue(np.array_equal(seg, self.seg))
     # NIFTI_interface - Loading and Storage of Predictions
