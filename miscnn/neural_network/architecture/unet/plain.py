@@ -35,7 +35,7 @@ from tensorflow.keras.layers import BatchNormalization
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
 #-----------------------------------------------------#
-#         Architecture class: U-Net Standard          #
+#           Architecture class: U-Net Plain           #
 #-----------------------------------------------------#
 """ The Plain variant of the popular U-Net architecture.
 

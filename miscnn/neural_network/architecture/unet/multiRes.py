@@ -58,7 +58,7 @@ from miscnn.neural_network.architecture.abstract_architecture import Abstract_Ar
 
 
 #-----------------------------------------------------#
-#         Architecture class: U-Net Standard          #
+#         Architecture class: U-Net MultiRes          #
 #-----------------------------------------------------#
 """ The MultiRes variant of the popular U-Net architecture.
 

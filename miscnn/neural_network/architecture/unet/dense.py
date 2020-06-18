@@ -39,7 +39,7 @@ from tensorflow.keras.layers import BatchNormalization
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
 #-----------------------------------------------------#
-#         Architecture class: U-Net Standard          #
+#           Architecture class: U-Net Dense           #
 #-----------------------------------------------------#
 """ The Dense variant of the popular U-Net architecture.
     It uses additional concatenate layers after each convolutional layer.
