@@ -14,13 +14,14 @@ before_install:
   - python --version
   - pip install -U pip
   - pip install -U pytest
-#  - pip install codecov
+  - pip install -U pytest-cov
+  - pip install codecov
 
 install:
   - pip install .
 
 script:
-  - pytest -v
+  - pytest -v --cov=./
 
-# after_success:
-#   - codecov
+after_success:
+  - codecov
