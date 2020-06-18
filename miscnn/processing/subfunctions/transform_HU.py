@@ -54,8 +54,8 @@ class TransformHU(Abstract_Subfunction):
         self.slope = slope
         self.intercept = intercept
         self.clipScan_value = clipScan_value
-        self.BOUND_MIN = minmaxBound(0)
-        self.BOUND_MAX = minmaxBound(1)
+        self.BOUND_MIN = minmaxBound[0]
+        self.BOUND_MAX = minmaxBound[1]
 
     #---------------------------------------------#
     #                Preprocessing                #
@@ -67,12 +67,16 @@ class TransformHU(Abstract_Subfunction):
         # Identify current spacing
         try :
             slope = sample.details["slope"]
-        except AttributeError:
+        except:
             print("'slope' is not initialized in sample details!")
+            print("The default value for 'slope' is used.")
+            slope = self.slope
         try:
             intercept = sample.details["intercept"]
-        except AttributeError:
+        except:
             print("'intercept' is not initialized in sample details!")
+            print("The default value for 'intercept' is used.")
+            intercept = self.intercept
 
         # Set out of scan values to 0
         if self.clipScan_value is not None:
