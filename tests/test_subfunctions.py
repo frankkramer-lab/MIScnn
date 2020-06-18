@@ -403,3 +403,48 @@ class SubfunctionsTEST(unittest.TestCase):
                 pred = sf.postprocessing(sample_pred.pred_data)
                 # Check for correctness
                 self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
+
+
+    #-------------------------------------------------#
+    #                   TransformHU                   #
+    #-------------------------------------------------#
+    def test_SUBFUNCTIONS_TransformHU_preprocessing(self):
+        # Initialize Subfunction
+        sf = TransformHU()
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Test for training as well as prediction
+            for train in [True, False]:
+                # Create sample object from template
+                varname = "sample" + dim
+                if train : varname += "seg"
+                sample = deepcopy(getattr(self, varname))
+                if not train:
+                    sample.details = {"slope":1.0, "intercept":-1024.0}
+                # Run preprocessing of the subfunction
+                sf.preprocessing(sample, training=train)
+                # Check for correctness
+                self.assertTrue(np.array_equal(sample.seg_data,
+                                getattr(self, varname).seg_data))
+                self.assertFalse(np.array_equal(sample.img_data,
+                                getattr(self, varname).img_data))
+
+    def test_SUBFUNCTIONS_TransformHU_postprocessing(self):
+        # Initialize Subfunction
+        sf = TransformHU()
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            sample_pred.details = {"slope":1.0, "intercept":-1024.0}
+            sample_train.details = {"slope":1.0, "intercept":-1024.0}
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred.pred_data)
+            # Check for correctness
+            self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
