@@ -146,6 +146,20 @@ class PreprocessorTEST(unittest.TestCase):
         self.assertEqual(len(batches), 1)
         self.assertEqual(batches[0][0].shape, (8,16,16,16,1))
 
+    # Batch preparation check
+    def test_PREPROCESSOR_BASE_prepareBatches(self):
+        sample_list = self.data_io3D.get_indiceslist()
+        pp = Preprocessor(self.data_io3D, batch_size=1, analysis="fullimage",
+                          prepare_batches=True)
+        batch_pointer = pp.run(sample_list[0:8], training=True, validation=False)
+        self.assertEqual(batch_pointer, 7)
+        tmp_batches = os.path.join(self.tmp_dir3D.name, "batches")
+        batch_list = []
+        for batch_file in os.listdir(tmp_batches):
+            if batch_file.startswith(str(pp.data_io.seed)):
+                batch_list.append(batch_file)
+        self.assertEqual(len(batch_list), 16)
+
     #-------------------------------------------------#
     #                  Postprocessing                 #
     #-------------------------------------------------#
@@ -160,19 +174,6 @@ class PreprocessorTEST(unittest.TestCase):
             sam = self.data_io3D.sample_loader(sample_list[i], load_seg=True)
             self.assertTrue(np.array_equal(pred_postprec,
                             np.reshape(sam.seg_data, (16,16,16))))
-
-        ## TODO: Add testing for patchwise postprocessing
-        #
-        # pp = Preprocessor(self.data_io3D, batch_size=1, patch_shape=(4,4,4),
-        #                   analysis="patchwise-grid", data_aug=None)
-        # batches = pp.run(sample_list[0:3], training=True, validation=False)
-        # for i in range(0, 3):
-        #     print(batches[i][1].shape)
-        #     pred_postprec = pp.postprocessing(sample_list[i], batches[i][1])
-        #     self.assertEqual(pred_postprec.shape, (16,16,16))
-        #     sam = self.data_io3D.sample_loader(sample_list[i], load_seg=True)
-        #     self.assertTrue(np.array_equal(pred_postprec,
-        #                     np.reshape(sam.seg_data, (16,16,16))))
 
     #-------------------------------------------------#
     #            Analysis: Patchwise-crop             #
@@ -201,6 +202,20 @@ class PreprocessorTEST(unittest.TestCase):
         self.assertEqual(len(batches), 3)
         batches = pp.run(sample_list[0:1], training=False, validation=False)
         self.assertEqual(len(batches), 64)
+        sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
+        sample.seg_data = to_categorical(sample.seg_data,
+                                         num_classes=sample.classes)
+        ready_data = pp.analysis_patchwise_crop(sample, data_aug=False)
+        self.assertEqual(len(ready_data), 1)
+        self.assertEqual(ready_data[0][0].shape, (4,4,4,1))
+        self.assertEqual(ready_data[0][1].shape, (4,4,4,3))
+
+    def test_PREPROCESSOR_patchwisecrop_skipBlanks(self):
+        sample_list = self.data_io3D.get_indiceslist()
+        pp = Preprocessor(self.data_io3D, data_aug=None, batch_size=1,
+                          analysis="patchwise-crop", patch_shape=(4,4,4))
+        pp.patchwise_skip_blanks = True
+        batches = pp.run(sample_list[0:3], training=True, validation=False)
         sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
@@ -245,6 +260,21 @@ class PreprocessorTEST(unittest.TestCase):
         self.assertEqual(len(ready_data), 64)
         self.assertEqual(ready_data[0][0].shape, (5,5,5,1))
         self.assertEqual(ready_data[0][1].shape, (5,5,5,3))
+
+    def test_PREPROCESSOR_patchwisegrid_skipBlanks(self):
+        sample_list = self.data_io3D.get_indiceslist()
+        pp = Preprocessor(self.data_io3D, data_aug=None, batch_size=1,
+                          analysis="patchwise-grid", patch_shape=(4,4,4))
+        pp.patchwise_skip_blanks = True
+        batches = pp.run(sample_list[0:3], training=True, validation=False)
+        sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
+        sample.seg_data = to_categorical(sample.seg_data,
+                                         num_classes=sample.classes)
+        ready_data = pp.analysis_patchwise_grid(sample, data_aug=False,
+                                                training=True)
+        self.assertEqual(len(ready_data), 64)
+        self.assertEqual(ready_data[0][0].shape, (4,4,4,1))
+        self.assertEqual(ready_data[0][1].shape, (4,4,4,3))
 
     #-------------------------------------------------#
     #               Analysis: Fullimage               #
