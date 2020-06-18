@@ -52,7 +52,7 @@ from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.layers.advanced_activations import ELU, LeakyReLU
+from tensorflow.keras.layers import ELU, LeakyReLU
 # Internal libraries/scripts
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
