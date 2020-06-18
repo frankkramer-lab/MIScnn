@@ -28,6 +28,7 @@ import numpy as np
 from miscnn import Data_IO, Preprocessor, Neural_Network
 from miscnn.data_loading.interfaces import Dictionary_interface
 from miscnn.evaluation import *
+from miscnn.evaluation.cross_validation import split_folds, run_fold
 
 #-----------------------------------------------------#
 #                 Unittest: Evaluation                #
@@ -86,6 +87,25 @@ class evaluationTEST(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_0")))
         self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_1")))
         self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_2")))
+
+    def test_EVALUATION_crossValidation_splitRun(self):
+        eval_path = os.path.join(self.tmp_dir.name, "evaluation")
+        split_folds(self.sample_list, k_fold=3, evaluation_path=eval_path)
+        self.assertTrue(os.path.exists(eval_path))
+        self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_0")))
+        self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_1")))
+        self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_2")))
+        for fold in range(0, 3):
+            run_fold(fold, self.model, epochs=1, iterations=None,
+                     evaluation_path=eval_path, draw_figures=False,
+                     callbacks=[], save_models=True)
+            fold_dir =os.path.join(eval_path, "fold_0")
+            self.assertTrue(os.path.exists(os.path.join(fold_dir,
+                                                        "history.tsv")))
+            self.assertTrue(os.path.exists(os.path.join(fold_dir,
+                                                        "sample_list.csv")))
+            self.assertTrue(os.path.exists(os.path.join(fold_dir,
+                                                        "model.hdf5")))
 
     #-------------------------------------------------#
     #                 Split Validation                #
