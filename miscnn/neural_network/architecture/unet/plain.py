@@ -91,7 +91,7 @@ class Architecture(Abstract_Architecture):
             cnn_chain = conv_layer_2D(cnn_chain, neurons, self.ba_norm, strides=1)
 
         # Output Layer
-        conv_out = Conv3D(n_labels, (1, 1), activation=self.activation)(cnn_chain)
+        conv_out = Conv2D(n_labels, (1, 1), activation=self.activation)(cnn_chain)
         # Create Model with associated input and output layers
         model = Model(inputs=[inputs], outputs=[conv_out])
         # Return model
