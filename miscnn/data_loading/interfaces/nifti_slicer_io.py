@@ -80,7 +80,7 @@ class NIFTIslicer_interface(Abstract_IO):
             # Load volume from NIFTI file
             vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
             # Transform NIFTI object to numpy array
-            vol_data = vol.get_data()
+            vol_data = vol.get_fdata()
             # Obtain number of slices
             for slice in range(0, vol_data.shape[0]):
                 sample_list.append(index + ":#:" + str(slice))
@@ -104,7 +104,7 @@ class NIFTIslicer_interface(Abstract_IO):
         # Load volume from NIFTI file
         vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
         # Transform NIFTI object to numpy array
-        vol_data = vol.get_data()
+        vol_data = vol.get_fdata()
         # Obtain slice from volume
         img_data = vol_data[int(ind_slice)]
         # Return volume
@@ -127,7 +127,7 @@ class NIFTIslicer_interface(Abstract_IO):
         # Load segmentation from NIFTI file
         seg = nib.load(os.path.join(seg_path, "segmentation.nii.gz"))
         # Transform NIFTI object to numpy array
-        seg_vol_data = seg.get_data()
+        seg_vol_data = seg.get_fdata()
         # Obtain slice from volume
         seg_data = seg_vol_data[int(ind_slice)]
         # Return segmentation
