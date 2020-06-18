@@ -205,3 +205,17 @@ class DataGeneratorTEST(unittest.TestCase):
         self.assertTrue(o_ratio == 1.0)
         s_ratio = s_counter / size
         self.assertTrue(1.0 >= s_ratio and s_ratio >= 0.5)
+
+    # Run data generation with preparation of subfunctions and batches
+    def test_DATAGENERATOR_prepareData(self):
+        pp_fi = Preprocessor(self.data_io, batch_size=4, data_aug=None,
+                             prepare_subfunctions=True, prepare_batches=True,
+                             analysis="fullimage")
+        data_gen = DataGenerator(self.sample_list, pp_fi, training=True,
+                                 shuffle=True, iterations=None)
+        self.assertEqual(len(data_gen), 3)
+        for batch in data_gen:
+            self.assertIsInstance(batch, tuple)
+            self.assertEqual(batch[0].shape[1:], (16,16,16,1))
+            self.assertEqual(batch[1].shape[1:], (16,16,16,3))
+            self.assertIn(batch[0].shape[0], [2,4])
