@@ -20,3 +20,4 @@ from miscnn.data_loading.interfaces.nifti_io import NIFTI_interface
 from miscnn.data_loading.interfaces.dictionary_io import Dictionary_interface
 from miscnn.data_loading.interfaces.nifti_slicer_io import NIFTIslicer_interface
 from miscnn.data_loading.interfaces.image_io import Image_interface
+from miscnn.data_loading.interfaces.dicom_io import DICOM_interface
