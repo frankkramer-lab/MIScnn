@@ -82,7 +82,7 @@ class evaluationTEST(unittest.TestCase):
                          draw_figures=False,
                          callbacks=[],
                          save_models=False,
-                         direct_output=False)
+                         return_output=False)
         self.assertTrue(os.path.exists(eval_path))
         self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_0")))
         self.assertTrue(os.path.exists(os.path.join(eval_path, "fold_1")))
@@ -118,7 +118,7 @@ class evaluationTEST(unittest.TestCase):
                          run_detailed_evaluation=False,
                          draw_figures=False,
                          callbacks=[],
-                         direct_output=False)
+                         return_output=False)
         self.assertTrue(os.path.exists(eval_path))
 
     #-------------------------------------------------#

@@ -41,7 +41,7 @@ class NeuralNetworkTEST(unittest.TestCase):
         for i in range(0, 6):
             img = np.random.rand(16, 16) * 255
             self.img = img.astype(int)
-            seg = np.random.rand(16, 16) * 2
+            seg = np.random.rand(16, 16) * 3
             self.seg = seg.astype(int)
             self.dataset2D["TEST.sample_" + str(i)] = (self.img, self.seg)
         # Initialize Dictionary IO Interface
@@ -154,6 +154,21 @@ class NeuralNetworkTEST(unittest.TestCase):
             sample = self.data_io3D.sample_loader(index, load_seg=True,
                                                   load_pred=True)
             self.assertIsNotNone(sample.pred_data)
+
+    def test_MODEL_prediction_returnOutput(self):
+        nn = Neural_Network(preprocessor=self.pp2D)
+        pred_list = nn.predict(self.sample_list2D, return_output=True)
+        for pred in pred_list:
+            self.assertIsNotNone(pred)
+            self.assertEqual(pred.shape, (16,16))
+
+    def test_MODEL_prediction_activationOutput(self):
+        nn = Neural_Network(preprocessor=self.pp2D)
+        pred_list = nn.predict(self.sample_list2D, return_output=True,
+                               activation_output=True)
+        for pred in pred_list:
+            self.assertIsNotNone(pred)
+            self.assertEqual(pred.shape, (16,16,3))
 
     #-------------------------------------------------#
     #                    Validation                   #
