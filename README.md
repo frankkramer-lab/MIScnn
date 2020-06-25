@@ -65,7 +65,7 @@ sample_list = data_io.get_indiceslist()
 model.train(sample_list[0:80], epochs=500)
 
 # Predict the segmentation for 20 samples
-pred = model.predict(sample_list[80:100], direct_output=True)
+pred = model.predict(sample_list[80:100], return_output=True)
 ```
 
 Now, let's run a 5-fold Cross-Validation with our model, create automatically evaluation figures and save the results into the directory "evaluation_results".

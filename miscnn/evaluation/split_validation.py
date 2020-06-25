@@ -46,13 +46,13 @@ Args:
                                             directory.
     run_detailed_evaluation (boolean):      Option if a detailed evaluation (additional prediction) should be performed.
     callbacks (list of Callback classes):   A list of Callback classes for custom evaluation.
-    direct_output (boolean):                Option, if computed evaluations will be output as the return of this function or
+    return_output (boolean):                Option, if computed evaluations will be output as the return of this function or
                                             if the evaluations will be saved on disk in the evaluation directory.
 """
 def split_validation(sample_list, model, percentage=0.2, epochs=20,
                      iterations=None, evaluation_path="evaluation",
                      draw_figures=False, run_detailed_evaluation=False,
-                     callbacks=[], direct_output=False):
+                     callbacks=[], return_output=False):
     # Calculate the number of samples in the validation set
     validation_size = int(math.ceil(float(len(sample_list) * percentage)))
     # Randomly pick samples until %-split percentage
@@ -76,5 +76,5 @@ def split_validation(sample_list, model, percentage=0.2, epochs=20,
     if run_detailed_evaluation:
         detailed_validation(validation, model, evaluation_path)
     # Return or backup the validation results
-    if direct_output : return history.history
+    if return_output : return history.history
     else : backup_history(history.history, evaluation_path)

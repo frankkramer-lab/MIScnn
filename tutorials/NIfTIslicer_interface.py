@@ -52,12 +52,12 @@ model = Neural_Network(preprocessor=pp)
 model.train(samples_list[30:50], epochs=3, iterations=10, callbacks=[])
 
 # Predict a generic slice with direct output
-pred = model.predict(["case_00002:#:42"], direct_output=True)
+pred = model.predict(["case_00002:#:42"], return_output=True)
 print(np.asarray(pred).shape)
 ## Be aware that the direct prediction output, has a additional batch axis
 
 # Predict a generic slice and save it as a NumPy pickle on disk
-model.predict(["case_00002:#:42"], direct_output=False)
+model.predict(["case_00002:#:42"], return_output=False)
 
 # Load the slice via sample-loader and output also the new prediction, now
 sample = data_io.sample_loader("case_00000:#:89", load_seg=True, load_pred=True)

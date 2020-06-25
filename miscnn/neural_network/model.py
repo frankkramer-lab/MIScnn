@@ -133,13 +133,16 @@ class Neural_Network:
 
     Args:
         sample_list (list of indices):  A list of sample indicies for which a segmentation prediction will be computed
-        direct_output (boolean):        Parameter which decides, if computed predictions will be output as the return of this
+        return_output (boolean):        Parameter which decides, if computed predictions will be output as the return of this
                                         function or if the predictions will be saved with the save_prediction method defined
                                         in the provided Data I/O interface.
+        activation_output (boolean):    Parameter which decides, if model output (activation function, normally softmax) will
+                                        be saved/outputed (if FALSE) or if the resulting class label (argmax) should be outputed.
     """
-    def predict(self, sample_list, direct_output=False):
+    def predict(self, sample_list, return_output=False,
+                activation_output=False):
         # Initialize result array for direct output
-        if direct_output : results = []
+        if return_output : results = []
         # Iterate over each sample
         for sample in sample_list:
             # Initialize Keras Data Generator for generating batches
@@ -153,15 +156,16 @@ class Neural_Network:
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            pred_seg = self.preprocessor.postprocessing(sample, pred_seg)
+            pred_seg = self.preprocessor.postprocessing(sample, pred_seg,
+                                                        activation_output)
             # Backup predicted segmentation
-            if direct_output : results.append(pred_seg)
+            if return_output : results.append(pred_seg)
             else : self.preprocessor.data_io.save_prediction(pred_seg, sample)
             # Clean up temporary files if necessary
             if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
                 self.preprocessor.data_io.batch_cleanup()
         # Output predictions results if direct output modus is active
-        if direct_output : return results
+        if return_output : return results
 
     #---------------------------------------------#
     #                 Evaluation                  #

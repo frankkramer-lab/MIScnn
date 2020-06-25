@@ -48,7 +48,7 @@ def detailed_validation(validation_samples, model, evaluation_path):
     # Iterate over each sample
     for sample_index in validation_samples:
         # Predict the sample with the provided model
-        model.predict([sample_index], direct_output=False)
+        model.predict([sample_index], return_output=False)
         # Load the sample
         sample = model.preprocessor.data_io.sample_loader(sample_index,
                                                           load_seg=True,

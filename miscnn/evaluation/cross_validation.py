@@ -49,15 +49,15 @@ Args:
     run_detailed_evaluation (boolean):      Option if a detailed evaluation (additional prediction) should be performed.
     callbacks (list of Callback classes):   A list of Callback classes for custom evaluation.
     save_models (boolean):                  Option if fitted models should be stored or thrown away.
-    direct_output (boolean):                Option, if computed evaluations will be output as the return of this function or
+    return_output (boolean):                Option, if computed evaluations will be output as the return of this function or
                                             if the evaluations will be saved on disk in the evaluation directory.
 """
 def cross_validation(sample_list, model, k_fold=3, epochs=20,
                      iterations=None, evaluation_path="evaluation",
                      draw_figures=False, run_detailed_evaluation=False,
-                     callbacks=[], save_models=True, direct_output=False):
+                     callbacks=[], save_models=True, return_output=False):
     # Initialize result cache
-    if direct_output : validation_results = []
+    if return_output : validation_results = []
     # Randomly permute the sample list
     samples_permuted = np.random.permutation(sample_list)
     # Split sample list into folds
@@ -83,7 +83,7 @@ def cross_validation(sample_list, model, k_fold=3, epochs=20,
         history = model.evaluate(training, validation, epochs=epochs,
                                  iterations=iterations, callbacks=cb_list)
         # Backup current history dictionary
-        if direct_output : validation_results.append(history.history)
+        if return_output : validation_results.append(history.history)
         else : backup_history(history.history, subdir)
         # Draw plots for the training & validation
         if draw_figures:
@@ -92,7 +92,7 @@ def cross_validation(sample_list, model, k_fold=3, epochs=20,
         if run_detailed_evaluation:
             detailed_validation(validation, model, subdir)
     # Return the validation results
-    if direct_output : return validation_results
+    if return_output : return validation_results
 
 
 #-----------------------------------------------------#

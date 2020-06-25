@@ -180,7 +180,7 @@ class Preprocessor:
     #          Prediction Postprocessing          #
     #---------------------------------------------#
     # Postprocess prediction data
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         # Reassemble patches into original shape for patchwise analysis
         if self.analysis == "patchwise-crop" or \
             self.analysis == "patchwise-grid":
@@ -198,7 +198,7 @@ class Preprocessor:
         # For fullimages remove the batch axis
         else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
-        prediction = np.argmax(prediction, axis=-1)
+        if not activation_output : prediction = np.argmax(prediction, axis=-1)
         # Run Subfunction postprocessing on the prediction
         for sf in reversed(self.subfunctions):
             prediction = sf.postprocessing(prediction)
