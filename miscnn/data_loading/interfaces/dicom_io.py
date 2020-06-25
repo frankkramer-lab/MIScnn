@@ -102,7 +102,6 @@ class DICOM_interface(Abstract_IO):
 
         dicom_images_path = None
 
-        # Make sure that the image file exists in the data set directory
         img_path = os.path.join(self.data_directory, index)
 
         #search folders and find the first DICOM image of the whole scan to get the path of the DICOM images
@@ -110,6 +109,7 @@ class DICOM_interface(Abstract_IO):
             for _ in filter(lambda x: re.findall('1-001.dcm', x), files):
                 dicom_images_path = root
         
+        # Make sure that the image file exists in the data set directory
         if not os.path.exists(dicom_images_path):
             raise ValueError(
                 "No DICOM scans could not be found \"{}\"".format(img_path)
