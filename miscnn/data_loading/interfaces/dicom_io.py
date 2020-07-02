@@ -36,11 +36,16 @@ from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 #                 DICOM I/O Interface                 #
 #-----------------------------------------------------#
 """ This class provides a Data I/O Interface that can be used to load images and structure sets
-    that are provided in the Digital Imaging and Communications in Medicine (DICOM) format """
+    that are provided in the Digital Imaging and Communications in Medicine (DICOM) format
+
+    The DICOM Viewer was designed for the Lung CT Segmentation Challenge 2017.
+    https://wiki.cancerimagingarchive.net/display/Public/Lung+CT+Segmentation+Challenge+2017#cb38430390714dbbad13f267f39a33eb
+"""
 
 class DICOM_interface(Abstract_IO):
     # Class variable initialization
-    def __init__(self, channels=1, classes=2, three_dim=True, mask_background = 0, structure_dict = {}):
+    def __init__(self, channels=1, classes=2, three_dim=True, mask_background=0,
+                 structure_dict={}, annotation_tag=None):
 
         """
         Args:
@@ -57,6 +62,7 @@ class DICOM_interface(Abstract_IO):
         self.channels = channels
         self.classes = classes
         self.three_dim = three_dim
+        self.annotation_tag = annotation_tag
         self.cache = dict()
         assert isinstance(mask_background,int), "mask_background value should be an integer"
         self.mask_background = mask_background
@@ -90,7 +96,7 @@ class DICOM_interface(Abstract_IO):
     #---------------------------------------------#
     #                  load_image                 #
     #---------------------------------------------#
-    # Read a volume NIFTI file from the data directory
+    # Read a volume DICOM file from the data directory
     def load_image(self, index):
 
         """
@@ -104,13 +110,16 @@ class DICOM_interface(Abstract_IO):
 
         img_path = os.path.join(self.data_directory, index)
 
-        #search folders and find the first DICOM image of the whole scan to get the path of the DICOM images
+        # search folders and find a DICOM image of the whole scan to get
+        # the path of the DICOM images
+        dicom_images_path = None
         for root, _, files in os.walk(img_path):
-            for _ in filter(lambda x: re.findall('1-001.dcm', x), files):
+            for _ in filter(lambda x: re.findall('.*001.dcm', x), files):
                 dicom_images_path = root
-        
+                break
+
         # Make sure that the image file exists in the data set directory
-        if not os.path.exists(dicom_images_path):
+        if not dicom_images_path or not os.path.exists(dicom_images_path):
             raise ValueError(
                 "No DICOM scans could not be found \"{}\"".format(img_path)
             )
@@ -119,7 +128,8 @@ class DICOM_interface(Abstract_IO):
         dicom_reader = sitk.ImageSeriesReader()
 
         #read all DICOM files contained in the provided folder
-        dicom_file_names = dicom_reader.GetGDCMSeriesFileNames(str(dicom_images_path))
+        dicom_file_names = dicom_reader.GetGDCMSeriesFileNames(
+                                                         str(dicom_images_path))
 
         #set file names
         dicom_reader.SetFileNames(dicom_file_names)
@@ -127,16 +137,20 @@ class DICOM_interface(Abstract_IO):
         #read dicom files
         dcm = dicom_reader.Execute()
 
-        #Read one of the images to get DICOM Pixelspacing and SliceThickness paramters
+        # Read one of the images to get DICOM Pixelspacing and SliceThickness
+        # paramters
         dcm_temp = pydicom.read_file(dicom_file_names[0])
 
-        self.cache[index] = np.array([dcm_temp.SliceThickness, dcm_temp.PixelSpacing[0], dcm_temp.PixelSpacing[1]], dtype=np.float32) 
+        self.cache[index] = np.array([dcm_temp.SliceThickness,
+                                      dcm_temp.PixelSpacing[0],
+                                      dcm_temp.PixelSpacing[1]],
+                                      dtype=np.float32)
 
 
         #return both the sitk image and all images as a numpy array
         return sitk.GetArrayFromImage(dcm)
 
-    
+
     def load_image_sitk(self, index):
 
         """
@@ -151,12 +165,15 @@ class DICOM_interface(Abstract_IO):
         # Make sure that the image file exists in the data set directory
         img_path = os.path.join(self.data_directory, index)
 
-        #search folders and find the first DICOM image of the whole scan to get the path of the DICOM images
+        # search folders and find a DICOM image of the whole scan to get
+        # the path of the DICOM images
+        dicom_images_path = None
         for root, _, files in os.walk(img_path):
-            for _ in filter(lambda x: re.findall('1-001.dcm', x), files):
+            for _ in filter(lambda x: re.findall('.*001.dcm', x), files):
                 dicom_images_path = root
+                break
 
-        if not os.path.exists(dicom_images_path):
+        if not dicom_images_path or not os.path.exists(dicom_images_path):
             raise ValueError(
                 "No DICOM scans could not be found \"{}\"".format(img_path)
             )
@@ -165,7 +182,8 @@ class DICOM_interface(Abstract_IO):
         dicom_reader = sitk.ImageSeriesReader()
 
         #read all DICOM files contained in the provided folder
-        dicom_file_names = dicom_reader.GetGDCMSeriesFileNames(str(dicom_images_path))
+        dicom_file_names = dicom_reader.GetGDCMSeriesFileNames(
+                                                         str(dicom_images_path))
 
         #set file names
         dicom_reader.SetFileNames(dicom_file_names)
@@ -173,10 +191,14 @@ class DICOM_interface(Abstract_IO):
         #read dicom files
         dcm = dicom_reader.Execute()
 
-        #Read one of the images to get DICOM Pixelspacing and SliceThickness paramters
+        #Read one of the images to get DICOM Pixelspacing and SliceThickness
+        #paramters
         dcm_temp = pydicom.read_file(dicom_file_names[0])
 
-        self.cache[index] = np.array([dcm_temp.SliceThickness, dcm_temp.PixelSpacing[0], dcm_temp.PixelSpacing[1]], dtype=np.float32) 
+        self.cache[index] = np.array([dcm_temp.SliceThickness,
+                                      dcm_temp.PixelSpacing[0],
+                                      dcm_temp.PixelSpacing[1]],
+                                      dtype=np.float32)
 
 
         #return both the sitk image and all images as a numpy array
@@ -195,9 +217,9 @@ class DICOM_interface(Abstract_IO):
         Returns:
             segmentations (array): 3D volume containing segmentations of all ROIs.
         """
-        
+
         rtStruct_path = self.get_rtStruct_file(index)
-       
+
         #get names, IDs and sequences of all ROIs contained in the provided structure file
         contours = self.get_ROI_data(rtStruct_path)
 
@@ -207,7 +229,7 @@ class DICOM_interface(Abstract_IO):
         #get segmentations
         segmentations = self.convert(contours, images)
 
-        # Return segmentations 
+        # Return segmentations
         return segmentations
 
 
@@ -221,31 +243,32 @@ class DICOM_interface(Abstract_IO):
             contour_data (dict): Dictionary containing ROI name, ID and Sequence.
         """
 
-        ss_file = pydicom.read_file(rtstruct_file) 
+        ss_file = pydicom.read_file(rtstruct_file)
 
         contours = []
 
-        for sequence, metadata in zip(ss_file.ROIContourSequence, ss_file.StructureSetROISequence):
-            
+        for sequence, metadata in zip(ss_file.ROIContourSequence,
+                                      ss_file.StructureSetROISequence):
+
             contour_data = {}
 
             contour_data['ROI_ID'] = metadata.ROINumber
             contour_data['ROI_Name'] = metadata.ROIName
             contour_data['ROI_Sequence'] = []
             for contour in sequence.ContourSequence:
-                            contour_data['ROI_Sequence'].append({
-                                'type': (contour.ContourGeometricType if hasattr(contour, 'ContourGeometricType') else 'No_type'),
-                                'points': {
-                                    'x': ([contour.ContourData[i] for i in range(0, len(contour.ContourData), 3)]), 
-                                    'y': ([contour.ContourData[i + 1] for i in range(0, len(contour.ContourData), 3)]),  
-                                    'z': ([contour.ContourData[i + 2] for i in range(0, len(contour.ContourData), 3)])  
-                                }
-                            })
+                contour_data['ROI_Sequence'].append({
+                    'type': (contour.ContourGeometricType if hasattr(contour, 'ContourGeometricType') else 'No_type'),
+                    'points': {
+                        'x': ([contour.ContourData[i] for i in range(0, len(contour.ContourData), 3)]),
+                        'y': ([contour.ContourData[i + 1] for i in range(0, len(contour.ContourData), 3)]),
+                        'z': ([contour.ContourData[i + 2] for i in range(0, len(contour.ContourData), 3)])
+                    }
+                })
 
             contours.append(contour_data)
-        
+
         return contours
-    
+
     #gets the path of a RT structure file
     def get_rtStruct_file(self, index):
 
@@ -256,22 +279,36 @@ class DICOM_interface(Abstract_IO):
             rtStruct_path (str): path to a RT structure file.
         """
 
-        
+
         path = os.path.join(self.data_directory, index)
 
-        #search folder structure for rt dcm file named 1-1.dcm
-        for root, _, files in os.walk(path):
-            for file in filter(lambda x: re.match('1-1.dcm', x), files):
-                rtStruct_path = os.path.join(root, file)
+        # Check if annotation tag is available
+        if not self.annotation_tag:
+            raise ValueError("Please provide an annotation tag")
 
-        # Make sure that the segmentation file exists in the data set directory        
-        if not os.path.exists(rtStruct_path):
+        # search folder structure for the segmentation by using the
+        # annotation tag
+        rtStruct_path = None
+        pattern = ".*" + self.annotation_tag + ".*"
+        for root, dirs, files in os.walk(path):
+            annot_dir = list(filter(lambda x: re.match(pattern, x), dirs))
+            if len(annot_dir) >= 1:
+                annot_dir = os.path.join(root, annot_dir[0])
+                files = os.listdir(annot_dir)
+                if len(files) > 1 or len(files) == 0:
+                    raise ValueError("More than one or no segmentation file found",
+                                     index, annot_dir)
+                rtStruct_path = os.path.join(annot_dir, files[0])
+                break
+
+        # Make sure that the segmentation file exists in the data set directory
+        if not rtStruct_path or not os.path.exists(rtStruct_path):
             raise ValueError(
-                "No structure file could not be found \"{}\"".format(rtStruct_path)
+                "Structure file could not be found \"{}\"".format(rtStruct_path)
             )
-        
-        return rtStruct_path  
-    
+
+        return rtStruct_path
+
     #---------------------------------------------#
     #         convert structure sequences         #
     #---------------------------------------------#
@@ -292,12 +329,12 @@ class DICOM_interface(Abstract_IO):
         mask.CopyInformation(dicom_image)
 
         np_mask = sitk.GetArrayFromImage(mask)
-        np_mask.fill(self.mask_background)      
+        np_mask.fill(self.mask_background)
 
-        
+
         for rtstruct in rtstruct_contours:
-            
-            
+
+
             if rtstruct['ROI_Name'] in self.structure_dict:
 
                 rtstruct_seq = rtstruct['ROI_Sequence']
@@ -317,7 +354,7 @@ class DICOM_interface(Abstract_IO):
 
                     z = int(pts[0, 2])
 
-                    
+
                     filled_poly = self._poly2mask(pts[:, 0], pts[:, 1], [shape[0], shape[1]])
                     np_mask[z, filled_poly] = int(self.structure_dict[rtstruct['ROI_Name']]) # sitk is xyz, numpy is zyx
 
@@ -334,12 +371,12 @@ class DICOM_interface(Abstract_IO):
         Returns:
             mask (array): filled 2D segmentation mask.
         """
-        
+
         poly_coords_x, poly_coords_y = draw.polygon(coords_x, coords_y, shape)
         #create an empty mask
         mask = np.zeros(shape, dtype=np.bool)
         #Observe that sitk uses the xyz convention, wheras numpy use zyx
-        mask[poly_coords_y, poly_coords_x] = True 
+        mask[poly_coords_y, poly_coords_x] = True
 
         return mask
 
@@ -357,7 +394,7 @@ class DICOM_interface(Abstract_IO):
             structure_names (list): List containing all ROI names and IDs found in a structure file.
         """
 
-        rtStruct_path = self.get_rtStruct_file(index)        
+        rtStruct_path = self.get_rtStruct_file(index)
 
         contours = self.get_ROI_data(rtStruct_path)
 
@@ -397,7 +434,7 @@ class DICOM_interface(Abstract_IO):
     # Parse slice thickness
     def load_details(self, i):
 
-        
+
         spacing = self.cache[i]
         # Delete cached spacing
         del self.cache[i]
@@ -420,7 +457,3 @@ class DICOM_interface(Abstract_IO):
         # Save segmentation to disk
         pred_file = str(index) + ".nii.gz"
         nib.save(nifti, os.path.join(output_path, pred_file))
-
-
-
-
