@@ -23,7 +23,7 @@
 import numpy as np
 from tensorflow.keras.callbacks import ModelCheckpoint
 import os
-import csv
+import json
 # Internal libraries/scripts
 from miscnn.data_loading.data_io import create_directories, backup_history
 from miscnn.utils.plotting import plot_validation
@@ -122,9 +122,9 @@ def split_folds(sample_list, k_fold=3, evaluation_path="evaluation"):
         validation = folds[i]
         # Initialize evaluation subdirectory for current fold
         subdir = create_directories(evaluation_path, "fold_" + str(i))
-        fold_cache = os.path.join(subdir, "sample_list.csv")
+        fold_cache = os.path.join(subdir, "sample_list.json")
         # Write sampling to disk
-        write_fold2csv(fold_cache, training, validation)
+        write_fold2disk(fold_cache, training, validation)
 
 
 
@@ -149,8 +149,8 @@ def run_fold(fold, model, epochs=20, iterations=None,
              save_models=True):
     # Load sampling fold from disk
     fold_path = os.path.join(evaluation_path, "fold_" + str(fold),
-                             "sample_list.csv")
-    training, validation = load_csv2fold(fold_path)
+                             "sample_list.json")
+    training, validation = load_disk2fold(fold_path)
     # Reset Neural Network model weights
     model.reset_weights()
     # Initialize evaluation subdirectory for current fold
@@ -171,22 +171,21 @@ def run_fold(fold, model, epochs=20, iterations=None,
         plot_validation(history.history, model.metrics, subdir)
 
 #-----------------------------------------------------#
-#                   CSV Management                    #
+#                   JSON Management                   #
 #-----------------------------------------------------#
 # Subfunction for writing a fold sampling to disk
-def write_fold2csv(file_path, training, validation):
-    with open(file_path, "w") as csvfile:
-        writer = csv.writer(csvfile, delimiter=" ")
-        writer.writerow(["TRAINING:"] + list(training))
-        writer.writerow(["VALIDATION:"] + list(validation))
+def write_fold2disk(file_path, training, validation):
+    with open(file_path, "w") as jsonfile:
+        sampling = {"TRAINING": list(training),
+                    "VALIDATION": list(validation)}
+        json.dump(sampling, jsonfile)
 
 # Subfunction for loading a fold sampling from disk
-def load_csv2fold(file_path):
-    training = None
-    validation = None
-    with open(file_path, "r") as csvfile:
-        reader = csv.reader(csvfile, delimiter=" ")
-        for row in reader:
-            if not training : training = row[1:]
-            else : validation = row[1:]
+def load_disk2fold(file_path):
+    with open(file_path, "r") as jsonfile:
+        sampling = json.load(jsonfile)
+        if "TRAINING" in sampling : training = sampling["TRAINING"]
+        else : training = None
+        if "VALIDATION" in sampling : validation = sampling["VALIDATION"]
+        else : validation = None
     return training, validation

@@ -103,7 +103,7 @@ class evaluationTEST(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(fold_dir,
                                                         "history.tsv")))
             self.assertTrue(os.path.exists(os.path.join(fold_dir,
-                                                        "sample_list.csv")))
+                                                        "sample_list.json")))
             self.assertTrue(os.path.exists(os.path.join(fold_dir,
                                                         "model.hdf5")))
 
