@@ -249,3 +249,5 @@ def create_directories(eval_path, subeval_path=None):
             os.mkdir(subdir)
         # Return path to evaluation subdirectory
         return subdir
+    # Return path to evaluation directory
+    else : return eval_path
