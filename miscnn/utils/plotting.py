@@ -52,7 +52,10 @@ def plot_validation(history, metrics, evaluation_directory):
     # Plot figures for the other metrics
     for metric_function in metrics:
         # identify metric name
-        metric_name = metric_function.__name__
+        if hasattr(metric_function, "__name__"):
+            metric_name = metric_function.__name__
+        else:
+            metric_name = metric_function.name
         # Plot metric
         plt.plot(history[metric_name])
         plt.plot(history["val_" + metric_name])
