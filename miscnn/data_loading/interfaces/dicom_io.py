@@ -54,6 +54,7 @@ class DICOM_interface(Abstract_IO):
             three_dim (bool): 3D volume if True.
             mask_background (int): Determines the value of the background pixels.
             structure_dict (dict): Dictionary containg ROI names.
+            annotation_tag (string): String to identify annotation series.
         Returns:
             None
         """
