@@ -1,6 +1,9 @@
 # Byte-compiled Python
 __pycache__/
 
+# Jupyter Notebook
+.ipynb_checkpoints/
+
 # Distribution / packaging
 build/
 dist/
