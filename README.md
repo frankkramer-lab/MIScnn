@@ -29,6 +29,7 @@ The open-source Python library MIScnn is an intuitive API allowing fast setup of
 - MIScnn Examples: [Overview of Use Cases and Examples](https://github.com/frankkramer-lab/MIScnn/wiki/Examples)
 - MIScnn Development Tracker: [GitHub project - MIScnn Development](https://github.com/frankkramer-lab/MIScnn/projects/1)
 - MIScnn on GitHub: [GitHub - frankkramer-lab/MIScnn](https://github.com/frankkramer-lab/MIScnn)
+- MIScnn on Zenodo: [Zenodo - MIScnn](https://doi.org/10.5281/zenodo.3970863)
 - MIScnn on PyPI: [PyPI - miscnn](https://pypi.org/project/miscnn/)
 
 ## Getting started: 60 seconds to a MIS pipeline
