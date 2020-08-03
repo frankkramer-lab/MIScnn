@@ -21,7 +21,7 @@ setup(
                      'numpy>=1.18.2',
                      'nibabel>=3.1.0',
                      'matplotlib==3.0.3',
-                     'Pillow==6.2.2',
+                     'Pillow==7.1.0',
                      'batchgenerators>=0.19.3',
                      'pydicom==2.0.0',
                      'SimpleITK==1.2.3',
