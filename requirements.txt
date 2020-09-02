@@ -1,9 +1,9 @@
-numpy==1.18.2
-tensorflow==2.2.0
+numpy==1.18.5
+tensorflow==2.3.0
 nibabel==3.1.0
-matplotlib==3.0.3
-Pillow==7.1.0
-batchgenerators==0.19.3
+matplotlib==3.3.1
+pillow==7.2.0
+batchgenerators==0.20.1
 pydicom==2.0.0
 SimpleITK==1.2.3
 scikit-image==0.15.0
