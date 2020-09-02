@@ -23,6 +23,7 @@
 import numpy as np
 from tensorflow.keras.utils import to_categorical
 import threading
+import multiprocessing as mp
 # Internal libraries/scripts
 from miscnn.processing.data_augmentation import Data_Augmentation
 from miscnn.processing.batch_creation import create_batches
@@ -65,11 +66,12 @@ class Preprocessor:
                                                 For Example: (64,128,128) for 64x128x128 patch cubes.
                                                 Be aware that the x-axis represents the number of slices in 3D volumes.
                                                 This parameter will be redundant if fullimage or patchwise-crop analysis is selected!!
+        use_mp_preprocessing (boolean):         uses multiprocessing to prepare subfunctions if True.
     """
     def __init__(self, data_io, batch_size, subfunctions=[],
                  data_aug=Data_Augmentation(), prepare_subfunctions=False,
                  prepare_batches=False, analysis="patchwise-crop",
-                 patch_shape=None):
+                 patch_shape=None, use_mp_preprocessing = False):
         # Parse Data Augmentation
         if isinstance(data_aug, Data_Augmentation):
             self.data_augmentation = data_aug
@@ -92,6 +94,7 @@ class Preprocessor:
         self.prepare_batches = prepare_batches
         self.analysis = analysis
         self.patch_shape = patch_shape
+        self.use_mp_preprocessing = use_mp_preprocessing
 
     #---------------------------------------------#
     #               Class variables               #
@@ -105,7 +108,7 @@ class Preprocessor:
                                             # The function create_batches will use this queue to create batches
     cache = dict()                          # Cache additional information and data for patch assembling after patchwise prediction
     thread_lock = threading.Lock()          # Create a threading lock for multiprocessing
-
+    mp_cpus = 10                            # Number of cpus used to prepare subfunctions if use_mp_preprocessing is set to True
     #---------------------------------------------#
     #               Prepare Batches               #
     #---------------------------------------------#
@@ -180,7 +183,7 @@ class Preprocessor:
     #          Prediction Postprocessing          #
     #---------------------------------------------#
     # Postprocess prediction data
-    def postprocessing(self, sample, prediction, activation_output=False):
+    def postprocessing(self, sample, prediction):
         # Reassemble patches into original shape for patchwise analysis
         if self.analysis == "patchwise-crop" or \
             self.analysis == "patchwise-grid":
@@ -198,7 +201,7 @@ class Preprocessor:
         # For fullimages remove the batch axis
         else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
-        if not activation_output : prediction = np.argmax(prediction, axis=-1)
+        prediction = np.argmax(prediction, axis=-1)
         # Run Subfunction postprocessing on the prediction
         for sf in reversed(self.subfunctions):
             prediction = sf.postprocessing(prediction)
@@ -208,17 +211,34 @@ class Preprocessor:
     #---------------------------------------------#
     #               Run Subfunctions              #
     #---------------------------------------------#
+    
     # Preprocess data through subfunctions and backup samples
     def run_subfunctions(self, indices_list, training=True):
-        # Iterate over all samples
-        for index in indices_list:
-            # Load sample
-            sample = self.data_io.sample_loader(index, load_seg=training)
-            # Run provided subfunctions on imaging data
-            for sf in self.subfunctions:
-                sf.preprocessing(sample, training=training)
-            # Backup sample as pickle to disk
-            self.data_io.backup_sample(sample)
+        #Prepare subfunctions using multiprocessing or single threading
+        if self.use_mp_preprocessing:
+            pool = mp.Pool(int(self.mp_cpus))
+            pool.map(self.run_subfunctions_mp, [subj for subj in indices_list])
+        else:
+            # Iterate over all samples
+            for index in indices_list:
+                # Load sample
+                sample = self.data_io.sample_loader(index, load_seg=training)
+                # Run provided subfunctions on imaging data
+                for sf in self.subfunctions:
+                    sf.preprocessing(sample, training=training)
+                # Backup sample as pickle to disk
+                self.data_io.backup_sample(sample)
+    
+    def run_subfunctions_mp(self, index):
+        
+        training = True
+        # Load sample
+        sample = self.data_io.sample_loader(index, load_seg=training)
+        # Run provided subfunctions on imaging data
+        for sf in self.subfunctions:
+            sf.preprocessing(sample, training=training)
+        # Backup sample as pickle to disk
+        self.data_io.backup_sample(sample)
 
     #---------------------------------------------#
     #           Patch-wise grid Analysis          #
