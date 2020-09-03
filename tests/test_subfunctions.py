@@ -77,8 +77,9 @@ class SubfunctionsTEST(unittest.TestCase):
         dataio = Data_IO(io_interface, input_path="", output_path="",
                          batch_path=tmp_batches, delete_batchDir=False)
         sf = [Resize((8,8,8)), Normalization(), Clipping(min=-1.0, max=0.0)]
-        pp = Preprocessor(dataio, batch_size=1, prepare_subfunctions=False,
-                          analysis="fullimage", subfunctions=sf)
+        pp = Preprocessor(dataio, data_aug=None, batch_size=1,
+                          prepare_subfunctions=False, analysis="fullimage",
+                          subfunctions=sf)
         sample_list = dataio.get_indiceslist()
         batches = pp.run(sample_list, training=True, validation=False)
         for i in range(0, 10):
@@ -86,7 +87,7 @@ class SubfunctionsTEST(unittest.TestCase):
             seg = batches[i][1]
             self.assertEqual(img.shape, (1,8,8,8,1))
             self.assertEqual(seg.shape, (1,8,8,8,3))
-            self.assertTrue(np.min(img) >= -1.75 and np.max(img) <= 0.75)
+            self.assertTrue(np.min(img) >= -1.0 and np.max(img) <= 0.0)
         self.tmp_dir.cleanup()
 
     # Run multiple or none subfunctions during postprocessing
@@ -151,6 +152,42 @@ class SubfunctionsTEST(unittest.TestCase):
         batches = pp.run(sample_list, training=True, validation=False)
         self.assertEqual(len(os.listdir(tmp_batches)), 10)
         for i in range(0, 10):
+            file_prepared_subfunctions = os.path.join(tmp_batches,
+                    str(pp.data_io.seed) + ".TEST.sample_" + str(i) + ".pickle")
+            self.assertTrue(os.path.exists(file_prepared_subfunctions))
+            img = batches[i][0]
+            seg = batches[i][1]
+            self.assertIsNotNone(img)
+            self.assertIsNotNone(seg)
+            self.assertEqual(img.shape, (1,8,8,8,1))
+            self.assertEqual(seg.shape, (1,8,8,8,3))
+        self.tmp_dir.cleanup()
+
+    # Run prepare subfunction of Preprocessor using multi-processing
+    def test_SUBFUNCTIONS_prepare_MULTIPROCESSING(self):
+        ds = dict()
+        for i in range(0, 5):
+            img = np.random.rand(16, 16, 16) * 255
+            img = img.astype(int)
+            seg = np.random.rand(16, 16, 16) * 3
+            seg = seg.astype(int)
+            sample = (img, seg)
+            ds["TEST.sample_" + str(i)] = sample
+        io_interface = Dictionary_interface(ds, classes=3, three_dim=True)
+        self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
+        tmp_batches = os.path.join(self.tmp_dir.name, "batches")
+        dataio = Data_IO(io_interface, input_path="", output_path="",
+                         batch_path=tmp_batches, delete_batchDir=False)
+        sf = [Resize((8,8,8)), Normalization(), Clipping(min=-1.0, max=0.0)]
+        pp = Preprocessor(dataio, batch_size=1, prepare_subfunctions=True,
+                          analysis="fullimage", subfunctions=sf,
+                          use_multiprocessing=True)
+        pp.mp_threads = 10
+        sample_list = dataio.get_indiceslist()
+        pp.run_subfunctions(sample_list, training=True)
+        batches = pp.run(sample_list, training=True, validation=False)
+        self.assertEqual(len(os.listdir(tmp_batches)), 5)
+        for i in range(0, 5):
             file_prepared_subfunctions = os.path.join(tmp_batches,
                     str(pp.data_io.seed) + ".TEST.sample_" + str(i) + ".pickle")
             self.assertTrue(os.path.exists(file_prepared_subfunctions))
