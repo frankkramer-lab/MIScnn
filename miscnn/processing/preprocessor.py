@@ -220,7 +220,7 @@ class Preprocessor:
     # preprocessed samples to disk
     def run_subfunctions(self, indices_list, training=True):
         # Prepare subfunctions using single threading
-        if not self.use_multiprocessing:
+        if not self.use_multiprocessing or not training:
             for index in indices_list:
                 self.prepare_sample_subfunctions(index, training)
         # Prepare subfunctions using multiprocessing
@@ -229,6 +229,8 @@ class Preprocessor:
             pool.map(partial(self.prepare_sample_subfunctions,
                              training=training),
                      indices_list)
+            pool.close()
+            pool.join()
 
     # Wrapper function to process subfunctions for a single sample
     def prepare_sample_subfunctions(self, index, training):
