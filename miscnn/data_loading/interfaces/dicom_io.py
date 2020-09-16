@@ -141,12 +141,12 @@ class DICOM_interface(Abstract_IO):
         # Read one of the images to get DICOM Pixelspacing and SliceThickness
         # paramters
         dcm_temp = pydicom.read_file(dicom_file_names[0])
-
-        self.cache[index] = np.array([dcm_temp.SliceThickness,
-                                      dcm_temp.PixelSpacing[0],
-                                      dcm_temp.PixelSpacing[1]],
-                                      dtype=np.float32)
-
+        spacing = np.array([dcm_temp.SliceThickness,
+                            dcm_temp.PixelSpacing[0],
+                            dcm_temp.PixelSpacing[1]],
+                            dtype=np.float32)
+        # Calculate absolute values for voxel spacing
+        self.cache[index] = np.absolute(spacing)
 
         #return both the sitk image and all images as a numpy array
         return sitk.GetArrayFromImage(dcm)
@@ -195,12 +195,12 @@ class DICOM_interface(Abstract_IO):
         #Read one of the images to get DICOM Pixelspacing and SliceThickness
         #paramters
         dcm_temp = pydicom.read_file(dicom_file_names[0])
-
-        self.cache[index] = np.array([dcm_temp.SliceThickness,
-                                      dcm_temp.PixelSpacing[0],
-                                      dcm_temp.PixelSpacing[1]],
-                                      dtype=np.float32)
-
+        spacing = np.array([dcm_temp.SliceThickness,
+                            dcm_temp.PixelSpacing[0],
+                            dcm_temp.PixelSpacing[1]],
+                            dtype=np.float32)
+        # Calculate absolute values for voxel spacing
+        self.cache[index] = np.absolute(spacing)
 
         #return both the sitk image and all images as a numpy array
         return dcm
