@@ -198,6 +198,17 @@ class Data_IO:
         return sample
 
     #---------------------------------------------#
+    #              Obtain all samples             #
+    #---------------------------------------------#
+    def get_samples(self, load_seg=False, load_pred=False):
+        sample_list = []
+        for index in self.indices_list:
+            sample = self.sample_loader(index, load_seg=load_seg,
+                                        load_pred=load_pred, backup=False)
+            sample_list.append(sample)
+        return sample_list
+
+    #---------------------------------------------#
     #               Variable Access               #
     #---------------------------------------------#
     def get_indiceslist(self):
