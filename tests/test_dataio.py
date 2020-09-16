@@ -67,13 +67,22 @@ class Data_IOTEST(unittest.TestCase):
                          batch_path=self.tmp_batches, delete_batchDir=False)
 
 
-    # Obtain sample list
-    def test_DATAIO_BASE_getSampleList(self):
+    # Obtain index list
+    def test_DATAIO_BASE_getIndexList(self):
         data_io = Data_IO(self.io_interface, input_path="", output_path="",
                          batch_path=self.tmp_batches, delete_batchDir=False)
         sample_list = data_io.get_indiceslist()
         self.assertEqual(len(sample_list), 10)
         self.assertIn("TEST.sample_0", sample_list)
+
+    # Obtain sample list
+    def test_DATAIO_BASE_getSampleList(self):
+        data_io = Data_IO(self.io_interface, input_path="", output_path="",
+                         batch_path=self.tmp_batches, delete_batchDir=False)
+        sample_list = data_io.get_samples()
+        self.assertEqual(len(sample_list), 10)
+        for i, sample in enumerate(sample_list):
+            self.assertEqual("TEST.sample_" + str(i), sample.index)
 
     # Prediction storage
     def test_DATAIO_BASE_savePrediction(self):
