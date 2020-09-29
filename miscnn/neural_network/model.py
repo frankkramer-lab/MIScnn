@@ -20,7 +20,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from tensorflow.keras.utils import multi_gpu_model
+from tensorflow.distribute import MirroredStrategy
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 import numpy as np
@@ -54,16 +54,44 @@ class Neural_Network:
         learning_rate (float):                  Learning rate in which weights of the neural network will be updated.
         batch_queue_size (integer):             The batch queue size is the number of previously prepared batches in the cache during runtime.
         Number of workers (integer):            Number of workers/threads which preprocess batches during runtime.
-        gpu_number (integer):                   Number of GPUs, which will be used for training.
+        multi_gpu (boolean):                    Parameter which decides, if multiple gpus will be used for training (Distributed training).
+                                                By default, false.
     """
     def __init__(self, preprocessor, architecture=Architecture(),
                  loss=tversky_loss, metrics=[dice_soft],
                  learninig_rate=0.0001, batch_queue_size=2,
-                 workers=1, gpu_number=1):
+                 workers=1, multi_gpu=False):
         # Identify data parameters
         self.three_dim = preprocessor.data_io.interface.three_dim
         self.channels = preprocessor.data_io.interface.channels
         self.classes = preprocessor.data_io.interface.classes
+        # Cache parameter
+        self.preprocessor = preprocessor
+        self.loss = loss
+        self.metrics = metrics
+        self.learninig_rate = learninig_rate
+        self.batch_queue_size = batch_queue_size
+        self.workers = workers
+        # Build model with multiple GPUs (MirroredStrategy)
+        if multi_gpu:
+            strategy = MirroredStrategy()
+            with strategy.scope() : self.build_model(architecture)
+        # Build model with single GPU
+        else : self.build_model(architecture)
+        # Cache starting weights
+        self.initialization_weights = self.model.get_weights()
+
+
+    #---------------------------------------------#
+    #               Class variables               #
+    #---------------------------------------------#
+    shuffle_batches = True                  # Option whether batch order should be shuffled or not
+    initialization_weights = None           # Neural Network model weights for weight reinitialization
+
+    #---------------------------------------------#
+    #                Model Creation               #
+    #---------------------------------------------#
+    def build_model(self, architecture):
         # Assemble the input shape
         input_shape = (None,)
         # Initialize model for 3D data
@@ -76,27 +104,9 @@ class Neural_Network:
              input_shape = (None, None, self.channels)
              self.model = architecture.create_model_2D(input_shape=input_shape,
                                                        n_labels=self.classes)
-        # Transform to Keras multi GPU model
-        if gpu_number > 1:
-            self.model = multi_gpu_model(self.model, gpu_number)
         # Compile model
-        self.model.compile(optimizer=Adam(lr=learninig_rate),
-                           loss=loss, metrics=metrics)
-        # Cache starting weights
-        self.initialization_weights = self.model.get_weights()
-        # Cache parameter
-        self.preprocessor = preprocessor
-        self.loss = loss
-        self.metrics = metrics
-        self.learninig_rate = learninig_rate
-        self.batch_queue_size = batch_queue_size
-        self.workers = workers
-
-    #---------------------------------------------#
-    #               Class variables               #
-    #---------------------------------------------#
-    shuffle_batches = True                  # Option whether batch order should be shuffled or not
-    initialization_weights = None           # Neural Network model weights for weight reinitialization
+        self.model.compile(optimizer=Adam(lr=self.learninig_rate),
+                           loss=self.loss, metrics=self.metrics)
 
     #---------------------------------------------#
     #                  Training                   #
