@@ -126,6 +126,27 @@ class NeuralNetworkTEST(unittest.TestCase):
         nn.reset_weights()
 
     #-------------------------------------------------#
+    #                 Multiprocessing                 #
+    #-------------------------------------------------#
+    # Multi GPU utilization
+    def test_MODEL_multiGPU(self):
+        try:
+            nn = Neural_Network(preprocessor=self.pp2D,
+                                gpu_number=2)
+            nn.train(self.sample_list2D, epochs=3)
+        except:
+            pass
+
+    # Multi threading utilization
+    def test_MODEL_multiThreading(self):
+        try:
+            nn = Neural_Network(preprocessor=self.pp2D,
+                                workers=5)
+            nn.train(self.sample_list2D, epochs=3)
+        except:
+            pass
+
+    #-------------------------------------------------#
     #                     Training                    #
     #-------------------------------------------------#
     def test_MODEL_training2D(self):
