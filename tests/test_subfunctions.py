@@ -182,7 +182,7 @@ class SubfunctionsTEST(unittest.TestCase):
         pp = Preprocessor(dataio, batch_size=1, prepare_subfunctions=True,
                           analysis="fullimage", subfunctions=sf,
                           use_multiprocessing=True)
-        pp.mp_threads = 10
+        pp.mp_threads = 4
         sample_list = dataio.get_indiceslist()
         pp.run_subfunctions(sample_list, training=True)
         batches = pp.run(sample_list, training=True, validation=False)
