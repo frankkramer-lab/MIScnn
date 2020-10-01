@@ -239,6 +239,9 @@ class Preprocessor:
         # Run provided subfunctions on imaging data
         for sf in self.subfunctions:
             sf.preprocessing(sample, training=training)
+        # Transform array data types in order to save disk space
+        sample.img_data = np.array(sample.img_data, dtype=np.float32)
+        sample.seg_data = np.array(sample.seg_data, dtype=np.uint8)
         # Backup sample as pickle to disk
         self.data_io.backup_sample(sample)
 
