@@ -134,6 +134,14 @@ class NeuralNetworkTEST(unittest.TestCase):
                             multi_gpu=True)
         nn.train(self.sample_list2D, epochs=3)
 
+
+    ### Comments:
+    ### For whatever reason, adding this unittest will break the
+    ### Subfunction preparation with Multiprocessing on Travis-CI.
+    ### With local and GitLab testing, it works without any problems
+    ### but Travis-CI throws a Segmentation Fault exception for the threads...
+    ### And also just for Python 3.6. It works perfectly with 3.7 & 3.8.
+    ### Therefore, I excluded it until I will find out more.
     # # Multi threading utilization
     # def test_MODEL_multiThreading(self):
     #     nn = Neural_Network(preprocessor=self.pp2D,
