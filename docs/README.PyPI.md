@@ -1,7 +1,7 @@
 ![MIScnn workflow](https://raw.githubusercontent.com/frankkramer-lab/MIScnn/master/docs/logo_long.png)
 
 [![shield_python](https://img.shields.io/pypi/pyversions/miscnn?style=flat-square)](https://www.python.org/)
-[![shield_build](https://img.shields.io/travis/frankkramer-lab/miscnn?style=flat-square)](https://travis-ci.org/github/frankkramer-lab/MIScnn)
+[![shield_build](https://img.shields.io/travis/frankkramer-lab/miscnn/master?style=flat-square)](https://travis-ci.org/github/frankkramer-lab/MIScnn)
 [![shield_coverage](https://img.shields.io/codecov/c/gh/frankkramer-lab/miscnn?style=flat-square)](https://codecov.io/gh/frankkramer-lab/miscnn)
 [![shield_pypi_version](https://img.shields.io/pypi/v/miscnn?style=flat-square)](https://pypi.org/project/miscnn/)
 [![shield_pypi_downloads](https://img.shields.io/pypi/dm/miscnn?style=flat-square)](https://pypistats.org/packages/miscnn)
