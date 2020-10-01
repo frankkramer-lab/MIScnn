@@ -128,12 +128,12 @@ class NeuralNetworkTEST(unittest.TestCase):
     #-------------------------------------------------#
     #                 Multiprocessing                 #
     #-------------------------------------------------#
-    # # Multi GPU utilization
-    # def test_MODEL_multiGPU(self):
-    #     nn = Neural_Network(preprocessor=self.pp2D,
-    #                         multi_gpu=True)
-    #     nn.train(self.sample_list2D, epochs=3)
-    #
+    # Multi GPU utilization
+    def test_MODEL_multiGPU(self):
+        nn = Neural_Network(preprocessor=self.pp2D,
+                            multi_gpu=True)
+        nn.train(self.sample_list2D, epochs=3)
+
     # # Multi threading utilization
     # def test_MODEL_multiThreading(self):
     #     nn = Neural_Network(preprocessor=self.pp2D,
