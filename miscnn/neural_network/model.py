@@ -20,7 +20,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from tensorflow.distribute import MirroredStrategy
+from tensorflow.distribute import MirroredStrategy, HierarchicalCopyAllReduce
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 import numpy as np
@@ -74,7 +74,7 @@ class Neural_Network:
         self.workers = workers
         # Build model with multiple GPUs (MirroredStrategy)
         if multi_gpu:
-            strategy = MirroredStrategy()
+            strategy = MirroredStrategy(cross_device_ops=HierarchicalCopyAllReduce())
             with strategy.scope() : self.build_model(architecture)
         # Build model with single GPU
         else : self.build_model(architecture)
