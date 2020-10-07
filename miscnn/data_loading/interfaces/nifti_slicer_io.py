@@ -37,13 +37,12 @@ from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
     In contrast to the normal NIfTI IO interface, the NIfTI slicer IO interface splits the 3D volumes
     into separate 2D images (slices).
     This can be useful if it is desired to apply specific 2D architectures.
-
-    Be aware that this interface defines slices on the first axis.
 """
 class NIFTIslicer_interface(Abstract_IO):
     # Class variable initialization
-    def __init__(self, channels=1, classes=2, pattern=None):
+    def __init__(self, slice_axis=0, channels=1, classes=2, pattern=None):
         self.data_directory = None
+        self.slice_axis = slice_axis
         self.channels = channels
         self.classes = classes
         self.three_dim = False
@@ -82,7 +81,7 @@ class NIFTIslicer_interface(Abstract_IO):
             # Transform NIFTI object to numpy array
             vol_data = vol.get_fdata()
             # Obtain number of slices
-            for slice in range(0, vol_data.shape[0]):
+            for slice in range(0, vol_data.shape[self.slice_axis]):
                 sample_list.append(index + ":#:" + str(slice))
         # Return sample list
         return sample_list
@@ -106,7 +105,7 @@ class NIFTIslicer_interface(Abstract_IO):
         # Transform NIFTI object to numpy array
         vol_data = vol.get_fdata()
         # Obtain slice from volume
-        img_data = vol_data[int(ind_slice)]
+        img_data = np.take(vol_data, int(ind_slice), axis=self.slice_axis)
         # Return volume
         return img_data
 
@@ -129,7 +128,7 @@ class NIFTIslicer_interface(Abstract_IO):
         # Transform NIFTI object to numpy array
         seg_vol_data = seg.get_fdata()
         # Obtain slice from volume
-        seg_data = seg_vol_data[int(ind_slice)]
+        seg_data = np.take(seg_vol_data, int(ind_slice), axis=self.slice_axis)
         # Return segmentation
         return seg_data
 
