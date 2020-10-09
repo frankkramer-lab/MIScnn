@@ -41,10 +41,10 @@ class PreprocessorTEST(unittest.TestCase):
         self.dataset2D = dict()
         for i in range(0, 10):
             img = np.random.rand(16, 16) * 255
-            self.img = img.astype(int)
+            img = img.astype(int)
             seg = np.random.rand(16, 16) * 2
-            self.seg = seg.astype(int)
-            self.dataset2D["TEST.sample_" + str(i)] = (self.img, self.seg)
+            seg = seg.astype(int)
+            self.dataset2D["TEST.sample_" + str(i)] = (img, seg)
         # Initialize Dictionary IO Interface
         io_interface2D = Dictionary_interface(self.dataset2D, classes=3,
                                               three_dim=False)
@@ -58,11 +58,11 @@ class PreprocessorTEST(unittest.TestCase):
         self.dataset3D = dict()
         for i in range(0, 10):
             img = np.random.rand(16, 16, 16) * 255
-            self.img = img.astype(int)
+            img = img.astype(int)
             seg = np.random.rand(16, 16, 16) * 3
-            self.seg = seg.astype(int)
-            if i in range(8,10): sample = (self.img, None)
-            else : sample = (self.img, self.seg)
+            seg = seg.astype(int)
+            if i in range(8,10): sample = (img, None)
+            else : sample = (img, seg)
             self.dataset3D["TEST.sample_" + str(i)] = sample
         # Initialize Dictionary IO Interface
         io_interface3D = Dictionary_interface(self.dataset3D, classes=3,
@@ -159,6 +159,16 @@ class PreprocessorTEST(unittest.TestCase):
             if batch_file.startswith(str(pp.data_io.seed)):
                 batch_list.append(batch_file)
         self.assertEqual(len(batch_list), 16)
+
+    # Subfunction preparation check
+    def test_PREPROCESSOR_BASE_prepareSubfunctions(self):
+        sample_list = self.data_io3D.get_indiceslist()
+        pp = Preprocessor(self.data_io3D, batch_size=1, analysis="fullimage",
+                          prepare_subfunctions=True)
+        pp.run_subfunctions(sample_list[0:8], training=True)
+        pp.run(sample_list[0:8], training=True, validation=False)
+        pp.run_subfunctions(sample_list[8:10], training=False)
+        pp.run(sample_list[8:10], training=False, validation=False)
 
     #-------------------------------------------------#
     #                  Postprocessing                 #
