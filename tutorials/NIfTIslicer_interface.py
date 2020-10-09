@@ -60,7 +60,7 @@ print(np.asarray(pred).shape)
 model.predict(["case_00002:#:42"], return_output=False)
 
 # Load the slice via sample-loader and output also the new prediction, now
-sample = data_io.sample_loader("case_00000:#:89", load_seg=True, load_pred=True)
+sample = data_io.sample_loader("case_00002:#:42", load_seg=True, load_pred=True)
 print(sample.img_data.shape, sample.seg_data.shape, sample.pred_data.shape)
 
 
