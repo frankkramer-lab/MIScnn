@@ -83,8 +83,12 @@ class Resampling(Abstract_Subfunction):
         # Access original shape of the last sample and reset it
         original_shape = self.original_shape
         self.original_shape = None
+        # Handle resampling shape for activation output
+        if len(prediction.shape) != (len(original_shape) - 1):
+            original_shape = (prediction.shape[-1], ) + original_shape[1:]
         # Transform original shape to one-channel array for resampling
-        prediction = np.reshape(prediction, prediction.shape + (1,))
+        else:
+            prediction = np.reshape(prediction, prediction.shape + (1,))
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
         # Resample imaging data
@@ -93,6 +97,7 @@ class Resampling(Abstract_Subfunction):
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        prediction = np.reshape(prediction, original_shape[1:])
+        if len(prediction.shape) == (len(original_shape) - 1):
+            prediction = np.reshape(prediction, original_shape[1:])
         # Return postprocessed prediction
         return prediction

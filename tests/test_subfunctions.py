@@ -302,6 +302,36 @@ class SubfunctionsTEST(unittest.TestCase):
             else : old_shape = (16,16,16)
             self.assertEqual(pred.shape, old_shape)
 
+    def test_SUBFUNCTIONS_RESAMPLING_postprocessing_activationOutput(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            if dim == "2D" : continue
+
+            # Initialize Subfunction
+            if dim == "2D" : spacing = (1,1)
+            else : spacing = (1,1,1)
+            sf = Resampling(new_spacing=spacing)
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            if dim == "2D" : old_spacing = (1.8, 3.0)
+            else : old_spacing = (1.8, 3.0, 3.0)
+            sample_pred.details = {"spacing":np.array(old_spacing)}
+            sample_train.details = {"spacing":np.array(old_spacing)}
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            if dim == "2D":
+                sample_pred.pred_data = np.random.rand(16, 16, 3) * 3
+            else:
+                sample_pred.pred_data = np.random.rand(16, 16, 16, 3) * 3
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred.pred_data)
+            # Check for correctness
+            if dim == "2D" : old_shape = (16,16,3)
+            else : old_shape = (16,16,16,3)
+            self.assertEqual(pred.shape, old_shape)
 
     #-------------------------------------------------#
     #                     Padding                     #
