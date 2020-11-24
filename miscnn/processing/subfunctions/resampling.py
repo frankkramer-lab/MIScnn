@@ -97,7 +97,7 @@ class Resampling(Abstract_Subfunction):
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        if len(prediction.shape) == (len(original_shape) - 1):
+        if prediction.shape[-1] == 1:
             prediction = np.reshape(prediction, original_shape[1:])
         # Return postprocessed prediction
         return prediction
