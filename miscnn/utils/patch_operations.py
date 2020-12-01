@@ -82,7 +82,10 @@ def slice_2Dmatrix(array, window, overlap):
                             float(window[0] - overlap[0])))
     steps_y = int(math.ceil((len(array[0]) - overlap[1]) /
                             float(window[1] - overlap[1])))
-
+    # Exception Handling: patch overlap smaller than patches
+    if steps_x < 1 : steps_x = 1
+    if steps_y < 1 : steps_y = 1
+    
     # Iterate over it x,y
     patches = []
     for x in range(0, steps_x):
@@ -118,6 +121,9 @@ def concat_2Dmatrices(patches, image_size, window, overlap):
                             float(window[0] - overlap[0])))
     steps_y = int(math.ceil((image_size[1] - overlap[1]) /
                             float(window[1] - overlap[1])))
+    # Exception Handling: patch overlap smaller than patches
+    if steps_x < 1 : steps_x = 1
+    if steps_y < 1 : steps_y = 1
 
     # Iterate over it x,y,z
     matrix_x = None
@@ -166,6 +172,10 @@ def slice_3Dmatrix(array, window, overlap):
                             float(window[1] - overlap[1])))
     steps_z = int(math.ceil((len(array[0][0]) - overlap[2]) /
                             float(window[2] - overlap[2])))
+    # Exception Handling: patch overlap smaller than patches
+    if steps_x < 1 : steps_x = 1
+    if steps_y < 1 : steps_y = 1
+    if steps_z < 1 : steps_z = 1
 
     # Iterate over it x,y,z
     patches = []
@@ -212,6 +222,10 @@ def concat_3Dmatrices(patches, image_size, window, overlap):
                             float(window[1] - overlap[1])))
     steps_z = int(math.ceil((image_size[2] - overlap[2]) /
                             float(window[2] - overlap[2])))
+    # Exception Handling: patch overlap smaller than patches
+    if steps_x < 1 : steps_x = 1
+    if steps_y < 1 : steps_y = 1
+    if steps_z < 1 : steps_z = 1
 
     # Iterate over it x,y,z
     matrix_x = None
