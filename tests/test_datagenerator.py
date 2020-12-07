@@ -219,3 +219,26 @@ class DataGeneratorTEST(unittest.TestCase):
             self.assertEqual(batch[0].shape[1:], (16,16,16,1))
             self.assertEqual(batch[1].shape[1:], (16,16,16,3))
             self.assertIn(batch[0].shape[0], [2,4])
+
+    #-------------------------------------------------#
+    #              Inference Augmentation             #
+    #-------------------------------------------------#
+    # Inference Augmentation Test
+    def test_DATAGENERATOR_inferenceAug(self):
+        data_aug = Data_Augmentation()
+        pp_fi = Preprocessor(self.data_io, batch_size=4, data_aug=data_aug,
+                             prepare_subfunctions=False, prepare_batches=False,
+                             analysis="fullimage")
+        data_gen = DataGenerator([self.sample_list[0]], pp_fi, training=False,
+                                 shuffle=False, iterations=None)
+        pred_list_inactive = []
+        for batch in data_gen:
+            pred_list_inactive.append(batch)
+        data_aug.infaug = True
+        pred_list_active = []
+        for batch in data_gen:
+            pred_list_active.append(batch)
+        for i in range(0, len(pred_list_active)):
+            ba = pred_list_active[i]
+            bi = pred_list_inactive[i]
+            self.assertFalse(np.array_equal(ba, bi))

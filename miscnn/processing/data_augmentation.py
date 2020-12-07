@@ -36,7 +36,7 @@ from batchgenerators.transforms import BrightnessMultiplicativeTransform, GammaT
 #-----------------------------------------------------#
 # Class to perform diverse data augmentation techniques
 class Data_Augmentation:
-    # Configurations for the data augmentation techniques
+    # Configurations for the data augmentation techniques (can be adjusted)
     config_p_per_sample = 0.15                      # Probability a data augmentation technique
                                                     # will be performed on the sample
     config_mirror_axes = (0, 1, 2)
@@ -50,9 +50,14 @@ class Data_Augmentation:
     config_rotations_angleY = (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi)
     config_rotations_angleZ = (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi)
     config_scaling_range = (0.85, 1.25)
+
     # Cropping settings
     cropping = False
     cropping_patch_shape = None
+    # Inference augmentation (do not change)
+    infaug = False                                  # Should Inference augmentation (flipping) be performed on prediction image
+    infaug_flip_current = None                      # Cache variable for storing current flip axis of inference augmentation
+    infaug_flip_list = list(range(1, 4))
     # Segmentation map augmentation
     seg_augmentation = True
 
@@ -176,6 +181,12 @@ class Data_Augmentation:
         aug_seg_data = np.moveaxis(aug_seg_data, 1, -1)
         # Return augmentated image and segmentation data
         return aug_img_data, aug_seg_data
+
+    #---------------------------------------------#
+    #         Run Inference Augmentation          #
+    #---------------------------------------------#
+    def run_infaug(self, data):
+        return np.flip(data, axis=self.infaug_flip_current)
 
 #-----------------------------------------------------#
 #           Batchgenerators Data Generator            #
