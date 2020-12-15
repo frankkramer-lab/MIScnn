@@ -39,7 +39,7 @@ class Sample:
     details = None
 
     # Create a Sample object
-    def __init__(self, index, image, channels, classes):
+    def __init__(self, index, image, channels, classes, extended):
         # Preprocess image data if required
         if image.shape[-1] != channels:
             image = numpy.reshape(image, image.shape + (channels,))
@@ -49,6 +49,7 @@ class Sample:
         self.channels = channels
         self.classes = classes
         self.shape = self.img_data.shape
+        self.extended = extended
 
     # Add and preprocess a segmentation annotation
     def add_segmentation(self, seg):
@@ -61,6 +62,9 @@ class Sample:
         if pred.shape[-1] != 1:
             pred = numpy.reshape(pred, pred.shape + (1,))
         self.pred_data = pred
+
+    def get_extended_data(self):
+        return self.extended
 
     # Add optional information / details for custom usage
     def add_details(self, details):

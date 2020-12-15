@@ -106,7 +106,7 @@ class Image_interface(Abstract_IO):
         # Keep only intensity for grayscale images
         if self.img_type =="grayscale" : img = img[:,:,0]
         # Return image
-        return img
+        return img, {"type": "image"}
 
     #---------------------------------------------#
     #              load_segmentation              #
@@ -157,14 +157,9 @@ class Image_interface(Abstract_IO):
         return pred_data
 
     #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    def load_details(self, i):
-        pass
-    #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
-    def save_prediction(self, pred, index, output_path):
+    def save_prediction(self, sample, output_path):
         # Resolve location where data should be written
         if not os.path.exists(output_path):
             raise IOError(
@@ -172,7 +167,7 @@ class Image_interface(Abstract_IO):
             )
 
         # Transform numpy array to a Pillow image
-        pred_pillow = Image.fromarray(pred.astype(np.uint8))
+        pred_pillow = Image.fromarray(sample.pred_data.astype(np.uint8))
         # Save segmentation to disk
         pred_file = str(index) + "." + self.img_format
         pred_pillow.save(os.path.join(output_path, pred_file))
