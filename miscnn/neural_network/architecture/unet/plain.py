@@ -48,11 +48,14 @@ class Architecture(Abstract_Architecture):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, activation='softmax', batch_normalization=True):
+    def __init__(self, activation='softmax', batch_normalization=True,
+                 pooling=(1,2,2)):
         # Parse parameter
         self.activation = activation
         # Batch normalization settings
         self.ba_norm = batch_normalization
+        # Adjust pooling step
+        self.pooling = pooling
         # Create list of filters
         self.feature_map = [30, 60, 120, 240, 320]
 
@@ -114,7 +117,7 @@ class Architecture(Abstract_Architecture):
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
         contracting_convs.append(cnn_chain)
-        cnn_chain = MaxPooling3D(pool_size=(1, 2, 2))(cnn_chain)
+        cnn_chain = MaxPooling3D(pool_size=self.pooling)(cnn_chain)
 
         # Remaining contracting layers
         for i in range(1, len(self.feature_map)):
@@ -140,7 +143,7 @@ class Architecture(Abstract_Architecture):
 
         # Last expanding layer
         neurons = self.feature_map[0]
-        cnn_chain = Conv3DTranspose(neurons, (1, 2, 2), strides=(1, 2, 2),
+        cnn_chain = Conv3DTranspose(neurons, self.pooling, strides=self.pooling,
                                     padding='same')(cnn_chain)
         cnn_chain = concatenate([cnn_chain, contracting_convs[0]], axis=-1)
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)

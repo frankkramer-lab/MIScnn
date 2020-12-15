@@ -135,8 +135,11 @@ class Preprocessor:
             if training:
                 sample.seg_data = to_categorical(sample.seg_data,
                                                  num_classes=sample.classes)
-            # Decide if data augmentation should be performed
+            # Decide if data augmentation should be performed on data
             if training and not validation and self.data_augmentation is not None:
+                data_aug = True
+            elif not training and self.data_augmentation is not None and \
+                self.data_augmentation.infaug:
                 data_aug = True
             else:
                 data_aug = False
@@ -189,6 +192,9 @@ class Preprocessor:
     #---------------------------------------------#
     # Postprocess prediction data
     def postprocessing(self, sample, prediction, activation_output=False):
+        # Apply back-flipping if inference augmentation is active
+        if self.data_augmentation is not None and self.data_augmentation.infaug:
+            prediction = self.data_augmentation.run_infaug(prediction)
         # Reassemble patches into original shape for patchwise analysis
         if self.analysis == "patchwise-crop" or \
             self.analysis == "patchwise-grid":
@@ -280,8 +286,10 @@ class Preprocessor:
                                          return_slicer=True)
             self.cache["slicer_" + str(sample.index)] = slicer
         # Run data augmentation
-        if data_aug:
+        if data_aug and training:
             img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
+        elif data_aug and not training:
+            img_data = self.data_augmentation.run_infaug(img_data)
         # Create tuple of preprocessed data
         if training:
             ready_data = list(zip(img_data, seg_data))
@@ -364,8 +372,10 @@ class Preprocessor:
         img_data = np.expand_dims(img, axis=0)
         if training : seg_data = np.expand_dims(seg, axis=0)
         # Run data augmentation
-        if data_aug:
+        if data_aug and training:
             img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
+        elif data_aug and not training:
+            img_data = self.data_augmentation.run_infaug(img_data)
         # Create tuple of preprocessed data
         if training : ready_data = list(zip(img_data, seg_data))
         else : ready_data = list(zip(img_data))

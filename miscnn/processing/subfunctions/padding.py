@@ -67,16 +67,20 @@ class Padding(Abstract_Subfunction):
         # Transform data from channel-last to channel-first structure
         img_data = np.moveaxis(img_data, -1, 0)
         if training : seg_data = np.moveaxis(seg_data, -1, 0)
+        # Define kwargs
+        if self.pad_mode == "constant":
+            kwargs = {"constant_values": self.pad_value_img}
+        else : kwargs = {}
         # Pad imaging data
         img_data, crop_coords = pad_nd_image(img_data, self.min_size,
                     mode=self.pad_mode,
-                    kwargs={"constant_values": self.pad_value_img},
+                    kwargs=kwargs,
                     return_slicer=True,
                     shape_must_be_divisible_by=self.shape_must_be_divisible_by)
         if training:
             seg_data = pad_nd_image(seg_data, self.min_size,
                     mode=self.pad_mode,
-                    kwargs={"constant_values": self.pad_value_seg},
+                    kwargs=kwargs,
                     return_slicer=False,
                     shape_must_be_divisible_by=self.shape_must_be_divisible_by)
         # Cache current crop coordinates for later postprocessing
