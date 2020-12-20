@@ -39,7 +39,7 @@ class Sample:
     details = None
 
     # Create a Sample object
-    def __init__(self, index, image, channels, classes, extended):
+    def __init__(self, index, image, channels, classes, extended = {}):
         # Preprocess image data if required
         if image.shape[-1] != channels:
             image = numpy.reshape(image, image.shape + (channels,))
