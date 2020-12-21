@@ -247,7 +247,7 @@ class Neural_Network:
     """
     # Evaluate the Neural Network model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, epochs=20,
-                 iterations=None, callbacks=[]):
+                 iterations=None, callbacks=[], class_weight=None):
         # Initialize a Keras Data Generator for generating Training data
         dataGen_training = DataGenerator(training_samples, self.preprocessor,
                                          training=True, validation=False,
@@ -263,6 +263,7 @@ class Neural_Network:
                                  validation_data=dataGen_validation,
                                  callbacks=callbacks,
                                  epochs=epochs,
+                                 class_weight=class_weight,
                                  workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
