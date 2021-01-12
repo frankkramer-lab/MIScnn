@@ -50,6 +50,8 @@ class Data_Augmentation:
     config_rotations_angleY = (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi)
     config_rotations_angleZ = (-15. / 360 * 2. * np.pi, 15. / 360 * 2. * np.pi)
     config_scaling_range = (0.85, 1.25)
+    coloraug_per_channel = True
+    config_contrast_preserverange = True
 
     # Cropping settings
     cropping = False
@@ -97,22 +99,22 @@ class Data_Augmentation:
         if self.contrast:
             aug_contrast = ContrastAugmentationTransform(
                                         self.config_contrast_range,
-                                        preserve_range=True,
-                                        per_channel=True,
+                                        preserve_range=self.config_contrast_preserverange,
+                                        per_channel=self.coloraug_per_channel,
                                         p_per_sample=self.config_p_per_sample)
             transforms.append(aug_contrast)
         # Add brightness augmentation
         if self.brightness:
             aug_brightness = BrightnessMultiplicativeTransform(
                                         self.config_brightness_range,
-                                        per_channel=True,
+                                        per_channel=self.coloraug_per_channel,
                                         p_per_sample=self.config_p_per_sample)
             transforms.append(aug_brightness)
         # Add gamma augmentation
         if self.gamma:
             aug_gamma = GammaTransform(self.config_gamma_range,
                                        invert_image=False,
-                                       per_channel=True,
+                                       per_channel=self.coloraug_per_channel,
                                        retain_stats=True,
                                        p_per_sample=self.config_p_per_sample)
             transforms.append(aug_gamma)
