@@ -55,6 +55,8 @@ class DataGenerator(Keras_Sequence):
             self.batchpointers = list(range(0, batches_count+1))
         elif not training:
             self.batch_queue = preprocessor.run(sample_list, False, False)
+        # Shuffle before starting
+        self.on_epoch_end()
 
     # Return the next batch for associated index
     def __getitem__(self, idx):
