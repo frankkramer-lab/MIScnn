@@ -28,6 +28,7 @@ import numpy as np
 import nibabel as nib
 from PIL import Image
 #Internal libraries
+import miscnn.data_loading.sample as MIScnn_sample
 from miscnn.data_loading.interfaces import Image_interface, NIFTI_interface, \
                                            NIFTIslicer_interface, \
                                            Dictionary_interface
@@ -85,14 +86,15 @@ class IO_interfacesTEST(unittest.TestCase):
         sample_list = interface.initialize(self.tmp_data.name)
         img = interface.load_image(sample_list[0])
         seg = interface.load_segmentation(sample_list[0])
-        self.assertTrue(np.array_equal(img, self.img[:,:,0]))
+        self.assertTrue(np.array_equal(img[0], self.img[:,:,0]))
         self.assertTrue(np.array_equal(seg, self.seg[:,:,0]))
     # NIFTI_interface - Loading and Storage of Predictions
     def test_IOI_IMAGE_predictionhandling(self):
         interface = Image_interface(pattern="image")
         sample_list = interface.initialize(self.tmp_data.name)
-        interface.save_prediction(self.seg[:,:,0], "pred.image",
-                                  self.tmp_data.name)
+        sample = MIScnn_sample.Sample("pred.image", self.img[:,:,0], 1, 2);
+        sample.add_prediction(self.seg[:,:,0]);
+        interface.save_prediction(sample, self.tmp_data.name)
         pred = interface.load_prediction("pred.image", self.tmp_data.name)
         self.assertTrue(np.array_equal(pred, self.seg[:,:,0]))
 
@@ -112,18 +114,22 @@ class IO_interfacesTEST(unittest.TestCase):
     def test_IOI_NIFTI_loading(self):
         interface = NIFTI_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
-        img = interface.load_image(sample_list[0])
+        img, extended = interface.load_image(sample_list[0])
+        # Create a Sample object
+        sample = MIScnn_sample.Sample(sample_list[0], img, interface.channels, interface.classes, extended)
         seg = interface.load_segmentation(sample_list[0])
-        details = interface.load_details(sample_list[0])
+        details = interface.load_details( sample)
         self.assertTrue(np.array_equal(img, self.img))
         self.assertTrue(np.array_equal(seg, self.seg))
     # NIFTI_interface - Loading and Storage of Predictions
     def test_IOI_NIFTI_predictionhandling(self):
         interface = NIFTI_interface(pattern="nifti")
         sample_list = interface.initialize(self.tmp_data.name)
-        interface.save_prediction(self.seg, "pred.nifti", self.tmp_data.name)
+        sample = MIScnn_sample.Sample("pred.nifti", np.asarray([0]), interface.channels, interface.classes)
+        sample.add_prediction(self.seg);
+        interface.save_prediction(sample, self.tmp_data.name)
         pred = interface.load_prediction("pred.nifti", self.tmp_data.name)
-        self.assertTrue(np.array_equal(pred, self.seg))
+        self.assertTrue(np.array_equal(pred.reshape(self.seg.shape), self.seg))
 
     #-------------------------------------------------#
     #              NIfTI slicer Interface             #
@@ -143,7 +149,7 @@ class IO_interfacesTEST(unittest.TestCase):
         sample_list = interface.initialize(self.tmp_data.name)
         img = interface.load_image(sample_list[-1])
         seg = interface.load_segmentation(sample_list[-1])
-        self.assertTrue(np.array_equal(img, self.img[-1]))
+        self.assertTrue(np.array_equal(img[0], self.img[-1]))
         self.assertTrue(np.array_equal(seg, self.seg[-1]))
     # NIFTI_interface - Loading and Storage of Predictions
     def test_IOI_NIFTIslicer_predictionhandling(self):
@@ -178,7 +184,7 @@ class IO_interfacesTEST(unittest.TestCase):
         sample_list = interface.initialize("")
         img = interface.load_image(sample_list[0])
         seg = interface.load_segmentation(sample_list[0])
-        self.assertTrue(np.array_equal(img, self.img))
+        self.assertTrue(np.array_equal(img[0], self.img))
         self.assertTrue(np.array_equal(seg, self.seg))
     # NIFTI_interface - Loading and Storage of Predictions
     def test_IOI_DICTIONARY_predictionhandling(self):
@@ -186,9 +192,11 @@ class IO_interfacesTEST(unittest.TestCase):
         my_dict["dict_sample"] = (self.img, self.seg)
         interface = Dictionary_interface(my_dict)
         sample_list = interface.initialize("")
-        interface.save_prediction(self.seg, "dict_sample", "")
+        sample = MIScnn_sample.Sample("dict_sample", np.asarray([0]), 1, 2)
+        sample.add_prediction(self.seg);
+        interface.save_prediction(sample, "")
         pred = interface.load_prediction("dict_sample", "")
-        self.assertTrue(np.array_equal(pred, self.seg))
+        self.assertTrue(np.array_equal(pred.reshape(self.seg.shape), self.seg))
 
 #-----------------------------------------------------#
 #               Unittest: Main Function               #

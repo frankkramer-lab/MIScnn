@@ -164,8 +164,8 @@ class NIFTI_interface(Abstract_IO):
                 "Data path, {}, could not be resolved".format(output_path)
             )
         # Convert numpy array to NIFTI
-        nifti = nib.Nifti1Image(sample.pred_data, sample.get_extended_data()["affine"])
+        nifti = nib.Nifti1Image(sample.pred_data, sample.get_extended_data()["affine"] if "affine" in sample.get_extended_data().keys() else None)
         #nifti.get_data_dtype() == pred.dtype
         # Save segmentation to disk
-        pred_file = str(index) + ".nii.gz"
+        pred_file = str(sample.index) + ".nii.gz"
         nib.save(nifti, os.path.join(output_path, pred_file))

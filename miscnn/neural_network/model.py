@@ -170,7 +170,10 @@ class Neural_Network:
                                                         activation_output)
             # Backup predicted segmentation
             if return_output : results.append(pred_seg)
-            else : self.preprocessor.data_io.save_prediction(pred_seg, sample)
+            else :
+              sampleObj = self.preprocessor.data_io.sample_loader(sample, load_seg=False); #TODO optimize
+              sampleObj.add_prediction(pred_seg)
+              self.preprocessor.data_io.save_prediction(sampleObj)
             # Clean up temporary files if necessary
             if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
                 self.preprocessor.data_io.batch_cleanup()
