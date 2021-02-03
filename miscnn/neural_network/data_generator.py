@@ -69,14 +69,14 @@ class DataGenerator(Keras_Sequence):
 
     # Return the number of batches for one epoch
     def __len__(self):
+        # IF number of samples is specified in the parameters take it
+        if self.iterations is not None : return self.iterations
         # Number of batches is the number of preprocessed batch files
-        if self.preprocessor.prepare_batches:
+        elif self.preprocessor.prepare_batches:
             return len(self.batchpointers)
         # Number of batches is preprocessed for the single sample to predict
         elif not self.training:
             return len(self.batch_queue)
-        # IF number of samples is specified in the parameters take it
-        elif self.iterations is not None : return self.iterations
         # Else number of samples is dynamic -> calculate it
         else:
             if self.preprocessor.data_augmentation is not None and not \
