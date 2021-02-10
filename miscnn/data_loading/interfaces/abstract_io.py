@@ -30,10 +30,9 @@ from abc import ABC, abstractmethod
 Methods:
     __init__                Object creation function
     initialize:             Prepare the data set and create indices list
-    load_image:             Load an image
+    load_image:             Load an image and associated data
     load_segmentation:      Load a segmentation
     load_prediction:        Load a prediction from file
-    load_details:           Load optional information
     save_prediction:        Save a prediction to file
 """
 class Abstract_IO(ABC):

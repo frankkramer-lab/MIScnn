@@ -118,7 +118,7 @@ class IO_interfacesTEST(unittest.TestCase):
         # Create a Sample object
         sample = MIScnn_sample.Sample(sample_list[0], img, interface.channels, interface.classes, extended)
         seg = interface.load_segmentation(sample_list[0])
-        details = interface.load_details( sample)
+        
         self.assertTrue(np.array_equal(img, self.img))
         self.assertTrue(np.array_equal(seg, self.seg))
     # NIFTI_interface - Loading and Storage of Predictions

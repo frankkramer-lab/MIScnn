@@ -54,7 +54,7 @@ class Resampling(Abstract_Subfunction):
         img_data = sample.img_data
         seg_data = sample.seg_data
         # Identify current spacing
-        try : current_spacing = sample.details["spacing"]
+        try : current_spacing = sample.get_extended_data()["spacing"]
         except AttributeError:
             print("'spacing' is not initialized in sample details!")
         # Cache current spacing for later postprocessing

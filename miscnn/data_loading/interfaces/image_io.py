@@ -36,10 +36,9 @@ from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 Methods:
     __init__                Object creation function
     initialize:             Prepare the data set and create indices list
-    load_image:             Load an image
+    load_image:             Load an image and associated data
     load_segmentation:      Load a segmentation
     load_prediction:        Load a prediction
-    load_details:           Load optional information
     save_prediction:        Save a prediction to disk
 
 Args:

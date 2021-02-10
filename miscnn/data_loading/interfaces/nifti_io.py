@@ -86,7 +86,22 @@ class NIFTI_interface(Abstract_IO):
         vol_data = vol.get_fdata()
         # Save spacing in cache
         # Return volume
-        return vol_data, {"type":"nifti", "affine":vol.affine}
+        
+        spacing_matrix = vol.affine[:3,:3]
+        # Identify correct spacing diagonal
+        diagonal_negative = np.diag(spacing_matrix)
+        diagonal_positive = np.diag(spacing_matrix[::-1,:])
+        if np.count_nonzero(diagonal_negative) != 1:
+            spacing = diagonal_negative
+        elif np.count_nonzero(diagonal_positive) != 1:
+            spacing = diagonal_positive
+        else:
+            warnings.warn("Affinity matrix of NIfTI volume can not be parsed.")
+        # Calculate absolute values for voxel spacing
+        spacing = np.absolute(spacing)
+        # Delete cached spacing
+        # Return dictionary
+        return vol_data, {"type":"nifti", "affine":vol.affine, "spacing":spacing}
 
     #---------------------------------------------#
     #              load_segmentation              #
@@ -130,28 +145,6 @@ class NIFTI_interface(Abstract_IO):
         pred_data = pred.get_fdata()
         # Return prediction
         return pred_data #should this also store the matrix in case they are not aligned?
-
-    #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    # Parse slice thickness
-    def load_details(self, sample):
-        # Parse voxel spacing from affinity matrix of NIfTI
-        spacing_matrix = sample.get_extended_data()["affine"][:3,:3]
-        # Identify correct spacing diagonal
-        diagonal_negative = np.diag(spacing_matrix)
-        diagonal_positive = np.diag(spacing_matrix[::-1,:])
-        if np.count_nonzero(diagonal_negative) != 1:
-            spacing = diagonal_negative
-        elif np.count_nonzero(diagonal_positive) != 1:
-            spacing = diagonal_positive
-        else:
-            warnings.warn("Affinity matrix of NIfTI volume can not be parsed.")
-        # Calculate absolute values for voxel spacing
-        spacing = np.absolute(spacing)
-        # Delete cached spacing
-        # Return detail dictionary
-        return {"spacing":spacing}
 
     #---------------------------------------------#
     #               save_prediction               #

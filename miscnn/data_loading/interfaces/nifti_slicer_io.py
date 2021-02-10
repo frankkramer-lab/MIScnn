@@ -156,12 +156,6 @@ class NIFTIslicer_interface(Abstract_IO):
         return pred_data
 
     #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    def load_details(self, i):
-        pass
-
-    #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
     # Write a segmentation prediction into in the NPY file format

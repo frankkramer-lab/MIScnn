@@ -262,7 +262,7 @@ class SubfunctionsTEST(unittest.TestCase):
                 sample = deepcopy(getattr(self, varname))
                 if dim == "2D" : old_spacing = (1.8, 3.0)
                 else : old_spacing = (1.8, 3.0, 3.0)
-                sample.details = {"spacing":np.array(old_spacing)}
+                sample.extended = {"spacing":np.array(old_spacing)}
                 # Run preprocessing of the subfunction
                 sf.preprocessing(sample, training=train)
                 # Check for correctness
@@ -288,8 +288,8 @@ class SubfunctionsTEST(unittest.TestCase):
             sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
             if dim == "2D" : old_spacing = (1.8, 3.0)
             else : old_spacing = (1.8, 3.0, 3.0)
-            sample_pred.details = {"spacing":np.array(old_spacing)}
-            sample_train.details = {"spacing":np.array(old_spacing)}
+            sample_pred.extended = {"spacing":np.array(old_spacing)}
+            sample_train.extended = {"spacing":np.array(old_spacing)}
             # Run preprocessing of the subfunction
             sf.preprocessing(sample_train, training=True)
             sf.preprocessing(sample_pred, training=False)
@@ -316,8 +316,8 @@ class SubfunctionsTEST(unittest.TestCase):
             sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
             if dim == "2D" : old_spacing = (1.8, 3.0)
             else : old_spacing = (1.8, 3.0, 3.0)
-            sample_pred.details = {"spacing":np.array(old_spacing)}
-            sample_train.details = {"spacing":np.array(old_spacing)}
+            sample_pred.extended = {"spacing":np.array(old_spacing)}
+            sample_train.extended = {"spacing":np.array(old_spacing)}
             # Run preprocessing of the subfunction
             sf.preprocessing(sample_train, training=True)
             sf.preprocessing(sample_pred, training=False)

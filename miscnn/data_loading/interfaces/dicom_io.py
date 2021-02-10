@@ -197,11 +197,9 @@ class DICOM_interface(Abstract_IO):
                             dcm_temp.PixelSpacing[0],
                             dcm_temp.PixelSpacing[1]],
                             dtype=np.float32)
-        # Calculate absolute values for voxel spacing
-        self.cache[index] = np.absolute(spacing)
 
         #return both the sitk image and all images as a numpy array
-        return dcm
+        return dcm, {"type":"dicom", "spacing":np.absolute(spacing)}
 
 
     #---------------------------------------------#
@@ -223,7 +221,7 @@ class DICOM_interface(Abstract_IO):
         contours = self.get_ROI_data(rtStruct_path)
 
         #Load CT images in sitk format
-        images = self.load_image_sitk(index)
+        images, image_data = self.load_image_sitk(index)
 
         #get segmentations
         segmentations = self.convert(contours, images)
