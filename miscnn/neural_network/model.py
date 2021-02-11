@@ -159,6 +159,8 @@ class Neural_Network:
             dataGen = DataGenerator([sample], self.preprocessor,
                                     training=False, validation=False,
                                     shuffle=False, iterations=None)
+            
+            sampleObj = self.preprocessor.data_io.sample_loader(sample, load_seg=False); #TODO optimize
             # Run prediction process with Keras predict
             pred_list = []
             for batch in dataGen:
@@ -166,12 +168,11 @@ class Neural_Network:
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            pred_seg = self.preprocessor.postprocessing(sample, pred_seg,
+            pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output)
             # Backup predicted segmentation
             if return_output : results.append(pred_seg)
             else :
-              sampleObj = self.preprocessor.data_io.sample_loader(sample, load_seg=False); #TODO optimize
               sampleObj.add_prediction(pred_seg)
               self.preprocessor.data_io.save_prediction(sampleObj)
             # Clean up temporary files if necessary
@@ -212,6 +213,8 @@ class Neural_Network:
             dataGen = DataGenerator([sample], self.preprocessor,
                                     training=False, validation=False,
                                     shuffle=False, iterations=None)
+            
+            sampleObj = self.preprocessor.data_io.sample_loader(sample, load_seg=False); #TODO optimize
             # Run prediction process with Keras predict
             pred_list = []
             for batch in dataGen:
@@ -219,7 +222,7 @@ class Neural_Network:
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            pred_seg = self.preprocessor.postprocessing(sample, pred_seg,
+            pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output=True)
             # Backup predicted segmentation for current augmentation
             results.append(pred_seg)

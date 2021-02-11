@@ -42,7 +42,6 @@ class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     def __init__(self, new_shape=(128,128,128)):
         self.new_shape = new_shape
-        self.original_shape = None
 
     #---------------------------------------------#
     #                Preprocessing                #
@@ -52,7 +51,7 @@ class Resize(Abstract_Subfunction):
         img_data = sample.img_data
         seg_data = sample.seg_data
         # Cache current spacing for later postprocessing
-        if not training : self.original_shape = (1,) + img_data.shape[0:-1]
+        if not training : sample.extended["orig_resize_shape"] = (1,) + img_data.shape[0:-1]
         # Transform data from channel-last to channel-first structure
         img_data = np.moveaxis(img_data, -1, 0)
         if training : seg_data = np.moveaxis(seg_data, -1, 0)
@@ -69,10 +68,9 @@ class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, prediction):
+    def postprocessing(self, sample, prediction):
         # Access original shape of the last sample and reset it
-        original_shape = self.original_shape
-        self.original_shape = None
+        original_shape = sample.get_extended_data()["orig_resize_shape"]
         # Transform original shape to one-channel array
         prediction = np.reshape(prediction, prediction.shape + (1,))
         # Transform prediction from channel-last to channel-first structure

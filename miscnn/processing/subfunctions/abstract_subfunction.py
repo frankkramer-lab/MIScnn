@@ -77,10 +77,11 @@ class Abstract_Subfunction(ABC):
         It is possible to pass configurations through the initialization function of this class.
 
         Parameter:
+            sample (Sample Object):   The sample object that was segmented. Contains metadata.
             prediction (numpy array):   Numpy array of the predicted segmentation
         Return:
             prediction (numpy array):   Numpy array of processed predicted segmentation
     """
     @abstractmethod
-    def postprocessing(self, prediction):
+    def postprocessing(self, sample, prediction):
         return prediction

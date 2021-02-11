@@ -125,7 +125,7 @@ class SubfunctionsTEST(unittest.TestCase):
                 seg_list.append(data_patches[i][1])
             seg = np.stack(seg_list, axis=0)
             self.assertEqual(seg.shape, (27,4,4,4,3))
-            pred = pp.postprocessing(index, seg)
+            pred = pp.postprocessing(sample, seg)
             self.assertEqual(pred.shape, (16,16,16))
         self.tmp_dir.cleanup()
 
@@ -238,7 +238,7 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16)
             else : old_shape = (16,16,16)
@@ -296,7 +296,7 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16)
             else : old_shape = (16,16,16)
@@ -327,7 +327,7 @@ class SubfunctionsTEST(unittest.TestCase):
             else:
                 sample_pred.pred_data = np.random.rand(16, 16, 16, 3) * 3
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16,3)
             else : old_shape = (16,16,16,3)
@@ -374,7 +374,7 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16)
             else : old_shape = (16,16,16)
@@ -416,7 +416,7 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
 
@@ -467,7 +467,7 @@ class SubfunctionsTEST(unittest.TestCase):
                 # Transform segmentation data to simulate prediction data
                 sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
                 # Run postprocessing of the subfunction
-                pred = sf.postprocessing(sample_pred.pred_data)
+                pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
                 # Check for correctness
                 self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
 
@@ -512,6 +512,6 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             self.assertTrue(np.array_equal(pred, sample_pred.pred_data))

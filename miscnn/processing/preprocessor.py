@@ -199,11 +199,11 @@ class Preprocessor:
         if self.analysis == "patchwise-crop" or \
             self.analysis == "patchwise-grid":
             # Check if patch was padded
-            slice_key = "slicer_" + str(sample)
+            slice_key = "slicer_" + str(sample.index)
             if slice_key in self.cache:
                 prediction = crop_patch(prediction, self.cache[slice_key])
             # Load cached shape & Concatenate patches into original shape
-            seg_shape = self.cache.pop("shape_" + str(sample))
+            seg_shape = self.cache.pop("shape_" + str(sample.index))
             prediction = concat_matrices(patches=prediction,
                                     image_size=seg_shape,
                                     window=self.patch_shape,
@@ -213,9 +213,10 @@ class Preprocessor:
         else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
         if not activation_output : prediction = np.argmax(prediction, axis=-1)
+        
         # Run Subfunction postprocessing on the prediction
         for sf in reversed(self.subfunctions):
-            prediction = sf.postprocessing(prediction)
+            prediction = sf.postprocessing(sample, prediction)
         # Return postprocessed prediction
         return prediction
 
