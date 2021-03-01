@@ -85,10 +85,10 @@ class Data_IO:
         # If sample is a backup -> load it from pickle
         if backup : return self.load_sample_pickle(index)
         # Load the image with the I/O interface
-        image = self.interface.load_image(index)
+        image, extended = self.interface.load_image(index)
         # Create a Sample object
         sample = MIScnn_sample.Sample(index, image, self.interface.channels,
-                                      self.interface.classes)
+                                      self.interface.classes, extended)
         # IF needed read the provided segmentation for current sample
         if load_seg:
             segmentation = self.interface.load_segmentation(index)
@@ -97,8 +97,6 @@ class Data_IO:
         if load_pred:
             prediction = self.interface.load_prediction(index, self.output_path)
             sample.add_prediction(prediction)
-        # Add optional details to the sample object
-        sample.add_details(self.interface.load_details(index))
         # Return sample object
         return sample
 
@@ -106,12 +104,12 @@ class Data_IO:
     #              Prediction Backup              #
     #---------------------------------------------#
     # Save a segmentation prediction
-    def save_prediction(self, pred, index):
+    def save_prediction(self, sample):
         # Create the output directory if not existent
         if not os.path.exists(self.output_path):
             os.mkdir(self.output_path)
         # Backup the prediction
-        self.interface.save_prediction(pred, index, self.output_path)
+        self.interface.save_prediction(sample, self.output_path)
 
     #---------------------------------------------#
     #               Batch Management              #
