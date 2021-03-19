@@ -151,8 +151,6 @@ class NIFTI_interface(Abstract_IO):
             warnings.warn("Affinity matrix of NIfTI volume can not be parsed.")
         # Calculate absolute values for voxel spacing
         spacing = np.absolute(spacing)
-        # Delete cached spacing
-        del self.cache[i]
         # Return detail dictionary
         return {"spacing":spacing}
 
@@ -166,8 +164,12 @@ class NIFTI_interface(Abstract_IO):
             raise IOError(
                 "Data path, {}, could not be resolved".format(output_path)
             )
-        # Convert numpy array to NIFTI
-        nifti = nib.Nifti1Image(pred, None)
+        # Cast pred.dtype to numpy.uint16
+        pred = pred.astype(np.uint16)
+        # Convert numpy array to NIFTI with spacing
+        nifti = nib.Nifti1Image(pred, affine=self.cache[index])
+        # Delete cached spacing
+        del self.cache[index]
         #nifti.get_data_dtype() == pred.dtype
         # Save segmentation to disk
         pred_file = str(index) + ".nii.gz"
