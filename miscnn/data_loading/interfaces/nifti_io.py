@@ -167,7 +167,10 @@ class NIFTI_interface(Abstract_IO):
         # Cast pred.dtype to numpy.uint16
         pred = pred.astype(np.uint16)
         # Convert numpy array to NIFTI with spacing
-        nifti = nib.Nifti1Image(pred, affine=self.cache[index])
+        if index in self.cache:
+            nifti = nib.Nifti1Image(pred, affine=self.cache[index])
+        else:
+            nifti = nib.Nifti1Image(pred, affine=None)
         # Delete cached spacing
         del self.cache[index]
         #nifti.get_data_dtype() == pred.dtype
