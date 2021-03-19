@@ -169,10 +169,10 @@ class NIFTI_interface(Abstract_IO):
         # Convert numpy array to NIFTI with spacing
         if index in self.cache:
             nifti = nib.Nifti1Image(pred, affine=self.cache[index])
+            # Delete cached spacing
+            del self.cache[index]
         else:
             nifti = nib.Nifti1Image(pred, affine=None)
-        # Delete cached spacing
-        del self.cache[index]
         #nifti.get_data_dtype() == pred.dtype
         # Save segmentation to disk
         pred_file = str(index) + ".nii.gz"
