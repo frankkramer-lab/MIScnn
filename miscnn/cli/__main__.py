@@ -1,0 +1,227 @@
+import argparse
+import pathlib
+import os
+import os.path
+from miscnn import Data_IO
+import pandas as pd
+import numpy as np
+from tqdm import tqdm
+from miscnn.data_loading.interfaces import NIFTI_interface
+from miscnn.data_loading.interfaces import Image_interface
+from miscnn.data_loading.interfaces import DICOM_interface
+
+parser = argparse.ArgumentParser(description='MIScnn CLI')
+subparsers = parser.add_subparsers(help='Components')
+parser.add_argument('-v', dest="verbose", action='store_true', default=False,
+                    help='provide verbose output', required=False)
+parser.add_argument('--data_dir', dest="data_dir", type=str, default="./data",
+                    help='set path to data dir', required=False)
+
+#verification
+verification_parser = subparsers.add_parser("verify")
+verification_parser.set_defaults(which='verify')
+verification_parser.add_argument("-t", "--type", dest="imagetype", choices=["NIFTI", "DICOM", "IMG"], help="The method of medical image storage in the datapath", required=True)
+#verification_parser.add_argument('-b', "--batches", dest="batches", action='store_true', default=False, help='check if loading of batches works. Provide list of existent seeds.', required=False)
+
+#implement cleaning
+cleanup_parser = subparsers.add_parser("cleanup")
+cleanup_parser.set_defaults(which='cleanup')
+cleanup_parser.add_argument("-b", "--batches", dest="batches", action='store_true', default=False, help="Cleanup batch directory", required=False)
+cleanup_parser.add_argument("-e", "--evaluation", dest="eval", action='store_true', default=False, help="Cleanup evaluation directory", required=False)
+cleanup_parser.add_argument("-p", "--prediction", dest="pred", action='store_true', default=False, help="Cleanup prediction directory", required=False)
+
+#data exploration subparser
+data_exp_parser = subparsers.add_parser("data_exp")
+data_exp_parser.set_defaults(which='data_exp')
+data_exp_parser.add_argument("-t", "--type", dest="imagetype", choices=["NIFTI", "DICOM", "IMG", "Unknown"], default="Unknown", help="The method of medical image storage in the datapath", required=False)
+data_exp_parser.add_argument('-c', "--counts", dest="counts", action='store_true', default=False, help='count data provided', required=False)
+data_exp_parser.add_argument('-m', "--memory", dest="memory", action='store_true', default=False, help='compute memory cost', required=False)
+data_exp_parser.add_argument('-s', "--structure", dest="structure", action='store_true', default=False, help='scan data for its structure', required=False)
+data_exp_parser.add_argument('-n', "--minmax", dest="minmax", action='store_true', default=False, help='compute range per data element and overall range.', required=False)
+data_exp_parser.add_argument('-r', "--ratio", dest="ratio", action='store_true', default=False, help='Ratios between the segmentation classes provided.', required=False)
+data_exp_parser.add_argument("-e", "--export", dest="export", type=str, default="", help="If and there the data should be exported to", required=False)
+
+#TODO add config code
+#TODO add conversion
+
+args = parser.parse_args()
+
+def del_tree(path):
+    for root, dirs, files in os.walk(path, topdown=False):
+        for name in files:
+            os.remove(os.path.join(root, name))
+        for name in dirs:
+            os.rmdir(os.path.join(root, name))
+    
+
+if (args.which == "verify"):
+    interface = None
+    elif (args.imagetype == "NIFTI"):
+        interface = NIFTI_interface()
+        print("using NIFTI_interface")
+    elif (args.imagetype == "DICOM"):
+        interface = DICOM_interface()
+        print("using DICOM_interface")
+    elif (args.imagetype == "IMG"):
+        interface = Image_interface()
+        print("using Image_interface")
+    dataio = Data_IO(interface, args.data_dir)
+    indices = dataio.get_indiceslist()
+    if len(indices) == 0: #or maybe lower than a threshold
+        print("[WARNING] Datapath " + str(args.data_path) + " does not seem to contain any samples.")
+    for index in indices:
+        try:
+            sample = dataio.sample_loader(index, load_seg=False)
+        except:
+            print("[ERROR] Sample image with index " + index + " failed to load using the " + args.imagetype + " interface.")
+        try:
+            sample = dataio.sample_loader(index, load_seg=True)
+        except:
+            print("[WARNING] Sample segmentation with index " + index + " failed to load using the " + args.imagetype + " interface.")
+elif (args.which == "cleanup"):
+    if (args.batches):
+        del_tree(args.data_dir + "/batches")
+    if (args.eval):
+        del_tree(args.data_dir + "/evaluation")
+    if (args.pred):
+        del_tree(args.data_dir + "/prediction")
+elif (args.which == "data_exp"):
+    interface = None
+    if (args.imagetype == "Unknown"):
+        print("attempting to infer the image type")
+        print("image type inference not yet implemented")
+        exit()
+    elif (args.imagetype == "NIFTI"):
+        interface = NIFTI_interface()
+        print("using NIFTI_interface")
+    elif (args.imagetype == "DICOM"):
+        interface = DICOM_interface()
+        print("using DICOM_interface")
+    elif (args.imagetype == "IMG"):
+        interface = Image_interface()
+        print("using Image_interface")
+    dataio = Data_IO(interface, args.data_dir)
+    
+    indices = dataio.get_indiceslist()
+    cnt = len(indices)
+    print("interface found " + cnt + " indices in the data directory.")
+    
+    data_dir = str(args.data_dir)
+    images = [index for index in indices if os.path.exists(data_dir + "/" + index + "/imaging.nii.gz") or os.path.exists(data_dir + "/" + index + "/imaging.dcm") or os.path.exists(data_dir + "/" + index + "/imaging.png")]
+    segmentations = [index for index in indices if os.path.exists(data_dir + "/" + index + "/segmentation.nii.gz") or os.path.exists(data_dir + "/" + index + "/segmentation.dcm") or os.path.exists(data_dir + "/" + index + "/segmentation.png")]
+    
+    if (args.counts):
+        print("Found " + str(cnt) + " samples.")
+        print("In Samples found " + str(len(images)) + " images.")
+        print("In Samples found " + str(len(segmentations)) + " image segmentations.")
+    df = pd.DataFrame()
+    df["name"] = indices
+    if (args.memory):
+        print("collecting memory information of data directory.")
+        imagesize = 0
+        max_img = 0
+        min_img = 99999999999
+        segsize = 0
+        max_seg = 0
+        min_seg = 99999999999
+        sample_data = {}
+        for index in tqdm(indices):
+            if (not os.path.isdir(data_dir + "/" + index)):
+                continue
+            sample_data[index] = [index]
+            size = os.path.getsize(data_dir + "/" + index + "/imaging.nii.gz")
+            max_img = max(size, max_img)
+            min_img = min(size, min_img)
+            sample_data[index].append(size)
+            imagesize += size
+            if (os.path.exists(data_dir + "/" + index + "/segmentation.nii.gz")):
+                size = os.path.getsize(data_dir + "/" + index + "/segmentation.nii.gz")
+                sample_data[index].append(size)
+                max_seg = max(size, max_seg)
+                min_seg = min(size, min_seg)
+                segsize += size
+            else:
+                sample_data[index].append(0)
+        print("total datasize of images is " + str(imagesize) + " which averages to " + str(imagesize / images) + " bytes of data per image.")
+        print("total datasize of segmentations is " + str(segsize) + " which averages to " + str(segsize / segmentations) + " bytes of data per segmentation.")
+        print("the minimum value in the data images is " + str(min_img))
+        print("the maximum value in the data images is " + str(max_img))
+        print("the minimum value in the data segmentations is " + str(min_seg))
+        print("the maximum value in the data segmentations is " + str(max_seg))
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "image_size", "segmentation_size"]), on="name", how="right")
+        #TODO compute model size, evaluation and prediction memory cost. as well as batches
+    if (args.structure):
+        sample_data = {}
+        print("collecting structure data.")
+        for index in tqdm(indices):
+            if (not os.path.isdir(data_dir + "/" + index)):
+                continue
+            # Sample loading
+            sample = dataio.sample_loader(index, load_seg=False)
+            # Create an empty list for the current asmple in our data dictionary
+            sample_data[index] = [index]
+            sample_data[index].append(sample.img_data.shape)
+            if ("spacing" in sample.get_extended_data()):
+                sample_data[index].append(sample.get_extended_data()["spacing"])
+            elif ("affine" in sample.get_extended_data()):
+            
+                spacing_matrix = sample.get_extended_data()["affine"][:3,:3]
+                # Identify correct spacing diagonal
+                diagonal_negative = np.diag(spacing_matrix)
+                diagonal_positive = np.diag(spacing_matrix[::-1,:])
+                if np.count_nonzero(diagonal_negative) != 1:
+                    spacing = diagonal_negative
+                elif np.count_nonzero(diagonal_positive) != 1:
+                    spacing = diagonal_positive
+                else:
+                    warnings.warn("Affinity matrix of NIfTI volume can not be parsed.")
+                # Calculate absolute values for voxel spacing
+                spacing = np.absolute(spacing)
+                sample_data[index].append(spacing)
+            else:
+                sample_data[index].append(None)
+            # Identify and store class distribution
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "shape", "voxel_spacing"]), on="name", how="right")
+    if (args.minmax):
+        sample_data = {}
+        print("finding minima and maxima of the data images")
+        for index in tqdm(indices):
+            if (not os.path.isdir(data_dir + "/" + index)):
+                continue
+            # Sample loading
+            sample = dataio.sample_loader(index, load_seg=False)
+            # Create an empty list for the current asmple in our data dictionary
+            sample_data[index] = [index]
+            # Identify minimum and maximum volume intensity
+            sample_data[index].append(sample.img_data.min())
+            sample_data[index].append(sample.img_data.max())
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "minimum", "maximum"]), on="name", how="right")
+    if (args.ratio):
+        sample_data = {}
+        print("computing class ratios.")
+        for index in tqdm(indices):
+            if (not os.path.isdir(data_dir + "/" + index)):
+                continue
+            has_seg = os.path.exists(data_dir + "/" + index + "/segmentation.nii.gz")
+            if (not has_seg):
+                sample_data[index] = [index]
+                continue
+            # Sample loading
+            sample = dataio.sample_loader(index, load_seg=True)
+            # Create an empty list for the current asmple in our data dictionary
+            sample_data[index] = [index]
+            # Store voxel spacing
+            unique_data, unique_counts = np.unique(sample.seg_data, return_counts=True)
+            class_freq = unique_counts / np.sum(unique_counts)
+            class_freq = np.around(class_freq, decimals=6)
+            sample_data[index].append(tuple(class_freq))
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "class_frequency"]), on="name", how="right")
+    
+    if (len(args.export) > 0):
+        df.to_csv(args.export)
+    else:
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(df)
+        
+
+    
