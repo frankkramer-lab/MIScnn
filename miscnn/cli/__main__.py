@@ -40,6 +40,7 @@ data_exp_parser.add_argument('-s', "--structure", dest="structure", action='stor
 data_exp_parser.add_argument('-n', "--minmax", dest="minmax", action='store_true', default=False, help='compute range per data element and overall range.', required=False)
 data_exp_parser.add_argument('-r', "--ratio", dest="ratio", action='store_true', default=False, help='Ratios between the segmentation classes provided.', required=False)
 data_exp_parser.add_argument("-e", "--export", dest="export", type=str, default="", help="If and there the data should be exported to", required=False)
+data_exp_parser.add_argument("-b", "--binning", dest="binning", type=int, default=0, help="compute N bins over the dataset and get variation over the images.", required=False)
 
 #TODO add config code
 #TODO add conversion
@@ -56,7 +57,7 @@ def del_tree(path):
 
 if (args.which == "verify"):
     interface = None
-    elif (args.imagetype == "NIFTI"):
+    if (args.imagetype == "NIFTI"):
         interface = NIFTI_interface()
         print("using NIFTI_interface")
     elif (args.imagetype == "DICOM"):
@@ -104,11 +105,18 @@ elif (args.which == "data_exp"):
     
     indices = dataio.get_indiceslist()
     cnt = len(indices)
-    print("interface found " + cnt + " indices in the data directory.")
+    print("interface found " + str(cnt) + " indices in the data directory.")
     
     data_dir = str(args.data_dir)
     images = [index for index in indices if os.path.exists(data_dir + "/" + index + "/imaging.nii.gz") or os.path.exists(data_dir + "/" + index + "/imaging.dcm") or os.path.exists(data_dir + "/" + index + "/imaging.png")]
     segmentations = [index for index in indices if os.path.exists(data_dir + "/" + index + "/segmentation.nii.gz") or os.path.exists(data_dir + "/" + index + "/segmentation.dcm") or os.path.exists(data_dir + "/" + index + "/segmentation.png")]
+    
+    global_min = 999999
+    global_max = -99999
+
+    #this is the values that descibe the value space shared by all data objects.
+    shared_min = 999999
+    shared_max = -99999
     
     if (args.counts):
         print("Found " + str(cnt) + " samples.")
@@ -182,7 +190,7 @@ elif (args.which == "data_exp"):
                 sample_data[index].append(None)
             # Identify and store class distribution
         df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "shape", "voxel_spacing"]), on="name", how="right")
-    if (args.minmax):
+    if (args.minmax or args.binning > 0):
         sample_data = {}
         print("finding minima and maxima of the data images")
         for index in tqdm(indices):
@@ -193,8 +201,22 @@ elif (args.which == "data_exp"):
             # Create an empty list for the current asmple in our data dictionary
             sample_data[index] = [index]
             # Identify minimum and maximum volume intensity
-            sample_data[index].append(sample.img_data.min())
-            sample_data[index].append(sample.img_data.max())
+            min_val = sample.img_data.min()
+            max_val = sample.img_data.max()
+            global_min = min(global_min, min_val)
+            global_max = max(global_max, max_val)
+            if (shared_min == 999999):
+                shared_min = min_val
+            else:
+                shared_min = max(shared_min, min_val)
+            if (shared_max == -99999):
+                shared_max = max_val
+            else:
+                shared_max = min(shared_max, min_val)
+            sample_data[index].append(min_val)
+            sample_data[index].append(max_val)
+        print("the global value space is (", str(global_min) + ", " + str(global_max) + ")")
+        print("the shared value space is (", str(shared_min) + ", " + str(shared_max) + ")")
         df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "minimum", "maximum"]), on="name", how="right")
     if (args.ratio):
         sample_data = {}
@@ -216,6 +238,27 @@ elif (args.which == "data_exp"):
             class_freq = np.around(class_freq, decimals=6)
             sample_data[index].append(tuple(class_freq))
         df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "class_frequency"]), on="name", how="right")
+    if (args.binning > 0):
+        threshhold = []
+        ratio = (shared_max - shared_min) / args.binning
+        threshhold.append(shared_min)
+        for i in range(args.binning):
+            threshhold.append(shared_min + ratio * (1 + i))
+        threshhold.append(global_max + 1)
+        print(threshhold)
+        sample_data = {}
+        for index in tqdm(indices):
+            if (not os.path.isdir(data_dir + "/" + index)):
+                continue
+            sample = dataio.sample_loader(index, load_seg=False)
+            # Create an empty list for the current asmple in our data dictionary
+            sample_data[index] = [index]
+            # Identify minimum and maximum volume intensity
+            sample_data[index].append((threshhold[0] < sample.img_data).sum())
+            for i in range(args.binning + 1):
+                sample_data[index].append(((threshhold[i] <= sample.img_data) & (threshhold[i + 1] > sample.img_data)).sum())
+        
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name"] + ["bin"+str(i) for i in range(len(threshhold))]), on="name", how="right")
     
     if (len(args.export) > 0):
         df.to_csv(args.export)
@@ -223,5 +266,4 @@ elif (args.which == "data_exp"):
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(df)
         
-
-    
+#check if z-score observes normal distribution. calculate transformation to normal distribution
