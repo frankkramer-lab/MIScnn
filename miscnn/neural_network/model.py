@@ -118,9 +118,11 @@ class Neural_Network:
         epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through
                                                 the complete data set.
         iterations (integer):                   Number of iterations (batches) in a single epoch.
-        callbacks (list of Callback classes):   A list of Callback classes for custom evaluation
+        callbacks (list of Callback classes):   A list of Callback classes for custom evaluation.
+        class_weight (dictionary or list):      A list or dictionary of float values to handle class unbalance.
     """
-    def train(self, sample_list, epochs=20, iterations=None, callbacks=[]):
+    def train(self, sample_list, epochs=20, iterations=None, callbacks=[],
+              class_weight=None):
         # Initialize Keras Data Generator for generating batches
         dataGen = DataGenerator(sample_list, self.preprocessor, training=True,
                                 validation=False, shuffle=self.shuffle_batches,
@@ -129,6 +131,7 @@ class Neural_Network:
         self.model.fit(dataGen,
                        epochs=epochs,
                        callbacks=callbacks,
+                       class_weight=class_weight,
                        workers=self.workers,
                        max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
@@ -250,7 +253,7 @@ class Neural_Network:
     """
     # Evaluate the Neural Network model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, epochs=20,
-                 iterations=None, callbacks=[]):
+                 iterations=None, callbacks=[], class_weight=None):
         # Initialize a Keras Data Generator for generating Training data
         dataGen_training = DataGenerator(training_samples, self.preprocessor,
                                          training=True, validation=False,
@@ -266,6 +269,7 @@ class Neural_Network:
                                  validation_data=dataGen_validation,
                                  callbacks=callbacks,
                                  epochs=epochs,
+                                 class_weight=class_weight,
                                  workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
