@@ -159,7 +159,20 @@ elif (args.which == "data_exp"):
     df = pd.DataFrame()
     df["name"] = indices
     if (args.classes):
-        pass
+        class_set = []
+        for index in tqdm(segmentations):
+            sample = dataio.sample_loader(index, load_seg=True)
+            classes = np.unique(sample.seg_data)
+            
+            if (len(class_set)):
+                class_set = list(classes)
+            for c in classes:
+                if (not c in class_set):
+                    print("Warning: not all classes occur in every file.")
+                    class_set.append(c)
+        print("The total count of classes over all segmentations is " + str(len(class_set)))
+        if (len(class_set) < 2):
+            print("Warning detected a class count smaller than 2. This dataset is likely damaged.")
     if (args.memory):
         print("collecting memory information of data directory.")
         imagesize = 0
