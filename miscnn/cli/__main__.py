@@ -1,3 +1,23 @@
+#==============================================================================#
+#  Author:       Philip Meyer                                                  #
+#  Copyright:    2021 IT-Infrastructure for Translational Medical Research,    #
+#                University of Augsburg                                        #
+#                                                                              #
+#  This program is free software: you can redistribute it and/or modify        #
+#  it under the terms of the GNU General Public License as published by        #
+#  the Free Software Foundation, either version 3 of the License, or           #
+#  (at your option) any later version.                                         #
+#                                                                              #
+#  This program is distributed in the hope that it will be useful,             #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+#  GNU General Public License for more details.                                #
+#                                                                              #
+#  You should have received a copy of the GNU General Public License           #
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
+#==============================================================================#
+
+
 import argparse
 import pathlib
 import os
@@ -17,6 +37,7 @@ parser.add_argument('-v', dest="verbose", action='store_true', default=False,
 parser.add_argument('--data_dir', dest="data_dir", type=str, default="./data",
                     help='set path to data dir', required=False)
 
+parser.set_defaults(which='null')
 #verification
 verification_parser = subparsers.add_parser("verify")
 verification_parser.set_defaults(which='verify')
@@ -34,7 +55,8 @@ cleanup_parser.add_argument("-p", "--prediction", dest="pred", action='store_tru
 data_exp_parser = subparsers.add_parser("data_exp")
 data_exp_parser.set_defaults(which='data_exp')
 data_exp_parser.add_argument("-t", "--type", dest="imagetype", choices=["NIFTI", "DICOM", "IMG", "Unknown"], default="Unknown", help="The method of medical image storage in the datapath", required=False)
-data_exp_parser.add_argument('-c', "--counts", dest="counts", action='store_true', default=False, help='count data provided', required=False)
+data_exp_parser.add_argument('-cn', "--counts", dest="counts", action='store_true', default=False, help='count data provided', required=False)
+data_exp_parser.add_argument('-cl', "--classes", dest="classes", action='store_true', default=False, help='count data provided', required=False)
 data_exp_parser.add_argument('-m', "--memory", dest="memory", action='store_true', default=False, help='compute memory cost', required=False)
 data_exp_parser.add_argument('-s', "--structure", dest="structure", action='store_true', default=False, help='scan data for its structure', required=False)
 data_exp_parser.add_argument('-n', "--minmax", dest="minmax", action='store_true', default=False, help='compute range per data element and overall range.', required=False)
@@ -88,10 +110,23 @@ elif (args.which == "cleanup"):
         del_tree(args.data_dir + "/prediction")
 elif (args.which == "data_exp"):
     interface = None
+    data_dir = str(args.data_dir)
     if (args.imagetype == "Unknown"):
-        print("attempting to infer the image type")
-        print("image type inference not yet implemented")
-        exit()
+        files = [f[f.find("."):] for dp, dn, filenames in os.walk(data_dir) for f in filenames if os.path.isfile(os.path.join(dp, f)) and ("imaging" in f or "segmentation" in f)]
+        unique = list(np.unique(np.asarray(files)))
+        unique = [u for u in unique if u in [".nii", ".nii.gz", ".dcm", ".png"]]
+        if len(unique) > 1:
+            print("Failed to infer image type")
+            exit()
+        if (unique[0] == ".png"):
+            interface = Image_interface()
+            print("Inferred Image_interface")
+        elif (unique[0] == ".dcm"):
+            interface = DICOM_interface()
+            print("Inferred DICOM_interface")
+        else:
+            interface = NIFTI_interface()
+            print("Inferred NIFTI_interface")
     elif (args.imagetype == "NIFTI"):
         interface = NIFTI_interface()
         print("using NIFTI_interface")
@@ -107,7 +142,6 @@ elif (args.which == "data_exp"):
     cnt = len(indices)
     print("interface found " + str(cnt) + " indices in the data directory.")
     
-    data_dir = str(args.data_dir)
     images = [index for index in indices if os.path.exists(data_dir + "/" + index + "/imaging.nii.gz") or os.path.exists(data_dir + "/" + index + "/imaging.dcm") or os.path.exists(data_dir + "/" + index + "/imaging.png")]
     segmentations = [index for index in indices if os.path.exists(data_dir + "/" + index + "/segmentation.nii.gz") or os.path.exists(data_dir + "/" + index + "/segmentation.dcm") or os.path.exists(data_dir + "/" + index + "/segmentation.png")]
     
@@ -124,6 +158,8 @@ elif (args.which == "data_exp"):
         print("In Samples found " + str(len(segmentations)) + " image segmentations.")
     df = pd.DataFrame()
     df["name"] = indices
+    if (args.classes):
+        pass
     if (args.memory):
         print("collecting memory information of data directory.")
         imagesize = 0
