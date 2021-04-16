@@ -219,7 +219,7 @@ class SubfunctionsTEST(unittest.TestCase):
                           analysis="fullimage", subfunctions=sf)
         nn = Neural_Network(preprocessor=pp)
         sample_list = dataio.get_indiceslist()
-        nn.predict(sample_list)
+        nn.predict(sample_list, return_output=True)
 
     #-------------------------------------------------#
     #                    Resizing                     #
