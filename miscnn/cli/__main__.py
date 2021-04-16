@@ -57,12 +57,14 @@ data_exp_parser.set_defaults(which='data_exp')
 data_exp_parser.add_argument("-t", "--type", dest="imagetype", choices=["NIFTI", "DICOM", "IMG", "Unknown"], default="Unknown", help="The method of medical image storage in the datapath", required=False)
 data_exp_parser.add_argument('-cn', "--counts", dest="counts", action='store_true', default=False, help='count data provided', required=False)
 data_exp_parser.add_argument('-cl', "--classes", dest="classes", action='store_true', default=False, help='count data provided', required=False)
-data_exp_parser.add_argument('-m', "--memory", dest="memory", action='store_true', default=False, help='compute memory cost', required=False)
+data_exp_parser.add_argument('-mem', "--memory", dest="memory", action='store_true', default=False, help='compute memory cost', required=False)
 data_exp_parser.add_argument('-s', "--structure", dest="structure", action='store_true', default=False, help='scan data for its structure', required=False)
-data_exp_parser.add_argument('-n', "--minmax", dest="minmax", action='store_true', default=False, help='compute range per data element and overall range.', required=False)
+data_exp_parser.add_argument('-m', "--minmax", dest="minmax", action='store_true', default=False, help='compute range per data element and overall range.', required=False)
+data_exp_parser.add_argument('-mS', "--minmax_seg", dest="minmax_seg", action='store_true', default=False, help='compute range per data class and overall range.', required=False)
 data_exp_parser.add_argument('-r', "--ratio", dest="ratio", action='store_true', default=False, help='Ratios between the segmentation classes provided.', required=False)
 data_exp_parser.add_argument("-e", "--export", dest="export", type=str, default="", help="If and there the data should be exported to", required=False)
 data_exp_parser.add_argument("-b", "--binning", dest="binning", type=int, default=0, help="compute N bins over the dataset and get variation over the images.", required=False)
+data_exp_parser.add_argument("-bS", "--binning_seg", dest="binning_seg", type=int, default=0, help="compute N bins over the dataset per class and get variation over the images.", required=False)
 
 #TODO add config code
 #TODO add conversion
@@ -152,6 +154,8 @@ elif (args.which == "data_exp"):
     shared_min = 999999
     shared_max = -99999
     
+    class_set = []
+    
     if (args.counts):
         print("Found " + str(cnt) + " samples.")
         print("In Samples found " + str(len(images)) + " images.")
@@ -159,7 +163,6 @@ elif (args.which == "data_exp"):
     df = pd.DataFrame()
     df["name"] = indices
     if (args.classes):
-        class_set = []
         for index in tqdm(segmentations):
             sample = dataio.sample_loader(index, load_seg=True)
             classes = np.unique(sample.seg_data)
@@ -173,6 +176,7 @@ elif (args.which == "data_exp"):
         print("The total count of classes over all segmentations is " + str(len(class_set)))
         if (len(class_set) < 2):
             print("Warning detected a class count smaller than 2. This dataset is likely damaged.")
+        class_cnt = len(class_set)
     if (args.memory):
         print("collecting memory information of data directory.")
         imagesize = 0
@@ -267,6 +271,34 @@ elif (args.which == "data_exp"):
         print("the global value space is (", str(global_min) + ", " + str(global_max) + ")")
         print("the shared value space is (", str(shared_min) + ", " + str(shared_max) + ")")
         df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "minimum", "maximum"]), on="name", how="right")
+    if (args.minmax_seg or args.binning_seg > 0):
+        sample_data = {}
+        print("finding minima and maxima of the data images")
+        for index in tqdm(indices):
+            if (not os.path.isdir(data_dir + "/" + index)):
+                continue
+            # Sample loading
+            sample = dataio.sample_loader(index, load_seg=False)
+            # Create an empty list for the current asmple in our data dictionary
+            sample_data[index] = [index]
+            # Identify minimum and maximum volume intensity
+            min_val = sample.img_data.min()
+            max_val = sample.img_data.max()
+            global_min = min(global_min, min_val)
+            global_max = max(global_max, max_val)
+            if (shared_min == 999999):
+                shared_min = min_val
+            else:
+                shared_min = max(shared_min, min_val)
+            if (shared_max == -99999):
+                shared_max = max_val
+            else:
+                shared_max = min(shared_max, min_val)
+            sample_data[index].append(min_val)
+            sample_data[index].append(max_val)
+        print("the global value space is (", str(global_min) + ", " + str(global_max) + ")")
+        print("the shared value space is (", str(shared_min) + ", " + str(shared_max) + ")")
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "minimum", "maximum"]), on="name", how="right")
     if (args.ratio):
         sample_data = {}
         print("computing class ratios.")
@@ -288,6 +320,27 @@ elif (args.which == "data_exp"):
             sample_data[index].append(tuple(class_freq))
         df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "class_frequency"]), on="name", how="right")
     if (args.binning > 0):
+        threshhold = []
+        ratio = (shared_max - shared_min) / args.binning
+        threshhold.append(shared_min)
+        for i in range(args.binning):
+            threshhold.append(shared_min + ratio * (1 + i))
+        threshhold.append(global_max + 1)
+        print(threshhold)
+        sample_data = {}
+        for index in tqdm(indices):
+            if (not os.path.isdir(data_dir + "/" + index)):
+                continue
+            sample = dataio.sample_loader(index, load_seg=False)
+            # Create an empty list for the current asmple in our data dictionary
+            sample_data[index] = [index]
+            # Identify minimum and maximum volume intensity
+            sample_data[index].append((threshhold[0] < sample.img_data).sum())
+            for i in range(args.binning + 1):
+                sample_data[index].append(((threshhold[i] <= sample.img_data) & (threshhold[i + 1] > sample.img_data)).sum())
+        
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name"] + ["bin"+str(i) for i in range(len(threshhold))]), on="name", how="right")
+    if (args.binning_seg > 0):
         threshhold = []
         ratio = (shared_max - shared_min) / args.binning
         threshhold.append(shared_min)
