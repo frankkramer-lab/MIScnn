@@ -27,7 +27,7 @@ import numpy as np
 from tensorflow.keras.utils import to_categorical
 from copy import deepcopy
 #Internal libraries
-from miscnn import Data_IO, Preprocessor
+from miscnn import Data_IO, Preprocessor, Neural_Network
 from miscnn.data_loading.interfaces import Dictionary_interface
 from miscnn.data_loading.sample import Sample
 from miscnn.processing.subfunctions import *
@@ -198,6 +198,28 @@ class SubfunctionsTEST(unittest.TestCase):
             self.assertEqual(img.shape, (1,8,8,8,1))
             self.assertEqual(seg.shape, (1,8,8,8,3))
         #self.tmp_dir.cleanup()
+
+    # Run prepare subfunction of Preprocessor
+    def test_SUBFUNCTIONS_fullrun(self):
+        ds = dict()
+        for i in range(0, 10):
+            img = np.random.rand(16, 16, 16) * 255
+            img = img.astype(int)
+            seg = np.random.rand(16, 16, 16) * 3
+            seg = seg.astype(int)
+            sample = (img, seg)
+            ds["TEST.sample_" + str(i)] = sample
+        io_interface = Dictionary_interface(ds, classes=3, three_dim=True)
+        self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
+        tmp_batches = os.path.join(self.tmp_dir.name, "batches")
+        dataio = Data_IO(io_interface, input_path="", output_path="",
+                         batch_path=tmp_batches, delete_batchDir=False)
+        sf = [Resize((16,16,16)), Normalization(), Clipping(min=-1.0, max=0.0)]
+        pp = Preprocessor(dataio, batch_size=1, prepare_subfunctions=True,
+                          analysis="fullimage", subfunctions=sf)
+        nn = Neural_Network(preprocessor=pp)
+        sample_list = dataio.get_indiceslist()
+        nn.predict(sample_list)
 
     #-------------------------------------------------#
     #                    Resizing                     #
