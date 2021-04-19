@@ -24,7 +24,7 @@ setup(
                      'pillow==8.1.1',
                      'batchgenerators>=0.20.1',
                      'pydicom==2.0.0',
-                     'SimpleITK==1.2.3',
+                     'SimpleITK==2.0.2',
                      'scikit-image==0.15.0'],
    classifiers=["Programming Language :: Python :: 3",
                 "Programming Language :: Python :: 3.6",
