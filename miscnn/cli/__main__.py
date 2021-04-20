@@ -68,6 +68,7 @@ data_exp_parser.add_argument("-bS", "--binning_seg", dest="binning_seg", type=in
 
 #TODO add config code
 #TODO add conversion
+#TODO add visualization
 
 args = parser.parse_args()
 
@@ -156,13 +157,17 @@ elif (args.which == "data_exp"):
     
     class_set = []
     
+    class_minmax = {}
+    
     if (args.counts):
         print("Found " + str(cnt) + " samples.")
         print("In Samples found " + str(len(images)) + " images.")
         print("In Samples found " + str(len(segmentations)) + " image segmentations.")
     df = pd.DataFrame()
     df["name"] = indices
-    if (args.classes):
+    if (args.classes or args.minmax_seg or args.binning_seg > 0):
+        print("computing classes of all samples. This is implied with segmentation class analysis.")
+        show_warnings = True
         for index in tqdm(segmentations):
             sample = dataio.sample_loader(index, load_seg=True)
             classes = np.unique(sample.seg_data)
@@ -171,8 +176,11 @@ elif (args.which == "data_exp"):
                 class_set = list(classes)
             for c in classes:
                 if (not c in class_set):
-                    print("Warning: not all classes occur in every file.")
+                    if (show_warnings):
+                        print("Warning: not all classes occur in every file.")
                     class_set.append(c)
+            
+            show_warnings = False
         print("The total count of classes over all segmentations is " + str(len(class_set)))
         if (len(class_set) < 2):
             print("Warning detected a class count smaller than 2. This dataset is likely damaged.")
@@ -273,32 +281,44 @@ elif (args.which == "data_exp"):
         df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "minimum", "maximum"]), on="name", how="right")
     if (args.minmax_seg or args.binning_seg > 0):
         sample_data = {}
-        print("finding minima and maxima of the data images")
-        for index in tqdm(indices):
-            if (not os.path.isdir(data_dir + "/" + index)):
-                continue
+        print("finding minima and maxima of each segmentation class the data images")
+        
+        for c in class_set:
+            class_minmax[c] = [999999, -99999, 999999, -99999]
+        
+        for index in tqdm(segmentations):
             # Sample loading
-            sample = dataio.sample_loader(index, load_seg=False)
+            sample = dataio.sample_loader(index, load_seg=True)
             # Create an empty list for the current asmple in our data dictionary
+            
             sample_data[index] = [index]
-            # Identify minimum and maximum volume intensity
-            min_val = sample.img_data.min()
-            max_val = sample.img_data.max()
-            global_min = min(global_min, min_val)
-            global_max = max(global_max, max_val)
-            if (shared_min == 999999):
-                shared_min = min_val
-            else:
-                shared_min = max(shared_min, min_val)
-            if (shared_max == -99999):
-                shared_max = max_val
-            else:
-                shared_max = min(shared_max, min_val)
-            sample_data[index].append(min_val)
-            sample_data[index].append(max_val)
-        print("the global value space is (", str(global_min) + ", " + str(global_max) + ")")
-        print("the shared value space is (", str(shared_min) + ", " + str(shared_max) + ")")
-        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name", "minimum", "maximum"]), on="name", how="right")
+            for c in class_set:
+                # Identify minimum and maximum volume intensity
+                data = np.ma.MaskedArray(sample.img_data, sample.seg_data.astype(np.uint8) != np.uint8(c))
+                min_val = data.min()
+                max_val = data.max()
+                class_minmax[c][0] = min(class_minmax[c][0], min_val)
+                class_minmax[c][1] = max(class_minmax[c][1], max_val)
+                if (class_minmax[c][2] == 999999):
+                    class_minmax[c][2] = min_val
+                else:
+                    class_minmax[c][2] = max(class_minmax[c][2], min_val)
+                if (class_minmax[c][3] == -99999):
+                    class_minmax[c][3] = max_val
+                else:
+                    class_minmax[c][3] = min(class_minmax[c][3], max_val)
+                sample_data[index].append(min_val)
+                sample_data[index].append(max_val)
+        for c in class_set:
+            print("the global value space for class " + str(c) + " is (", str(class_minmax[c][0]) + ", " + str(class_minmax[c][1]) + ")")
+            print("the shared value space for class " + str(c) + " is (", str(class_minmax[c][2]) + ", " + str(class_minmax[c][3]) + ")")
+        
+        columns = ["name"]
+        for c in class_set:
+            columns.append("minimum_c" + str(c))
+            columns.append("maximum_c" + str(c))
+        
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=columns), on="name", how="right")
     if (args.ratio):
         sample_data = {}
         print("computing class ratios.")
@@ -341,26 +361,38 @@ elif (args.which == "data_exp"):
         
         df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name"] + ["bin"+str(i) for i in range(len(threshhold))]), on="name", how="right")
     if (args.binning_seg > 0):
-        threshhold = []
-        ratio = (shared_max - shared_min) / args.binning
-        threshhold.append(shared_min)
-        for i in range(args.binning):
-            threshhold.append(shared_min + ratio * (1 + i))
-        threshhold.append(global_max + 1)
-        print(threshhold)
+        print("fitting bins for segmentation classes.")
+        threshholds = {}
+        for c in class_set:
+            threshhold = []
+            ratio = (class_minmax[c][3] - class_minmax[c][2]) / args.binning_seg
+            threshhold.append(class_minmax[c][2])
+            for i in range(args.binning_seg):
+                threshhold.append(class_minmax[c][2] + ratio * (1 + i))
+            threshhold.append(class_minmax[c][1] + 1)
+            
+            threshholds[c] = threshhold
+            print("The threshholds for class " + str(c) + " are: " + str(threshhold))
+        
+        print("Computing bins for segmentation classes.")
         sample_data = {}
-        for index in tqdm(indices):
-            if (not os.path.isdir(data_dir + "/" + index)):
-                continue
+        for index in tqdm(segmentations):
             sample = dataio.sample_loader(index, load_seg=False)
             # Create an empty list for the current asmple in our data dictionary
             sample_data[index] = [index]
-            # Identify minimum and maximum volume intensity
-            sample_data[index].append((threshhold[0] < sample.img_data).sum())
-            for i in range(args.binning + 1):
-                sample_data[index].append(((threshhold[i] <= sample.img_data) & (threshhold[i + 1] > sample.img_data)).sum())
+            
+            for c in class_set:
+                # Identify minimum and maximum volume intensity
+                sample_data[index].append(((threshholds[c][0] < sample.img_data) & (sample.seg_data.astype(np.uint8) != np.uint8(c))).sum())
+                for i in range(args.binning_seg + 1):
+                    sample_data[index].append(((threshholds[c][i] <= sample.img_data) & (threshholds[c][i + 1] > sample.img_data) & sample.seg_data.astype(np.uint8) != np.uint8(c)).sum())
         
-        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=["name"] + ["bin"+str(i) for i in range(len(threshhold))]), on="name", how="right")
+        indexes = ["name"]
+        for c in class_set:
+            for i in range(len(threshhold)):
+                indexes.append("class" + str(c) + "_bin"+str(i))
+        
+        df = df.merge(pd.DataFrame.from_dict(sample_data, orient="index",columns=indexes), on="name", how="right")
     
     if (len(args.export) > 0):
         df.to_csv(args.export)
