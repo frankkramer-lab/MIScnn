@@ -167,7 +167,7 @@ elif (args.which == "data_exp"):
     df["name"] = indices
     if (args.classes or args.minmax_seg or args.binning_seg > 0):
         print("computing classes of all samples. This is implied with segmentation class analysis.")
-        show_warnings = True
+        show_warnings = False
         for index in tqdm(segmentations):
             sample = dataio.sample_loader(index, load_seg=True)
             classes = np.unique(sample.seg_data)
@@ -180,7 +180,7 @@ elif (args.which == "data_exp"):
                         print("Warning: not all classes occur in every file.")
                     class_set.append(c)
             
-            show_warnings = False
+            show_warnings = True
         print("The total count of classes over all segmentations is " + str(len(class_set)))
         if (len(class_set) < 2):
             print("Warning detected a class count smaller than 2. This dataset is likely damaged.")
@@ -377,7 +377,7 @@ elif (args.which == "data_exp"):
         print("Computing bins for segmentation classes.")
         sample_data = {}
         for index in tqdm(segmentations):
-            sample = dataio.sample_loader(index, load_seg=False)
+            sample = dataio.sample_loader(index, load_seg=True)
             # Create an empty list for the current asmple in our data dictionary
             sample_data[index] = [index]
             
