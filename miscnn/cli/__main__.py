@@ -383,9 +383,9 @@ elif (args.which == "data_exp"):
             
             for c in class_set:
                 # Identify minimum and maximum volume intensity
-                sample_data[index].append(((threshholds[c][0] < sample.img_data) & (sample.seg_data.astype(np.uint8) != np.uint8(c))).sum())
+                sample_data[index].append(((threshholds[c][0] < sample.img_data) & (sample.seg_data.astype(np.uint8) == np.uint8(c))).sum())
                 for i in range(args.binning_seg + 1):
-                    sample_data[index].append(((threshholds[c][i] <= sample.img_data) & (threshholds[c][i + 1] > sample.img_data) & sample.seg_data.astype(np.uint8) != np.uint8(c)).sum())
+                    sample_data[index].append(((threshholds[c][i] <= sample.img_data) & (threshholds[c][i + 1] > sample.img_data) & (sample.seg_data.astype(np.uint8) == np.uint8(c))).sum())
         
         indexes = ["name"]
         for c in class_set:
