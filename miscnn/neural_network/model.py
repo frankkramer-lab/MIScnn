@@ -25,6 +25,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 import numpy as np
 # Internal libraries/scripts
+from miscnn.model.model import Model as BaseModel
 from miscnn.neural_network.metrics import dice_soft, tversky_loss
 from miscnn.neural_network.architecture.unet.standard import Architecture
 from miscnn.neural_network.data_generator import DataGenerator
@@ -33,7 +34,7 @@ from miscnn.neural_network.data_generator import DataGenerator
 #            Neural Network (model) class             #
 #-----------------------------------------------------#
 # Class which represents the Neural Network and which run the whole pipeline
-class Neural_Network:
+class Neural_Network(BaseModel):
     """ Initialization function for creating a Neural Network (model) object.
     This class provides functionality for handling all model methods.
     This class runs the whole pipeline and uses a Preprocessor instance to obtain batches.
