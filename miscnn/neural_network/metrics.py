@@ -141,8 +141,6 @@ def identify_axis(shape):
     else : raise ValueError('Metric: Shape of tensor is neither 2D or 3D.')
 
 
-https://github.com/umbertogriffo/focal-loss-keras/blob/master/src/loss_function/losses.py
-
 #-----------------------------------------------------#
 #                Categorical Focal Loss               #
 #-----------------------------------------------------#
