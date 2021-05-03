@@ -140,6 +140,12 @@ def identify_axis(shape):
     # Exception - Unknown
     else : raise ValueError('Metric: Shape of tensor is neither 2D or 3D.')
 
+
+https://github.com/umbertogriffo/focal-loss-keras/blob/master/src/loss_function/losses.py
+
+#-----------------------------------------------------#
+#                Categorical Focal Loss               #
+#-----------------------------------------------------#
 def categorical_focal_loss(alpha, gamma=2.):
     """
     Softmax version of focal loss.
@@ -159,6 +165,7 @@ def categorical_focal_loss(alpha, gamma=2.):
     References:
         Official paper: https://arxiv.org/pdf/1708.02002.pdf
         https://www.tensorflow.org/api_docs/python/tf/keras/backend/categorical_crossentropy
+        Implementation: https://github.com/umbertogriffo/focal-loss-keras/blob/master/src/loss_function/losses.py
     Usage:
      model.compile(loss=[categorical_focal_loss(alpha=[[.25, .25, .25]], gamma=2)], metrics=["accuracy"], optimizer=adam)
     """
