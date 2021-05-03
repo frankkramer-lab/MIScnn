@@ -19,6 +19,7 @@ setup(
    python_requires='>=3.6',
    install_requires=['tensorflow==2.3.1',
                      'numpy>=1.18.5',
+                     'pandas>=1.1.4',
                      'nibabel>=3.1.0',
                      'matplotlib==3.3.1',
                      'pillow==7.2.0',
