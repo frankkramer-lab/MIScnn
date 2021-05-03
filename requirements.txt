@@ -8,3 +8,4 @@ batchgenerators==0.20.1
 pydicom==2.0.0
 SimpleITK==2.0.2
 scikit-image==0.15.0
+tqdm==4.51.0
