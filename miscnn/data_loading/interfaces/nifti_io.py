@@ -84,11 +84,8 @@ class NIFTI_interface(Abstract_IO):
         vol = nib.load(os.path.join(img_path, "imaging.nii.gz"))
         # Transform NIFTI object to numpy array
         vol_data = vol.get_fdata()
-        # Save spacing in cache
-        # Return volume
-        
-        spacing_matrix = vol.affine[:3,:3]
         # Identify correct spacing diagonal
+        spacing_matrix = vol.affine[:3,:3]
         diagonal_negative = np.diag(spacing_matrix)
         diagonal_positive = np.diag(spacing_matrix[::-1,:])
         if np.count_nonzero(diagonal_negative) != 1:
@@ -156,9 +153,13 @@ class NIFTI_interface(Abstract_IO):
             raise IOError(
                 "Data path, {}, could not be resolved".format(output_path)
             )
+        # Obtain prediction data
+        pred = sample.pred_data.astype(np.uint16)
+        if "affine" in sample.get_extended_data():
+            spacing = sample.get_extended_data()["affine"]
+        else : spacing = None
         # Convert numpy array to NIFTI
-        nifti = nib.Nifti1Image(sample.pred_data, sample.get_extended_data()["affine"] if "affine" in sample.get_extended_data().keys() else None)
-        #nifti.get_data_dtype() == pred.dtype
+        nifti = nib.Nifti1Image(pred, spacing)
         # Save segmentation to disk
         pred_file = str(sample.index) + ".nii.gz"
         nib.save(nifti, os.path.join(output_path, pred_file))

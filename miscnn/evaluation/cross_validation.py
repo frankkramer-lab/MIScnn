@@ -22,6 +22,8 @@
 # External libraries
 import numpy as np
 from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ReduceLROnPlateau
+from tensorflow.keras.optimizers import Adam
 import os
 import json
 # Internal libraries/scripts
@@ -82,6 +84,10 @@ def cross_validation(sample_list, model, k_fold=3, epochs=20,
         # Run training & validation
         history = model.evaluate(training, validation, epochs=epochs,
                                  iterations=iterations, callbacks=cb_list)
+        # Reset Learning Rate if ReduceLROnPlateau is in callbacks
+        if any(isinstance(cb, ReduceLROnPlateau) for cb in cb_list):
+            model.model.compile(optimizer=Adam(lr=model.learninig_rate),
+                                loss=model.loss, metrics=model.metrics)
         # Backup current history dictionary
         if return_output : validation_results.append(history.history)
         else : backup_history(history.history, subdir)
