@@ -55,6 +55,8 @@ class DataGenerator(Keras_Sequence):
             self.batchpointers = list(range(0, batches_count+1))
         elif not training:
             self.batch_queue = preprocessor.run(sample_list, False, False)
+        # Shuffle before starting
+        self.on_epoch_end()
 
     # Return the next batch for associated index
     def __getitem__(self, idx):
@@ -69,14 +71,14 @@ class DataGenerator(Keras_Sequence):
 
     # Return the number of batches for one epoch
     def __len__(self):
-        # Number of batches is preprocessed for the single sample to predict
-        if not self.training:
-            return len(self.batch_queue)
         # IF number of samples is specified in the parameters take it
-        elif self.iterations is not None : return self.iterations
+        if self.iterations is not None : return self.iterations
         # Number of batches is the number of preprocessed batch files
         elif self.preprocessor.prepare_batches:
             return len(self.batchpointers)
+        # Number of batches is preprocessed for the single sample to predict
+        elif not self.training:
+            return len(self.batch_queue)
         # Else number of samples is dynamic -> calculate it
         else:
             if self.preprocessor.data_augmentation is not None and not \

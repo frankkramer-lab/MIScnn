@@ -131,6 +131,8 @@ class Preprocessor:
                     sf.preprocessing(sample, training=training)
             # Load sample from file with already processed subfunctions
             else : sample = self.data_io.sample_loader(index, backup=True)
+            # Cache sample object for prediction
+            if not training : self.cache[index] = sample
             # Transform digit segmentation classes into categorical
             if training:
                 sample.seg_data = to_categorical(sample.seg_data,
@@ -213,7 +215,7 @@ class Preprocessor:
         else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
         if not activation_output : prediction = np.argmax(prediction, axis=-1)
-        
+
         # Run Subfunction postprocessing on the prediction
         for sf in reversed(self.subfunctions):
             prediction = sf.postprocessing(sample, prediction)
