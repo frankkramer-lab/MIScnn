@@ -18,6 +18,8 @@ class CrossValidationGroup(Model_Group):
         fold_indices = list(range(len(folds)))
         # Start cross-validation
         
+        self.preprocessor.data_io.output_path = evaluation_path
+        
         for i in range(self.folds): #code is redundant to model group somehow clean
             model = self.models[i]
             training = np.concatenate([folds[x] for x in fold_indices if x!=i],
@@ -29,11 +31,16 @@ class CrossValidationGroup(Model_Group):
             cb_list = []
             if (not isinstance(model, Model_Group)):
                 #this child is a leaf. ensure correct storage.
-                cb_model = ModelCheckpoint(os.path.join(out_dir, "model.hdf5"),
+                path = os.path.join(out_dir, "model.hdf5")
+                cb_model = ModelCheckpoint(path,
                                            monitor="val_loss", verbose=1,
                                            save_best_only=True, mode="min")
                 cb_list = callbacks + [cb_model]
+                print("registering model store path to: " + str(path))
             else:
                 cb_list = callbacks
+            
             model.reset()
-            model.evaluate(training, validation, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=callbacks)
+            model.evaluate(training, validation, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=cb_list)
+        
+        self.preprocessor.data_io.output_path = evaluation_path

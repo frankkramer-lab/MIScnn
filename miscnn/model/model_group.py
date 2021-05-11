@@ -59,6 +59,7 @@ class Model_Group(Model):
                     sample = s.img_data
                 prediction_list.append(s.pred_data)
             res = aggregation_func(sample, prediction_list)
+            self.preprocessor.data_io.output_path = tmp #preprocessor is likely a reference so this needs to be reset
             self.preprocessor.data_io.save_prediction(res, sample)
         
         #deal with results
@@ -78,7 +79,8 @@ class Model_Group(Model):
             else:
                 cb_list = callbacks
             model.reset()
-            model.evaluate(training_samples, validation_samples, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=callbacks)
+            model.evaluate(training_samples, validation_samples, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=cb_list)
+        self.preprocessor.data_io.output_path = evaluation_path
     
     def reset(self):
         for model in self.models: #propagate

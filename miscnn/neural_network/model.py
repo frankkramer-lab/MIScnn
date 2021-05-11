@@ -205,6 +205,7 @@ class Neural_Network(BaseModel):
                                            self.preprocessor,
                                            training=True, validation=True,
                                            shuffle=self.shuffle_batches)
+        print("constructed data generation")
         # Run training & validation process with the Keras fit
         history = self.model.fit(dataGen_training,
                                  validation_data=dataGen_validation,
