@@ -23,9 +23,7 @@ import miscnn.cli.data_exploration as data_exp
 import os
 import os.path
 from miscnn import Data_IO
-from miscnn.data_loading.interfaces import NIFTI_interface
-from miscnn.data_loading.interfaces import Image_interface
-from miscnn.data_loading.interfaces import DICOM_interface
+from miscnn.data_loading.interfaces import miscnn_data_interfaces
 
 parser = argparse.ArgumentParser(description='MIScnn CLI')
 subparsers = parser.add_subparsers(help='Components')
@@ -64,17 +62,10 @@ def del_tree(path):
     
 
 if (args.which == "verify"):
-    interface = None
-    if (args.imagetype == "NIFTI"):
-        interface = NIFTI_interface()
-        print("using NIFTI_interface")
-    elif (args.imagetype == "DICOM"):
-        interface = DICOM_interface()
-        print("using DICOM_interface")
-    elif (args.imagetype == "IMG"):
-        interface = Image_interface()
-        print("using Image_interface")
-    dataio = Data_IO(interface, args.data_dir)
+    if (not args.imagetype in miscnn_data_interfaces.keys())
+        raise RuntimeError("Unknown Format")
+    
+    dataio = Data_IO(miscnn_data_interfaces[args.imagetype], args.data_dir)
     indices = dataio.get_indiceslist()
     if len(indices) == 0: #or maybe lower than a threshold
         print("[WARNING] Datapath " + str(args.data_path) + " does not seem to contain any samples.")

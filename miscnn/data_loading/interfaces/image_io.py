@@ -169,3 +169,10 @@ class Image_interface(Abstract_IO):
         # Save segmentation to disk
         pred_file = str(sample.index) + "." + self.img_format
         pred_pillow.save(os.path.join(output_path, pred_file))
+
+    #---------------------------------------------#
+    #           check_file_termination            #
+    #---------------------------------------------#
+    @staticmethod
+    def check_file_termination(termination):
+        return termination in [".bmp", ".jpg", ".png", ".jpeg", ".gif"]

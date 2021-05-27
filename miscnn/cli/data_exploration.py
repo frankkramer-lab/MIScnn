@@ -20,13 +20,11 @@
 import pathlib
 import os
 import os.path
-from miscnn import Data_IO
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from miscnn.data_loading.interfaces import NIFTI_interface
-from miscnn.data_loading.interfaces import Image_interface
-from miscnn.data_loading.interfaces import DICOM_interface
+from miscnn import Data_IO
+from miscnn.data_loading.interfaces import miscnn_data_interfaces, get_data_interface_from_file_term
 
 def register_commands(parser):
     parser.set_defaults(which='data_exp')
@@ -43,33 +41,20 @@ def register_commands(parser):
     parser.add_argument("-bS", "--binning_seg", dest="binning_seg", type=int, default=0, help="compute N bins over the dataset per class and get variation over the images.", required=False)
 
 def setup_execution(args):
-    interface = None
     data_dir = str(args.data_dir)
-    if (args.imagetype == "NIFTI"):
-        interface = NIFTI_interface()
-        print("using NIFTI_interface")
-    elif (args.imagetype == "DICOM"):
-        interface = DICOM_interface()
-        print("using DICOM_interface")
-    elif (args.imagetype == "IMG"):
-        interface = Image_interface()
-        print("using Image_interface")
+    interface = None
+    if (args.imagetype in miscnn_data_interfaces.keys()):
+        interface = miscnn_data_interfaces[args.imagetype]
     else:
         files = [f[f.find("."):] for dp, dn, filenames in os.walk(data_dir) for f in filenames if os.path.isfile(os.path.join(dp, f)) and ("imaging" in f or "segmentation" in f)]
         unique = list(np.unique(np.asarray(files)))
-        unique = [u for u in unique if u in [".nii", ".nii.gz", ".dcm", ".png"]]
-        if len(unique) > 1:
-            print("Failed to infer image type")
-            exit()
-        if (unique[0] == ".png"):
-            interface = Image_interface()
-            print("Inferred Image_interface")
-        elif (unique[0] == ".dcm"):
-            interface = DICOM_interface()
-            print("Inferred DICOM_interface")
-        else:
-            interface = NIFTI_interface()
-            print("Inferred NIFTI_interface")
+        unique = [get_data_interface_from_file_term(u) for u in unique]
+        if len(unique) != 1:
+            raise RuntimeError("Failed to infer image type")
+        if (None in unique):
+            raise RuntimeError("Failed to infer image type")
+        interface = unique[0]()
+        
     
     dataio = Data_IO(interface, args.data_dir)
     
