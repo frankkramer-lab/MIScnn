@@ -83,7 +83,7 @@ class Model_Group(Model):
         #deal with results
     
     # Evaluate the Model using the MIScnn pipeline
-    def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[], store=True):
+    def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[]):
         for model in self.models:
             out_dir = create_directories(evaluation_path, "group_" + str(model.id))
             model.preprocessor.data_io.output_path = out_dir
@@ -116,7 +116,7 @@ class Model_Group(Model):
         
         for model in self.models:
             model.dump(subdir)
-
+    
     # Load model from file
     def load(self, file_path, custom_objects={}):
         collection = [dir for dir in os.listdir(file_path) if os.isdir(dir)]

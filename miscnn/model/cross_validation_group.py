@@ -30,7 +30,7 @@ class CrossValidationGroup(Model_Group):
         Model_Group.__init__(self, modelList, preprocessor, verify_preprocessor)
         self.folds = folds
     
-    def evaluate(self, samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[], store=True, *args, **kwargs):
+    def evaluate(self, samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[], *args, **kwargs):
         samples_permuted = np.random.permutation(samples)
         # Split sample list into folds
         folds = np.array_split(samples_permuted, self.folds)

@@ -32,8 +32,6 @@ class Model():
         Model.__CNTR += 1 #technically not thread safe
         
     
-    
-    
     def train(self, sample_list, epochs=20, iterations=None, callbacks=[]):
         raise NotImplementedError()
     
