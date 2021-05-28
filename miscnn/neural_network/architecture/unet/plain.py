@@ -1,4 +1,4 @@
-# =============================================================================#
+#==============================================================================#
 #  Author:       Dominik Müller                                                #
 #  Copyright:    2020 IT-Infrastructure for Translational Medical Research,    #
 #                University of Augsburg                                        #
@@ -15,7 +15,7 @@
 #                                                                              #
 #  You should have received a copy of the GNU General Public License           #
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
-# =============================================================================#
+#==============================================================================#
 # -----------------------------------------------------#
 #                     Reference:                      #
 #         Fabian Isensee, Klaus H. Maier-Hein.        #
@@ -36,9 +36,9 @@ from tensorflow.keras.models import Model
 # Internal libraries/scripts
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
-# -----------------------------------------------------#
+#------------------------------------------------------#
 #           Architecture class: U-Net Plain            #
-# -----------------------------------------------------#
+#------------------------------------------------------#
 """ The Plain variant of the popular U-Net architecture.
 
 Methods:
@@ -49,9 +49,9 @@ Methods:
 
 
 class Architecture(Abstract_Architecture):
-    # ---------------------------------------------#
+    #---------------------------------------------#
     #                Initialization               #
-    # ---------------------------------------------#
+    #---------------------------------------------#
     def __init__(self, activation='softmax', conv_layer_activation=relu,
                  batch_normalization=True, batch_normalization_params=None,
                  dropout=0.5, pooling=(1, 2, 2)):
@@ -70,9 +70,9 @@ class Architecture(Abstract_Architecture):
         # Create list of filters
         self.feature_map = [30, 60, 120, 240, 320]
 
-    # --------------------------------------------#
+    #---------------------------------------------#
     #               Create 2D Model               #
-    # --------------------------------------------#
+    #---------------------------------------------#
     def create_model_2D(self, input_shape, n_labels=2):
         # Input layer
         inputs = Input(input_shape)
@@ -117,9 +117,9 @@ class Architecture(Abstract_Architecture):
         # Return model
         return model
 
-    # --------------------------------------------#
+    #---------------------------------------------#
     #               Create 3D Model               #
-    # --------------------------------------------#
+    #---------------------------------------------#
     def create_model_3D(self, input_shape, n_labels=2):
         # Input layer
         inputs = Input(input_shape)
@@ -184,9 +184,9 @@ class Architecture(Abstract_Architecture):
         return model
 
 
-# ----------------------------------------------------#
+#-----------------------------------------------------#
 #                   Subroutines 2D                    #
-# ----------------------------------------------------#
+#-----------------------------------------------------#
 # Convolution layer
 def conv_layer_2D(input, neurons, activation, ba_norm, ba_params, dropout, strides=1):
     conv = Conv2D(neurons, (3, 3), padding='same', strides=strides)(input)
@@ -199,9 +199,9 @@ def conv_layer_2D(input, neurons, activation, ba_norm, ba_params, dropout, strid
     return activation(conv)
 
 
-# ----------------------------------------------------#
+#-----------------------------------------------------#
 #                   Subroutines 3D                    #
-# ----------------------------------------------------#
+#-----------------------------------------------------#
 # Convolution layer
 def conv_layer_3D(input, neurons, activation, ba_norm, ba_params, dropout, strides=1):
     conv = Conv3D(neurons, (3, 3, 3), padding='same', strides=strides)(input)
