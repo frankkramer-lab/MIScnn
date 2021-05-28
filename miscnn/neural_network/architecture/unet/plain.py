@@ -16,15 +16,15 @@
 #  You should have received a copy of the GNU General Public License           #
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
-# -----------------------------------------------------#
+#-----------------------------------------------------#
 #                     Reference:                      #
 #         Fabian Isensee, Klaus H. Maier-Hein.        #
 #                     6 Aug 2019.                     #
 #         An attempt at beating the 3D U-Net.         #
 #           https://arxiv.org/abs/1908.02182          #
-# -----------------------------------------------------#
+#-----------------------------------------------------#
 #                   Library imports                   #
-# -----------------------------------------------------#
+#-----------------------------------------------------#
 # External libraries
 from tensorflow.keras.activations import relu
 from tensorflow.keras.layers import BatchNormalization, Dropout
@@ -36,9 +36,9 @@ from tensorflow.keras.models import Model
 # Internal libraries/scripts
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
-#------------------------------------------------------#
-#           Architecture class: U-Net Plain            #
-#------------------------------------------------------#
+#-----------------------------------------------------#
+#           Architecture class: U-Net Plain           #
+#-----------------------------------------------------#
 """ The Plain variant of the popular U-Net architecture.
 
 Methods:
