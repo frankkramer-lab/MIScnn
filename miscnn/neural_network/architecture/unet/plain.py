@@ -54,7 +54,7 @@ class Architecture(Abstract_Architecture):
     #---------------------------------------------#
     def __init__(self, activation='softmax', conv_layer_activation=relu,
                  batch_normalization=True, batch_normalization_params=None,
-                 dropout=0.5, pooling=(1, 2, 2)):
+                 dropout=0, pooling=(1, 2, 2)):
         # Parse parameter
         if batch_normalization_params is None:
             batch_normalization_params = {'momentum': 0.1, 'epsilon': 1e-5}
