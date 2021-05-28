@@ -62,7 +62,7 @@ class Architecture(Abstract_Architecture):
         self.conv_layer_activation = conv_layer_activation
         # Batch normalization settings
         self.ba_norm = batch_normalization
-        self.ba_params = batch_normalization_params
+        self.ba_norm_params = batch_normalization_params
         # Dropout params
         self.dropout = dropout
         # Adjust pooling step
@@ -86,18 +86,18 @@ class Architecture(Abstract_Architecture):
         for i in range(0, len(self.feature_map)):
             neurons = self.feature_map[i]
             cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             contracting_convs.append(cnn_chain)
             cnn_chain = MaxPooling2D(pool_size=(2, 2))(cnn_chain)
 
         # Middle Layer
         neurons = self.feature_map[-1]
         cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
         cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Expanding Layers
         for i in reversed(range(0, len(self.feature_map))):
@@ -106,9 +106,9 @@ class Architecture(Abstract_Architecture):
                                         padding='same')(cnn_chain)
             cnn_chain = concatenate([cnn_chain, contracting_convs[i]], axis=-1)
             cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Output Layer
         conv_out = Conv2D(n_labels, (1, 1), activation=self.activation)(cnn_chain)
@@ -132,9 +132,9 @@ class Architecture(Abstract_Architecture):
         # First contracting layer
         neurons = self.feature_map[0]
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
         contracting_convs.append(cnn_chain)
         cnn_chain = MaxPooling3D(pool_size=self.pooling)(cnn_chain)
 
@@ -142,18 +142,18 @@ class Architecture(Abstract_Architecture):
         for i in range(1, len(self.feature_map)):
             neurons = self.feature_map[i]
             cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             contracting_convs.append(cnn_chain)
             cnn_chain = MaxPooling3D(pool_size=(2, 2, 2))(cnn_chain)
 
         # Middle Layer
         neurons = self.feature_map[-1]
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Expanding Layers except last layer
         for i in reversed(range(1, len(self.feature_map))):
@@ -162,9 +162,9 @@ class Architecture(Abstract_Architecture):
                                         padding='same')(cnn_chain)
             cnn_chain = concatenate([cnn_chain, contracting_convs[i]], axis=-1)
             cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                      self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Last expanding layer
         neurons = self.feature_map[0]
@@ -172,9 +172,9 @@ class Architecture(Abstract_Architecture):
                                     padding='same')(cnn_chain)
         cnn_chain = concatenate([cnn_chain, contracting_convs[0]], axis=-1)
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
         cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
-                                  self.ba_norm, self.ba_params, self.dropout, strides=1)
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Output Layer
         conv_out = Conv3D(n_labels, (1, 1, 1), activation=self.activation)(cnn_chain)
@@ -188,13 +188,13 @@ class Architecture(Abstract_Architecture):
 #                   Subroutines 2D                    #
 #-----------------------------------------------------#
 # Convolution layer
-def conv_layer_2D(input, neurons, activation, ba_norm, ba_params, dropout, strides=1):
+def conv_layer_2D(input, neurons, activation, ba_norm, ba_norm_params, dropout, strides=1):
     conv = Conv2D(neurons, (3, 3), padding='same', strides=strides)(input)
 
     if dropout:
         conv = Dropout(dropout)(conv)
     if ba_norm:
-        conv = BatchNormalization(**ba_params)(conv)
+        conv = BatchNormalization(**ba_norm_params)(conv)
 
     return activation(conv)
 
@@ -203,12 +203,12 @@ def conv_layer_2D(input, neurons, activation, ba_norm, ba_params, dropout, strid
 #                   Subroutines 3D                    #
 #-----------------------------------------------------#
 # Convolution layer
-def conv_layer_3D(input, neurons, activation, ba_norm, ba_params, dropout, strides=1):
+def conv_layer_3D(input, neurons, activation, ba_norm, ba_norm_params, dropout, strides=1):
     conv = Conv3D(neurons, (3, 3, 3), padding='same', strides=strides)(input)
 
     if dropout:
         conv = Dropout(dropout)(conv)
     if ba_norm:
-        conv = BatchNormalization(**ba_params)(conv)
+        conv = BatchNormalization(**ba_norm_params)(conv)
 
     return activation(conv)
