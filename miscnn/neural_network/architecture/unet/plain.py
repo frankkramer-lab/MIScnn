@@ -26,6 +26,7 @@
 #                   Library imports                   #
 # -----------------------------------------------------#
 # External libraries
+from tensorflow.keras.activations import relu
 from tensorflow.keras.layers import BatchNormalization, Dropout
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
@@ -51,7 +52,7 @@ class Architecture(Abstract_Architecture):
     # ---------------------------------------------#
     #                Initialization               #
     # ---------------------------------------------#
-    def __init__(self, activation='softmax', conv_layer_activation='relu',
+    def __init__(self, activation='softmax', conv_layer_activation=relu,
                  batch_normalization=True, batch_normalization_params=None,
                  dropout=0.5, pooling=(1, 2, 2)):
         # Parse parameter
@@ -188,14 +189,14 @@ class Architecture(Abstract_Architecture):
 # ----------------------------------------------------#
 # Convolution layer
 def conv_layer_2D(input, neurons, activation, ba_norm, ba_params, dropout, strides=1):
-    conv = Conv2D(neurons, (3, 3), activation=activation, padding='same', strides=strides)(input)
+    conv = Conv2D(neurons, (3, 3), padding='same', strides=strides)(input)
 
-    if ba_norm:
-        conv = BatchNormalization(**ba_params)(conv)
     if dropout:
         conv = Dropout(dropout)(conv)
+    if ba_norm:
+        conv = BatchNormalization(**ba_params)(conv)
 
-    return conv
+    return activation(conv)
 
 
 # ----------------------------------------------------#
@@ -203,11 +204,11 @@ def conv_layer_2D(input, neurons, activation, ba_norm, ba_params, dropout, strid
 # ----------------------------------------------------#
 # Convolution layer
 def conv_layer_3D(input, neurons, activation, ba_norm, ba_params, dropout, strides=1):
-    conv = Conv3D(neurons, (3, 3, 3), activation=activation, padding='same', strides=strides)(input)
+    conv = Conv3D(neurons, (3, 3, 3), padding='same', strides=strides)(input)
 
-    if ba_norm:
-        conv = BatchNormalization(**ba_params)(conv)
     if dropout:
         conv = Dropout(dropout)(conv)
+    if ba_norm:
+        conv = BatchNormalization(**ba_params)(conv)
 
-    return conv
+    return activation(conv)
