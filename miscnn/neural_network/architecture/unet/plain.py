@@ -26,7 +26,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from tensorflow.keras.layers import Activation, BatchNormalization, Dropout
+from tensorflow.keras.layers import Activation, BatchNormalization, Dropout, LeakyReLU
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from tensorflow.keras.layers import Input, concatenate
@@ -45,20 +45,20 @@ Methods:
     create_model_2D:        Creating the 2D U-Net plain model using Keras
     create_model_3D:        Creating the 3D U-Net plain model using Keras
 """
-
-
 class Architecture(Abstract_Architecture):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, activation='softmax', conv_layer_activation='relu',
+    def __init__(self, activation='softmax', conv_layer_activation='lrelu',
                  batch_normalization=True, batch_normalization_params=None,
                  dropout=0, pooling=(1, 2, 2)):
         # Parse parameter
         if batch_normalization_params is None:
             batch_normalization_params = {'momentum': 0.1, 'epsilon': 1e-5}
         self.activation = activation
-        self.conv_layer_activation = conv_layer_activation
+        # Parse activation layer
+        if conv_layer_activation == "lrelu":
+            self.conv_layer_activation = LeakyReLU(alpha=0.1)
         # Batch normalization settings
         self.ba_norm = batch_normalization
         self.ba_norm_params = batch_normalization_params
@@ -182,7 +182,6 @@ class Architecture(Abstract_Architecture):
         # Return model
         return model
 
-
 #-----------------------------------------------------#
 #                   Subroutines 2D                    #
 #-----------------------------------------------------#
@@ -196,7 +195,6 @@ def conv_layer_2D(input, neurons, activation, ba_norm, ba_norm_params, dropout, 
         conv = BatchNormalization(**ba_norm_params)(conv)
 
     return Activation(activation)(conv)
-
 
 #-----------------------------------------------------#
 #                   Subroutines 3D                    #
