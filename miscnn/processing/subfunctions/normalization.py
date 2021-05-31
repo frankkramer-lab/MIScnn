@@ -80,5 +80,5 @@ class Normalization(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, prediction):
+    def postprocessing(self, sample, prediction):
         return prediction

@@ -21,6 +21,8 @@
 #-----------------------------------------------------#
 # External libraries
 import numpy as np
+from tensorflow.keras.callbacks import ModelCheckpoint
+import os
 import math
 # Internal libraries/scripts
 from miscnn.data_loading.data_io import create_directories, backup_history
@@ -52,7 +54,7 @@ Args:
 def split_validation(sample_list, model, percentage=0.2, epochs=20,
                      iterations=None, evaluation_path="evaluation",
                      draw_figures=False, run_detailed_evaluation=False,
-                     callbacks=[], return_output=False):
+                     callbacks=[], save_models=True, return_output=False):
     # Calculate the number of samples in the validation set
     validation_size = int(math.ceil(float(len(sample_list) * percentage)))
     # Randomly pick samples until %-split percentage
@@ -64,6 +66,12 @@ def split_validation(sample_list, model, percentage=0.2, epochs=20,
     training = sample_list
     # Reset Neural Network model weights
     model.reset_weights()
+    # Save model
+    cb_model = ModelCheckpoint(os.path.join(evaluation_path, "model.hdf5"),
+                                   monitor="val_loss", verbose=1,
+                                   save_best_only=True, mode="min")
+    if save_models == True : cb_list = callbacks + [cb_model]
+    else : cb_list = callbacks
     # Run training & validation
     history = model.evaluate(training, validation, epochs=epochs,
                              iterations=iterations, callbacks=callbacks)

@@ -107,7 +107,7 @@ class NIFTIslicer_interface(Abstract_IO):
         # Obtain slice from volume
         img_data = np.take(vol_data, int(ind_slice), axis=self.slice_axis)
         # Return volume
-        return img_data
+        return img_data, {"type":"nifti_slice", "affine":vol.affine}
 
     #---------------------------------------------#
     #              load_segmentation              #
@@ -154,12 +154,6 @@ class NIFTIslicer_interface(Abstract_IO):
         pred_data = np.load(pred_path, allow_pickle=True)
         # Return prediction
         return pred_data
-
-    #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    def load_details(self, i):
-        pass
 
     #---------------------------------------------#
     #               save_prediction               #

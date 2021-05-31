@@ -54,11 +54,11 @@ class Resampling(Abstract_Subfunction):
         img_data = sample.img_data
         seg_data = sample.seg_data
         # Identify current spacing
-        try : current_spacing = sample.details["spacing"]
+        try : current_spacing = sample.get_extended_data()["spacing"]
         except AttributeError:
             print("'spacing' is not initialized in sample details!")
         # Cache current spacing for later postprocessing
-        if not training : self.original_shape = (1,) + img_data.shape[0:-1]
+        if not training :  sample.extended["orig_spacing"] = (1,) + img_data.shape[0:-1]
         # Calculate spacing ratio
         ratio = current_spacing / np.array(self.new_spacing)
         # Calculate new shape
@@ -79,12 +79,15 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, prediction):
+    def postprocessing(self, sample, prediction):
         # Access original shape of the last sample and reset it
-        original_shape = self.original_shape
-        self.original_shape = None
+        original_shape = sample.get_extended_data()["orig_spacing"]
+        # Handle resampling shape for activation output
+        if len(prediction.shape) != (len(original_shape) - 1):
+            original_shape = (prediction.shape[-1], ) + original_shape[1:]
         # Transform original shape to one-channel array for resampling
-        prediction = np.reshape(prediction, prediction.shape + (1,))
+        else:
+            prediction = np.reshape(prediction, prediction.shape + (1,))
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
         # Resample imaging data
@@ -93,6 +96,7 @@ class Resampling(Abstract_Subfunction):
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        prediction = np.reshape(prediction, original_shape[1:])
+        if prediction.shape[-1] == 1:
+            prediction = np.reshape(prediction, original_shape[1:])
         # Return postprocessed prediction
         return prediction

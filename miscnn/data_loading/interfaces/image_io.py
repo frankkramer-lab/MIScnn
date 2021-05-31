@@ -36,10 +36,9 @@ from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
 Methods:
     __init__                Object creation function
     initialize:             Prepare the data set and create indices list
-    load_image:             Load an image
+    load_image:             Load an image and associated data
     load_segmentation:      Load a segmentation
     load_prediction:        Load a prediction
-    load_details:           Load optional information
     save_prediction:        Save a prediction to disk
 
 Args:
@@ -106,7 +105,7 @@ class Image_interface(Abstract_IO):
         # Keep only intensity for grayscale images
         if self.img_type =="grayscale" : img = img[:,:,0]
         # Return image
-        return img
+        return img, {"type": "image"}
 
     #---------------------------------------------#
     #              load_segmentation              #
@@ -157,22 +156,16 @@ class Image_interface(Abstract_IO):
         return pred_data
 
     #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    def load_details(self, i):
-        pass
-    #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
-    def save_prediction(self, pred, index, output_path):
+    def save_prediction(self, sample, output_path):
         # Resolve location where data should be written
         if not os.path.exists(output_path):
             raise IOError(
                 "Data path, {}, could not be resolved".format(output_path)
             )
-
         # Transform numpy array to a Pillow image
-        pred_pillow = Image.fromarray(pred.astype(np.uint8))
+        pred_pillow = Image.fromarray(sample.pred_data[:, :, 0].astype(np.uint8))
         # Save segmentation to disk
-        pred_file = str(index) + "." + self.img_format
+        pred_file = str(sample.index) + "." + self.img_format
         pred_pillow.save(os.path.join(output_path, pred_file))

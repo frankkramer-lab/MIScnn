@@ -100,6 +100,17 @@ class DataAugmentationTEST(unittest.TestCase):
             img_aug, seg_aug = data_aug.run(self.img2D, self.seg2D)
             self.assertEqual(img_aug.shape[0], i)
 
+    # Inferene Augmentation
+    def test_DATAAUGMENTATION_BASE_infauf(self):
+        data_aug = Data_Augmentation()
+        data_aug.infaug = True
+        for axis in data_aug.infaug_flip_list:
+            data_aug.infaug_flip_current = axis
+            img_aug = data_aug.run_infaug(self.img3D)
+            self.assertFalse(np.array_equal(img_aug, self.img3D))
+            img_aug = data_aug.run_infaug(img_aug)
+            self.assertTrue(np.array_equal(img_aug, self.img3D))
+
     #-------------------------------------------------#
     #                    Parameter                    #
     #-------------------------------------------------#
