@@ -27,29 +27,37 @@ import numpy as np
 #Internal libraries
 from miscnn.data_loading.interfaces import Dictionary_interface
 
+from miscnn.model.model import Model as BaseModel
+from miscnn.model.model_group import Model_Group
+from miscnn import Data_IO, Preprocessor, Neural_Network
 
 
-class ModelStub(Model):
+class ModelStub(BaseModel):
     
-    def __init__(self, preprocessor, data):
-        Model.__init__(self, preprocessor)
+    def __init__(self, preprocessor):
+        BaseModel.__init__(self, preprocessor)
         
-        self.data = data
+        self.trained = False
         
     def train(self, sample_list, epochs=20, iterations=None, callbacks=[]):
-        raise NotImplementedError()
+        self.trained = True
     
     def predict(self, sample_list, activation_output=False):
-        raise NotImplementedError()
+        for sample in sample_list:
+            self.preprocessor.data_io.save_prediction(np.zeros((16, 16, 16)), sample)
     # Evaluate the Model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[], store=True):
-        raise NotImplementedError()
+        self.trained = True
+        for sample in validation_samples:
+            self.preprocessor.data_io.save_prediction(np.zeros((16, 16, 16)), sample)
     
     def reset(self):
-        pass
+        self.trained = False
     
     def copy(self):
-        return ModelStub(self.preprocessor, self.data)
+        stub = ModelStub(self.preprocessor)
+        stub.trained = self.trained
+        return stub
     
     # Dump model to file
     def dump(self, file_path):
@@ -59,6 +67,8 @@ class ModelStub(Model):
         pass
     
 
+def drop (x, y):
+    pass
 
 #-----------------------------------------------------#
 #              Unittest: Neural Network               #
@@ -92,150 +102,68 @@ class ModelTEST(unittest.TestCase):
                                  data_aug=None, analysis="fullimage")
         # Get sample list
         self.sample_list2D = self.data_io2D.get_indiceslist()
-        # Create 3D imgaging and segmentation data set
-        self.dataset3D = dict()
-        for i in range(0, 6):
-            img = np.random.rand(16, 16, 16) * 255
-            self.img = img.astype(int)
-            seg = np.random.rand(16, 16, 16) * 3
-            self.seg = seg.astype(int)
-            self.dataset3D["TEST.sample_" + str(i)] = (self.img, self.seg)
-        # Initialize Dictionary IO Interface
-        io_interface3D = Dictionary_interface(self.dataset3D, classes=3,
-                                              three_dim=True)
-        # Initialize temporary directory
-        self.tmp_dir3D = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
-        tmp_batches = os.path.join(self.tmp_dir3D.name, "batches")
-        # Initialize Data IO
-        self.data_io3D = Data_IO(io_interface3D,
-                                 input_path=os.path.join(self.tmp_dir3D.name),
-                                 output_path=os.path.join(self.tmp_dir3D.name),
-                                 batch_path=tmp_batches, delete_batchDir=False)
-        # Initialize Preprocessor
-        self.pp3D = Preprocessor(self.data_io3D, batch_size=2,
-                                 data_aug=None, analysis="fullimage")
-        # Get sample list
-        self.sample_list3D = self.data_io3D.get_indiceslist()
 
     # Delete all temporary files
     @classmethod
     def tearDownClass(self):
         self.tmp_dir2D.cleanup()
-        self.tmp_dir3D.cleanup()
 
     #-------------------------------------------------#
     #                Base Functionality               #
     #-------------------------------------------------#
     # Class Creation
     def test_MODEL_create(self):
-        nn2D = Neural_Network(preprocessor=self.pp2D)
-        self.assertIsInstance(nn2D, Neural_Network)
-        self.assertFalse(nn2D.three_dim)
-        self.assertIsNotNone(nn2D.model)
-        nn3D = Neural_Network(preprocessor=self.pp3D)
-        self.assertIsInstance(nn3D, Neural_Network)
-        self.assertTrue(nn3D.three_dim)
-        self.assertIsNotNone(nn3D.model)
+        group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
+        self.assertIsInstance(group, Model_Group)
+        #todo
+        
 
     # Model storage
     def test_MODEL_storage(self):
-        nn = Neural_Network(preprocessor=self.pp3D)
-        model_path = os.path.join(self.tmp_dir3D.name, "my_model.hdf5")
-        nn.dump(model_path)
-        self.assertTrue(os.path.exists(model_path))
+        group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
+        model_path = os.path.join(self.tmp_dir2D.name, "model")
+        group.dump(model_path)
+        group_path = os.path.join(model_path, "group_" + str(group.id))
+        self.assertTrue(os.path.exists(group_path))
+        self.assertTrue(os.path.exists(os.path.join(group_path, "metadata.json")))
 
     # Model loading
     def test_MODEL_loading(self):
-        nn = Neural_Network(preprocessor=self.pp3D)
-        model_path = os.path.join(self.tmp_dir3D.name, "my_model.hdf5")
-        nn.dump(model_path)
-        nn_new = Neural_Network(preprocessor=self.pp3D)
-        nn_new.load(model_path)
+        group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
+        model_path = os.path.join(self.tmp_dir2D.name, "model")
+        group.dump(model_path)
+        #todo. Currently the ModelGrouup doesn't deal with multiple model instances
 
     # Reseting weights
     def test_MODEL_resetWeights(self):
-        nn = Neural_Network(preprocessor=self.pp3D)
-        nn.reset_weights()
-
-    #-------------------------------------------------#
-    #                 Multiprocessing                 #
-    #-------------------------------------------------#
-    # Multi GPU utilization
-    def test_MODEL_multiGPU(self):
-        nn = Neural_Network(preprocessor=self.pp2D,
-                            multi_gpu=True)
-        nn.train(self.sample_list2D, epochs=3)
-
-
-    ### Comments:
-    ### For whatever reason, adding this unittest will break the
-    ### Subfunction preparation with Multiprocessing on Travis-CI.
-    ### With local and GitLab testing, it works without any problems
-    ### but Travis-CI throws a Segmentation Fault exception for the threads...
-    ### And also just for Python 3.6. It works perfectly with 3.7 & 3.8.
-    ### Therefore, I excluded it until I will find out more.
-    # # Multi threading utilization
-    # def test_MODEL_multiThreading(self):
-    #     nn = Neural_Network(preprocessor=self.pp2D,
-    #                         workers=5)
-    #     nn.train(self.sample_list2D, epochs=3)
+        group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
+        group.reset()
 
     #-------------------------------------------------#
     #                     Training                    #
     #-------------------------------------------------#
-    def test_MODEL_training2D(self):
-        nn = Neural_Network(preprocessor=self.pp2D)
-        nn.train(self.sample_list2D, epochs=3)
-
-    def test_MODEL_training3D(self):
-        nn = Neural_Network(preprocessor=self.pp3D)
-        nn.train(self.sample_list3D, epochs=3)
+    def test_MODEL_training(self):
+        group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
+        group.train(self.sample_list2D, epochs=3)
 
     #-------------------------------------------------#
     #                    Prediction                   #
     #-------------------------------------------------#
+    
     def test_MODEL_prediction2D(self):
-        nn = Neural_Network(preprocessor=self.pp2D)
-        nn.predict(self.sample_list2D)
+        group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
+        group.predict(self.sample_list2D, drop)
         for index in self.sample_list2D:
             sample = self.data_io2D.sample_loader(index, load_seg=True,
                                                   load_pred=True)
             self.assertIsNotNone(sample.pred_data)
-
-    def test_MODEL_prediction3D(self):
-        nn = Neural_Network(preprocessor=self.pp3D)
-        nn.predict(self.sample_list3D)
-        for index in self.sample_list3D:
-            sample = self.data_io3D.sample_loader(index, load_seg=True,
-                                                  load_pred=True)
-            self.assertIsNotNone(sample.pred_data)
-
-    def test_MODEL_prediction_returnOutput(self):
-        nn = Neural_Network(preprocessor=self.pp2D)
-        pred_list = nn.predict(self.sample_list2D, return_output=True)
-        for pred in pred_list:
-            self.assertIsNotNone(pred)
-            self.assertEqual(pred.shape, (16,16))
-
-    def test_MODEL_prediction_activationOutput(self):
-        nn = Neural_Network(preprocessor=self.pp2D)
-        pred_list = nn.predict(self.sample_list2D, return_output=True,
-                               activation_output=True)
-        for pred in pred_list:
-            self.assertIsNotNone(pred)
-            self.assertEqual(pred.shape, (16,16,3))
-
+    
     #-------------------------------------------------#
     #                    Validation                   #
     #-------------------------------------------------#
     def test_MODEL_validation2D(self):
-        nn = Neural_Network(preprocessor=self.pp2D)
-        history = nn.evaluate(self.sample_list2D[0:4], self.sample_list2D[4:6],
+        group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
+        history = group.evaluate(self.sample_list2D[0:4], self.sample_list2D[4:6],
                               epochs=3)
-        self.assertIsNotNone(history)
-
-    def test_MODEL_validation3D(self):
-        nn = Neural_Network(preprocessor=self.pp3D)
-        history = nn.evaluate(self.sample_list3D[0:4], self.sample_list3D[4:6],
-                              epochs=3)
-        self.assertIsNotNone(history)
+        #todo
+    

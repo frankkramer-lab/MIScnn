@@ -21,6 +21,7 @@ from miscnn.neural_network.model import Neural_Network
 import json
 from miscnn.data_loading.data_io import create_directories
 from tensorflow.keras.callbacks import ModelCheckpoint
+import os
 
 #-----------------------------------------------------#
 #            Neural Network (model) class             #
@@ -46,9 +47,9 @@ class Model_Group(Model):
             out_dir = create_directories(tmp, "group_" + str(model.id))
             model.preprocessor.data_io.output_path = out_dir
             cb_list = []
-            if (not isinstance(model, ModelGroup)):
+            if (not isinstance(model, Model_Group)):
                 #this child is a leaf. ensure correct storage.
-                cb_model = ModelCheckpoint(os.path.join(subdir, "model.hdf5"),
+                cb_model = ModelCheckpoint(os.path.join(out_dir, "model.hdf5"),
                                            monitor="val_loss", verbose=1,
                                            save_best_only=True, mode="min")
                 cb_list = callbacks + [cb_model]
@@ -67,14 +68,14 @@ class Model_Group(Model):
             model.predict(sample_list, activation_output=activation_output)
         
         for sample in sample_list:
-            sample = None
+            s = None
             prediction_list = []
             for model in self.models:
                 out_dir = os.path.join(tmp, "group_" + str(model.id))
                 model.preprocessor.data_io.output_path = out_dir
                 s = model.preprocessor.data_io.sample_loader(sample, load_seg=False, load_pred=True)
-                if sample is None:
-                    sample = s.img_data
+                if s is None:
+                    s = s.img_data
                 prediction_list.append(s.pred_data)
             res = aggregation_func(sample, prediction_list)
             self.preprocessor.data_io.output_path = tmp #preprocessor is likely a reference so this needs to be reset
@@ -88,7 +89,7 @@ class Model_Group(Model):
             out_dir = create_directories(evaluation_path, "group_" + str(model.id))
             model.preprocessor.data_io.output_path = out_dir
             cb_list = []
-            if (not isinstance(model, ModelGroup)):
+            if (not isinstance(model, Model_Group)):
                 #this child is a leaf. ensure correct storage.
                 cb_model = ModelCheckpoint(os.path.join(out_dir, "model.hdf5"),
                                            monitor="val_loss", verbose=1,
@@ -112,7 +113,7 @@ class Model_Group(Model):
         subdir = create_directories(file_path, "group_" + str(self.id))
         
         with open(os.path.join(subdir, "metadata.json"), "w") as f:
-            json.dump(f, {"type": "group"})
+            json.dump({"type": "group"}, f)
         
         for model in self.models:
             model.dump(subdir)
