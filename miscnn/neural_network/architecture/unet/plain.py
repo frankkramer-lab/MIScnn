@@ -26,11 +26,12 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, concatenate
-from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
+from tensorflow.keras.layers import Activation, BatchNormalization, Dropout
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
-from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
+from tensorflow.keras.layers import Input, concatenate
+from tensorflow.keras.models import Model
+
 # Internal libraries/scripts
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
@@ -44,16 +45,25 @@ Methods:
     create_model_2D:        Creating the 2D U-Net plain model using Keras
     create_model_3D:        Creating the 3D U-Net plain model using Keras
 """
+
+
 class Architecture(Abstract_Architecture):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, activation='softmax', batch_normalization=True,
-                 pooling=(1,2,2)):
+    def __init__(self, activation='softmax', conv_layer_activation='relu',
+                 batch_normalization=True, batch_normalization_params=None,
+                 dropout=0, pooling=(1, 2, 2)):
         # Parse parameter
+        if batch_normalization_params is None:
+            batch_normalization_params = {'momentum': 0.1, 'epsilon': 1e-5}
         self.activation = activation
+        self.conv_layer_activation = conv_layer_activation
         # Batch normalization settings
         self.ba_norm = batch_normalization
+        self.ba_norm_params = batch_normalization_params
+        # Dropout params
+        self.dropout = dropout
         # Adjust pooling step
         self.pooling = pooling
         # Create list of filters
@@ -74,15 +84,19 @@ class Architecture(Abstract_Architecture):
         # Contracting layers
         for i in range(0, len(self.feature_map)):
             neurons = self.feature_map[i]
-            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.ba_norm, strides=1)
-            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.ba_norm, strides=1)
+            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             contracting_convs.append(cnn_chain)
             cnn_chain = MaxPooling2D(pool_size=(2, 2))(cnn_chain)
 
         # Middle Layer
         neurons = self.feature_map[-1]
-        cnn_chain = conv_layer_2D(cnn_chain, neurons, self.ba_norm, strides=1)
-        cnn_chain = conv_layer_2D(cnn_chain, neurons, self.ba_norm, strides=1)
+        cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+        cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Expanding Layers
         for i in reversed(range(0, len(self.feature_map))):
@@ -90,8 +104,10 @@ class Architecture(Abstract_Architecture):
             cnn_chain = Conv2DTranspose(neurons, (2, 2), strides=(2, 2),
                                         padding='same')(cnn_chain)
             cnn_chain = concatenate([cnn_chain, contracting_convs[i]], axis=-1)
-            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.ba_norm, strides=1)
-            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.ba_norm, strides=1)
+            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+            cnn_chain = conv_layer_2D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Output Layer
         conv_out = Conv2D(n_labels, (1, 1), activation=self.activation)(cnn_chain)
@@ -114,23 +130,29 @@ class Architecture(Abstract_Architecture):
 
         # First contracting layer
         neurons = self.feature_map[0]
-        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
-        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
+        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
         contracting_convs.append(cnn_chain)
         cnn_chain = MaxPooling3D(pool_size=self.pooling)(cnn_chain)
 
         # Remaining contracting layers
         for i in range(1, len(self.feature_map)):
             neurons = self.feature_map[i]
-            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
-            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
+            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
             contracting_convs.append(cnn_chain)
             cnn_chain = MaxPooling3D(pool_size=(2, 2, 2))(cnn_chain)
 
         # Middle Layer
         neurons = self.feature_map[-1]
-        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
-        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
+        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Expanding Layers except last layer
         for i in reversed(range(1, len(self.feature_map))):
@@ -138,16 +160,20 @@ class Architecture(Abstract_Architecture):
             cnn_chain = Conv3DTranspose(neurons, (2, 2, 2), strides=(2, 2, 2),
                                         padding='same')(cnn_chain)
             cnn_chain = concatenate([cnn_chain, contracting_convs[i]], axis=-1)
-            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
-            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
+            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+            cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                      self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Last expanding layer
         neurons = self.feature_map[0]
         cnn_chain = Conv3DTranspose(neurons, self.pooling, strides=self.pooling,
                                     padding='same')(cnn_chain)
         cnn_chain = concatenate([cnn_chain, contracting_convs[0]], axis=-1)
-        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
-        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.ba_norm, strides=1)
+        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
+        cnn_chain = conv_layer_3D(cnn_chain, neurons, self.conv_layer_activation,
+                                  self.ba_norm, self.ba_norm_params, self.dropout, strides=1)
 
         # Output Layer
         conv_out = Conv3D(n_labels, (1, 1, 1), activation=self.activation)(cnn_chain)
@@ -156,22 +182,32 @@ class Architecture(Abstract_Architecture):
         # Return model
         return model
 
+
 #-----------------------------------------------------#
 #                   Subroutines 2D                    #
 #-----------------------------------------------------#
 # Convolution layer
-def conv_layer_2D(input, neurons, ba_norm, strides=1):
-    conv = Conv2D(neurons, (3,3), activation='relu', padding='same',
-                  strides=strides)(input)
-    if ba_norm : conv = BatchNormalization(momentum=0.99)(conv)
-    return conv
+def conv_layer_2D(input, neurons, activation, ba_norm, ba_norm_params, dropout, strides=1):
+    conv = Conv2D(neurons, (3, 3), padding='same', strides=strides)(input)
+
+    if dropout:
+        conv = Dropout(dropout)(conv)
+    if ba_norm:
+        conv = BatchNormalization(**ba_norm_params)(conv)
+
+    return Activation(activation)(conv)
+
 
 #-----------------------------------------------------#
 #                   Subroutines 3D                    #
 #-----------------------------------------------------#
 # Convolution layer
-def conv_layer_3D(input, neurons, ba_norm, strides=1):
-    conv = Conv3D(neurons, (3,3,3), activation='relu', padding='same',
-                  strides=strides)(input)
-    if ba_norm : conv = BatchNormalization(momentum=0.99)(conv)
-    return conv
+def conv_layer_3D(input, neurons, activation, ba_norm, ba_norm_params, dropout, strides=1):
+    conv = Conv3D(neurons, (3, 3, 3), padding='same', strides=strides)(input)
+
+    if dropout:
+        conv = Dropout(dropout)(conv)
+    if ba_norm:
+        conv = BatchNormalization(**ba_norm_params)(conv)
+
+    return Activation(activation)(conv)
