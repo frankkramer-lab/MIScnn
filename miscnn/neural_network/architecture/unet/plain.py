@@ -26,8 +26,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from tensorflow.keras.activations import relu
-from tensorflow.keras.layers import BatchNormalization, Dropout
+from tensorflow.keras.layers import Activation, BatchNormalization, Dropout
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from tensorflow.keras.layers import Input, concatenate
@@ -52,7 +51,7 @@ class Architecture(Abstract_Architecture):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, activation='softmax', conv_layer_activation=relu,
+    def __init__(self, activation='softmax', conv_layer_activation='relu',
                  batch_normalization=True, batch_normalization_params=None,
                  dropout=0, pooling=(1, 2, 2)):
         # Parse parameter
@@ -196,7 +195,7 @@ def conv_layer_2D(input, neurons, activation, ba_norm, ba_norm_params, dropout, 
     if ba_norm:
         conv = BatchNormalization(**ba_norm_params)(conv)
 
-    return activation(conv)
+    return Activation(activation)(conv)
 
 
 #-----------------------------------------------------#
@@ -211,4 +210,4 @@ def conv_layer_3D(input, neurons, activation, ba_norm, ba_norm_params, dropout, 
     if ba_norm:
         conv = BatchNormalization(**ba_norm_params)(conv)
 
-    return activation(conv)
+    return Activation(activation)(conv)
