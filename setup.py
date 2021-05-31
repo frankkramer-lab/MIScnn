@@ -17,7 +17,7 @@ setup(
    long_description_content_type="text/markdown",
    packages=find_packages(),
    python_requires='>=3.6',
-   install_requires=['tensorflow==2.4.0',
+   install_requires=['tensorflow==2.5.0',
                      'numpy>=1.18.5',
                      'pandas>=1.1.4',
                      'tqdm==4.51.0',
