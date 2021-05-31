@@ -1,4 +1,5 @@
 numpy==1.18.5
+pandas==1.1.4
 tensorflow==2.4.0
 nibabel==3.1.0
 matplotlib==3.3.1
@@ -7,3 +8,4 @@ batchgenerators==0.20.1
 pydicom==2.0.0
 SimpleITK==2.0.2
 scikit-image==0.15.0
+tqdm==4.51.0
