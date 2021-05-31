@@ -22,6 +22,7 @@
 # External libraries
 from tensorflow.keras import backend as K
 import numpy as np
+
 #-----------------------------------------------------#
 #              Standard Dice coefficient              #
 #-----------------------------------------------------#
@@ -191,5 +192,3 @@ def categorical_focal_loss(alpha, gamma=2.):
         return K.mean(K.sum(loss, axis=-1))
 
     return categorical_focal_loss_fixed
-
-
