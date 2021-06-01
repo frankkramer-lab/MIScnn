@@ -80,8 +80,6 @@ class Model_Group(Model):
             res = aggregation_func(sample, prediction_list)
             self.preprocessor.data_io.output_path = tmp #preprocessor is likely a reference so this needs to be reset
             self.preprocessor.data_io.save_prediction(res, sample)
-        
-        #deal with results
     
     # Evaluate the Model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[]):
