@@ -74,12 +74,12 @@ class Model_Group(Model):
                 out_dir = os.path.join(tmp, "group_" + str(model.id))
                 model.preprocessor.data_io.output_path = out_dir
                 s = model.preprocessor.data_io.sample_loader(sample, load_seg=False, load_pred=True)
-                if s is None:
-                    s = s.img_data
                 prediction_list.append(s.pred_data)
             res = aggregation_func(sample, prediction_list)
             self.preprocessor.data_io.output_path = tmp #preprocessor is likely a reference so this needs to be reset
-            self.preprocessor.data_io.save_prediction(res, sample)
+            s = self.preprocessor.data_io.sample_loader(sample, load_seg=False, load_pred=False)
+            s.pred_data = res
+            self.preprocessor.data_io.save_prediction(s)
     
     # Evaluate the Model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[]):
