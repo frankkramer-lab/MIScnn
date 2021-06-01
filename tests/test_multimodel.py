@@ -44,12 +44,16 @@ class ModelStub(BaseModel):
     
     def predict(self, sample_list, activation_output=False):
         for sample in sample_list:
-            self.preprocessor.data_io.save_prediction(np.zeros((16, 16, 16)), sample)
+            s = self.preprocessor.data_io.sample_loader(sample)
+            s.pred_data = np.zeros((16, 16, 16))
+            self.preprocessor.data_io.save_prediction(s)
     # Evaluate the Model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[], store=True):
         self.trained = True
         for sample in validation_samples:
-            self.preprocessor.data_io.save_prediction(np.zeros((16, 16, 16)), sample)
+            s = self.preprocessor.data_io.sample_loader(sample)
+            s.pred_data = np.zeros((16, 16, 16))
+            self.preprocessor.data_io.save_prediction(s)
     
     def reset(self):
         self.trained = False
