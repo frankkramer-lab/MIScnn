@@ -64,7 +64,6 @@ class DICOM_interface(Abstract_IO):
         self.classes = classes
         self.three_dim = three_dim
         self.annotation_tag = annotation_tag
-        self.cache = dict()
         assert isinstance(mask_background,int), "mask_background value should be an integer"
         self.mask_background = mask_background
         self.structure_dict = structure_dict
@@ -146,10 +145,9 @@ class DICOM_interface(Abstract_IO):
                             dcm_temp.PixelSpacing[1]],
                             dtype=np.float32)
         # Calculate absolute values for voxel spacing
-        self.cache[index] = np.absolute(spacing)
 
         #return both the sitk image and all images as a numpy array
-        return sitk.GetArrayFromImage(dcm)
+        return sitk.GetArrayFromImage(dcm), {"type":"dicom", "spacing":np.absolute(spacing)}
 
 
     def load_image_sitk(self, index):
@@ -199,11 +197,9 @@ class DICOM_interface(Abstract_IO):
                             dcm_temp.PixelSpacing[0],
                             dcm_temp.PixelSpacing[1]],
                             dtype=np.float32)
-        # Calculate absolute values for voxel spacing
-        self.cache[index] = np.absolute(spacing)
 
         #return both the sitk image and all images as a numpy array
-        return dcm
+        return dcm, {"type":"dicom", "spacing":np.absolute(spacing)}
 
 
     #---------------------------------------------#
@@ -225,7 +221,7 @@ class DICOM_interface(Abstract_IO):
         contours = self.get_ROI_data(rtStruct_path)
 
         #Load CT images in sitk format
-        images = self.load_image_sitk(index)
+        images, image_data = self.load_image_sitk(index)
 
         #get segmentations
         segmentations = self.convert(contours, images)
@@ -430,30 +426,17 @@ class DICOM_interface(Abstract_IO):
         return pred_data
 
     #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    # Parse slice thickness
-    def load_details(self, i):
-
-
-        spacing = self.cache[i]
-        # Delete cached spacing
-        del self.cache[i]
-        # Return detail dictionary
-        return {"spacing":spacing}
-
-    #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
     # Write a segmentation prediction into in the NIFTI file format
-    def save_prediction(self, pred, index, output_path):
+    def save_prediction(self, sample, output_path):
         # Resolve location where data should be written
         if not os.path.exists(output_path):
             raise IOError(
                 "Data path, {}, could not be resolved".format(output_path)
             )
         # Convert numpy array to NIFTI
-        nifti = nib.Nifti1Image(pred, None)
+        nifti = nib.Nifti1Image(sample.pred_data, sample.get_extended_data()["spacing"])
         #nifti.get_data_dtype() == pred.dtype
         # Save segmentation to disk
         pred_file = str(index) + ".nii.gz"

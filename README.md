@@ -126,15 +126,18 @@ Bavaria, Germany
 
 ## How to cite / More information
 
-Dominik Müller and Frank Kramer. (2019)  
-MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning.  
-arXiv e-print: [https://arxiv.org/abs/1910.09308](https://arxiv.org/abs/1910.09308)
+Müller, D., Kramer, F. MIScnn: a framework for medical image segmentation with convolutional neural networks and deep learning. BMC Med Imaging 21, 12 (2021).  
+DOI: https://doi.org/10.1186/s12880-020-00543-7
 
 ```
-Article{miscnn,
-  title={MIScnn: A Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning},
+Article{miscnn21,
+  title={MIScnn: a framework for medical image segmentation with convolutional neural networks and deep learning},
   author={Dominik Müller and Frank Kramer},
-  year={2019},
+  year={2021},
+  journal={BMC Medical Imaging},
+  volume={21},
+  url={https://doi.org/10.1186/s12880-020-00543-7},
+  doi={10.1186/s12880-020-00543-7},
   eprint={1910.09308},
   archivePrefix={arXiv},
   primaryClass={eess.IV}

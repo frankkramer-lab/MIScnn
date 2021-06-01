@@ -92,7 +92,8 @@ class Data_IOTEST(unittest.TestCase):
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=False)
         self.assertIsNone(sample.pred_data)
-        data_io.save_prediction(sample.seg_data, sample.index)
+        sample.pred_data = sample.seg_data
+        data_io.save_prediction(sample)
         self.assertTrue(os.path.exists(os.path.join(self.tmp_dir.name, "pred")))
         sample = data_io.sample_loader("TEST.sample_0", backup=False,
                                        load_seg=True, load_pred=True)

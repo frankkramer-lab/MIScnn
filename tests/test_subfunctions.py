@@ -27,7 +27,7 @@ import numpy as np
 from tensorflow.keras.utils import to_categorical
 from copy import deepcopy
 #Internal libraries
-from miscnn import Data_IO, Preprocessor
+from miscnn import Data_IO, Preprocessor, Neural_Network
 from miscnn.data_loading.interfaces import Dictionary_interface
 from miscnn.data_loading.sample import Sample
 from miscnn.processing.subfunctions import *
@@ -125,7 +125,7 @@ class SubfunctionsTEST(unittest.TestCase):
                 seg_list.append(data_patches[i][1])
             seg = np.stack(seg_list, axis=0)
             self.assertEqual(seg.shape, (27,4,4,4,3))
-            pred = pp.postprocessing(index, seg)
+            pred = pp.postprocessing(sample, seg)
             self.assertEqual(pred.shape, (16,16,16))
         self.tmp_dir.cleanup()
 
@@ -197,7 +197,29 @@ class SubfunctionsTEST(unittest.TestCase):
             self.assertIsNotNone(seg)
             self.assertEqual(img.shape, (1,8,8,8,1))
             self.assertEqual(seg.shape, (1,8,8,8,3))
-        self.tmp_dir.cleanup()
+        #self.tmp_dir.cleanup()
+
+    # Run prepare subfunction of Preprocessor
+    def test_SUBFUNCTIONS_fullrun(self):
+        ds = dict()
+        for i in range(0, 10):
+            img = np.random.rand(16, 16, 16) * 255
+            img = img.astype(int)
+            seg = np.random.rand(16, 16, 16) * 3
+            seg = seg.astype(int)
+            sample = (img, seg)
+            ds["TEST.sample_" + str(i)] = sample
+        io_interface = Dictionary_interface(ds, classes=3, three_dim=True)
+        self.tmp_dir = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
+        tmp_batches = os.path.join(self.tmp_dir.name, "batches")
+        dataio = Data_IO(io_interface, input_path="", output_path="",
+                         batch_path=tmp_batches, delete_batchDir=False)
+        sf = [Resize((16,16,16)), Normalization(), Clipping(min=-1.0, max=0.0)]
+        pp = Preprocessor(dataio, batch_size=1, prepare_subfunctions=True,
+                          analysis="fullimage", subfunctions=sf)
+        nn = Neural_Network(preprocessor=pp)
+        sample_list = dataio.get_indiceslist()
+        nn.predict(sample_list, return_output=True)
 
     #-------------------------------------------------#
     #                    Resizing                     #
@@ -238,7 +260,7 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16)
             else : old_shape = (16,16,16)
@@ -262,7 +284,7 @@ class SubfunctionsTEST(unittest.TestCase):
                 sample = deepcopy(getattr(self, varname))
                 if dim == "2D" : old_spacing = (1.8, 3.0)
                 else : old_spacing = (1.8, 3.0, 3.0)
-                sample.details = {"spacing":np.array(old_spacing)}
+                sample.extended = {"spacing":np.array(old_spacing)}
                 # Run preprocessing of the subfunction
                 sf.preprocessing(sample, training=train)
                 # Check for correctness
@@ -288,20 +310,50 @@ class SubfunctionsTEST(unittest.TestCase):
             sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
             if dim == "2D" : old_spacing = (1.8, 3.0)
             else : old_spacing = (1.8, 3.0, 3.0)
-            sample_pred.details = {"spacing":np.array(old_spacing)}
-            sample_train.details = {"spacing":np.array(old_spacing)}
+            sample_pred.extended = {"spacing":np.array(old_spacing)}
+            sample_train.extended = {"spacing":np.array(old_spacing)}
             # Run preprocessing of the subfunction
             sf.preprocessing(sample_train, training=True)
             sf.preprocessing(sample_pred, training=False)
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16)
             else : old_shape = (16,16,16)
             self.assertEqual(pred.shape, old_shape)
 
+    def test_SUBFUNCTIONS_RESAMPLING_postprocessing_activationOutput(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            if dim == "2D" : continue
+
+            # Initialize Subfunction
+            if dim == "2D" : spacing = (1,1)
+            else : spacing = (1,1,1)
+            sf = Resampling(new_spacing=spacing)
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            if dim == "2D" : old_spacing = (1.8, 3.0)
+            else : old_spacing = (1.8, 3.0, 3.0)
+            sample_pred.extended = {"spacing":np.array(old_spacing)}
+            sample_train.extended = {"spacing":np.array(old_spacing)}
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            if dim == "2D":
+                sample_pred.pred_data = np.random.rand(16, 16, 3) * 3
+            else:
+                sample_pred.pred_data = np.random.rand(16, 16, 16, 3) * 3
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
+            # Check for correctness
+            if dim == "2D" : old_shape = (16,16,3)
+            else : old_shape = (16,16,16,3)
+            self.assertEqual(pred.shape, old_shape)
 
     #-------------------------------------------------#
     #                     Padding                     #
@@ -344,7 +396,7 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16)
             else : old_shape = (16,16,16)
@@ -386,7 +438,7 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
 
@@ -437,7 +489,7 @@ class SubfunctionsTEST(unittest.TestCase):
                 # Transform segmentation data to simulate prediction data
                 sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
                 # Run postprocessing of the subfunction
-                pred = sf.postprocessing(sample_pred.pred_data)
+                pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
                 # Check for correctness
                 self.assertTrue(np.array_equal(pred, sample_pred.pred_data))
 
@@ -482,6 +534,6 @@ class SubfunctionsTEST(unittest.TestCase):
             # Transform segmentation data to simulate prediction data
             sample_pred.pred_data = np.squeeze(sample_train.seg_data, axis=-1)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
             # Check for correctness
             self.assertTrue(np.array_equal(pred, sample_pred.pred_data))

@@ -25,8 +25,9 @@ import tempfile
 import os
 import numpy as np
 #Internal libraries
-from miscnn import Data_IO, Preprocessor, Neural_Network
+from miscnn import Data_IO, Preprocessor, Neural_Network, Data_Augmentation
 from miscnn.data_loading.interfaces import Dictionary_interface
+from miscnn.neural_network.architecture.unet import UNet_standard
 
 #-----------------------------------------------------#
 #              Unittest: Neural Network               #
@@ -134,7 +135,6 @@ class NeuralNetworkTEST(unittest.TestCase):
                             multi_gpu=True)
         nn.train(self.sample_list2D, epochs=3)
 
-
     ### Comments:
     ### For whatever reason, adding this unittest will break the
     ### Subfunction preparation with Multiprocessing on Travis-CI.
@@ -192,6 +192,32 @@ class NeuralNetworkTEST(unittest.TestCase):
         for pred in pred_list:
             self.assertIsNotNone(pred)
             self.assertEqual(pred.shape, (16,16,3))
+
+    #-------------------------------------------------#
+    #              Augmentated Prediction             #
+    #-------------------------------------------------#
+    def test_MODEL_predictionAugmentated_2D(self):
+        data_aug = Data_Augmentation()
+        pp = Preprocessor(self.data_io2D, batch_size=2,
+                          data_aug=data_aug, analysis="fullimage")
+        nn = Neural_Network(preprocessor=pp)
+        for sample in self.sample_list2D:
+            predictions = nn.predict_augmentated(sample)
+            self.assertEqual(len(predictions), 2)
+            for pred in predictions:
+                self.assertEqual(pred.shape, (16,16,3))
+
+    def test_MODEL_predictionAugmentated_3D(self):
+        data_aug = Data_Augmentation()
+        pp = Preprocessor(self.data_io3D, batch_size=1, patch_shape=(8,8,8),
+                          data_aug=data_aug, analysis="patchwise-crop")
+        nn = Neural_Network(preprocessor=pp,
+                            architecture=UNet_standard(depth=2))
+        for sample in self.sample_list3D:
+            predictions = nn.predict_augmentated(sample)
+            self.assertEqual(len(predictions), 3)
+            for pred in predictions:
+                self.assertEqual(pred.shape, (16,16,16,3))
 
     #-------------------------------------------------#
     #                    Validation                   #

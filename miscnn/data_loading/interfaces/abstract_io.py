@@ -30,10 +30,9 @@ from abc import ABC, abstractmethod
 Methods:
     __init__                Object creation function
     initialize:             Prepare the data set and create indices list
-    load_image:             Load an image
+    load_image:             Load an image and associated data
     load_segmentation:      Load a segmentation
     load_prediction:        Load a prediction from file
-    load_details:           Load optional information
     save_prediction:        Save a prediction to file
 """
 class Abstract_IO(ABC):
@@ -123,22 +122,6 @@ class Abstract_IO(ABC):
     def load_prediction(self, i, output_path):
         pass
     #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    """ Load optional details during sample creation. This function can be used to parse whatever
-        information you want into the sample object. This enables usage of these information in custom
-        preprocessing subfunctions.
-        Example: Slice thickness / voxel spacing
-
-        Parameter:
-            index (variable):       An index from the provided indices_list of the initialize function
-        Return:
-            dict [dictionary]:      A basic Python dictionary
-    """
-    @abstractmethod
-    def load_details(self, i):
-        pass
-    #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
     """ Backup the prediction of the image with the index i into the output directory.
@@ -152,5 +135,5 @@ class Abstract_IO(ABC):
             None
     """
     @abstractmethod
-    def save_prediction(self, pred, i, output_path):
+    def save_prediction(self, sample, output_path):
         pass

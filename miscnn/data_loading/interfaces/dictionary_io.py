@@ -61,7 +61,10 @@ class Dictionary_interface(Abstract_IO):
     # Read a image from the dictionary
     def load_image(self, index):
         # Return image
-        return self.dictionary[index][0]
+        if len(self.dictionary[index]) > 3:
+            return self.dictionary[index][0], {"type": "dict", "extra": self.dictionary[index][3]}
+        else:
+            return self.dictionary[index][0], {"type": "dict", "extra": {}}
 
     #---------------------------------------------#
     #              load_segmentation              #
@@ -80,26 +83,15 @@ class Dictionary_interface(Abstract_IO):
         return self.dictionary[index][2]
 
     #---------------------------------------------#
-    #                 load_details                #
-    #---------------------------------------------#
-    # Parse additional information
-    def load_details(self, index):
-        # Return detail dictionary
-        if len(self.dictionary[index]) >= 4:
-            return self.dictionary[index][3]
-        else:
-            return None
-
-    #---------------------------------------------#
     #               save_prediction               #
     #---------------------------------------------#
     # Write a segmentation prediction into the dictionary
-    def save_prediction(self, pred, index, output_path):
+    def save_prediction(self, sample, output_path):
         # Check if a prediction is already present -> overwrite
-        if len(self.dictionary[index]) >= 3:
-            self.dictionary[index][2]
+        if len(self.dictionary[sample.index]) >= 3:
+            self.dictionary[sample.index][2]
         # If not, add the prediction to the sample tuple
-        elif len(self.dictionary[index]) == 1:
-            self.dictionary[index] = self.dictionary[index] + (None, pred,)
-        elif len(self.dictionary[index]) == 2:
-            self.dictionary[index] = self.dictionary[index] + (pred,)
+        elif len(self.dictionary[sample.index]) == 1:
+            self.dictionary[sample.index] = self.dictionary[sample.index] + (None, sample.pred_data,)
+        elif len(self.dictionary[sample.index]) == 2:
+            self.dictionary[sample.index] = self.dictionary[sample.index] + (sample.pred_data,)
