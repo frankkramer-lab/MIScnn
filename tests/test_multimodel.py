@@ -119,7 +119,6 @@ class ModelTEST(unittest.TestCase):
     def test_MODEL_create(self):
         group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
         self.assertIsInstance(group, Model_Group)
-        #todo
         
 
     # Model storage
@@ -136,7 +135,7 @@ class ModelTEST(unittest.TestCase):
         group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
         model_path = os.path.join(self.tmp_dir2D.name, "model")
         group.dump(model_path)
-        #todo. Currently the ModelGrouup doesn't deal with multiple model instances
+        group.load(model_path)
 
     # Reseting weights
     def test_MODEL_resetWeights(self):
@@ -169,5 +168,5 @@ class ModelTEST(unittest.TestCase):
         group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
         history = group.evaluate(self.sample_list2D[0:4], self.sample_list2D[4:6],
                               epochs=3)
-        #todo
+                              
     
