@@ -118,7 +118,7 @@ class Model_Group(Model):
     
     # Load model from file
     def load(self, file_path, custom_objects={}):
-        collection = [dir for dir in os.listdir(file_path) if os.isdir(dir)]
+        collection = [dir for dir in os.listdir(file_path) if os.path.isdir(dir)]
         
         for obj in collection:
             metadata = {}
