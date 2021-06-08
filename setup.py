@@ -23,7 +23,7 @@ setup(
                      'tqdm==4.51.0',
                      'nibabel>=3.1.0',
                      'matplotlib==3.3.1',
-                     'pillow==8.1.1',
+                     'pillow==8.2.0',
                      'batchgenerators>=0.20.1',
                      'pydicom==2.0.0',
                      'SimpleITK==2.0.2',
