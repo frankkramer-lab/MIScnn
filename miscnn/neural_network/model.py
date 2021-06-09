@@ -24,7 +24,9 @@ from tensorflow.distribute import MirroredStrategy, HierarchicalCopyAllReduce
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 import numpy as np
+import copy
 # Internal libraries/scripts
+from miscnn.model.model import Model as BaseModel
 from miscnn.neural_network.metrics import dice_soft, tversky_loss
 from miscnn.neural_network.architecture.unet.standard import Architecture
 from miscnn.neural_network.data_generator import DataGenerator
@@ -33,7 +35,7 @@ from miscnn.neural_network.data_generator import DataGenerator
 #            Neural Network (model) class             #
 #-----------------------------------------------------#
 # Class which represents the Neural Network and which run the whole pipeline
-class Neural_Network:
+class Neural_Network(BaseModel):
     """ Initialization function for creating a Neural Network (model) object.
     This class provides functionality for handling all model methods.
     This class runs the whole pipeline and uses a Preprocessor instance to obtain batches.
@@ -59,19 +61,16 @@ class Neural_Network:
     """
     def __init__(self, preprocessor, architecture=Architecture(),
                  loss=tversky_loss, metrics=[dice_soft],
-                 learninig_rate=0.0001, batch_queue_size=2,
+                 learning_rate=0.0001, batch_queue_size=2,
                  workers=1, multi_gpu=False):
-        # Identify data parameters
-        self.three_dim = preprocessor.data_io.interface.three_dim
-        self.channels = preprocessor.data_io.interface.channels
-        self.classes = preprocessor.data_io.interface.classes
+        BaseModel.__init__(self, preprocessor)
         # Cache parameter
-        self.preprocessor = preprocessor
         self.loss = loss
         self.metrics = metrics
-        self.learninig_rate = learninig_rate
+        self.learning_rate = learning_rate
         self.batch_queue_size = batch_queue_size
         self.workers = workers
+        self.architecture = architecture
         # Build model with multiple GPUs (MirroredStrategy)
         if multi_gpu:
             strategy = MirroredStrategy(cross_device_ops=HierarchicalCopyAllReduce())
@@ -105,7 +104,7 @@ class Neural_Network:
              self.model = architecture.create_model_2D(input_shape=input_shape,
                                                        n_labels=self.classes)
         # Compile model
-        self.model.compile(optimizer=Adam(lr=self.learninig_rate),
+        self.model.compile(optimizer=Adam(lr=self.learning_rate),
                            loss=self.loss, metrics=self.metrics)
 
     #---------------------------------------------#
@@ -262,6 +261,7 @@ class Neural_Network:
                                            self.preprocessor,
                                            training=True, validation=True,
                                            shuffle=self.shuffle_batches)
+        print("constructed data generation")
         # Run training & validation process with the Keras fit
         history = self.model.fit(dataGen_training,
                                  validation_data=dataGen_validation,
@@ -279,6 +279,17 @@ class Neural_Network:
     #---------------------------------------------#
     #               Model Management              #
     #---------------------------------------------#
+    def reset(self):
+        self.reset_weights()
+        self.model.compile(optimizer=Adam(lr=self.learning_rate),
+                           loss=self.loss, metrics=self.metrics)
+   
+    def copy(self):
+        new_model = Neural_Network(self.preprocessor, self.architecture, self.loss, copy.deepcopy(self.metrics), 
+            self.learning_rate, self.batch_queue_size, self.workers, False) #assume multi_gpu false because mirroring wqould be expensive with multiple models
+        new_model.model.set_weights(self.model.get_weights())
+        return new_model
+    
     # Re-initialize model weights
     def reset_weights(self):
         self.model.set_weights(self.initialization_weights)
@@ -292,5 +303,5 @@ class Neural_Network:
         # Create model input path
         self.model = load_model(file_path, custom_objects, compile=False)
         # Compile model
-        self.model.compile(optimizer=Adam(lr=self.learninig_rate),
+        self.model.compile(optimizer=Adam(lr=self.learning_rate),
                            loss=self.loss, metrics=self.metrics)
