@@ -164,9 +164,15 @@ class Image_interface(Abstract_IO):
             raise IOError(
                 "Data path, {}, could not be resolved".format(output_path)
             )
-        print(sample.pred_data.shape)
         # Transform numpy array to a Pillow image
         pred_pillow = Image.fromarray(sample.pred_data[:, :, 0].astype(np.uint8))
         # Save segmentation to disk
         pred_file = str(sample.index) + "." + self.img_format
         pred_pillow.save(os.path.join(output_path, pred_file))
+
+    #---------------------------------------------#
+    #           check_file_termination            #
+    #---------------------------------------------#
+    @staticmethod
+    def check_file_termination(termination):
+        return termination in [".bmp", ".jpg", ".png", ".jpeg", ".gif"]

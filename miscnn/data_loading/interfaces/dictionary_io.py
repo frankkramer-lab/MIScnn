@@ -95,3 +95,10 @@ class Dictionary_interface(Abstract_IO):
             self.dictionary[sample.index] = self.dictionary[sample.index] + (None, sample.pred_data,)
         elif len(self.dictionary[sample.index]) == 2:
             self.dictionary[sample.index] = self.dictionary[sample.index] + (sample.pred_data,)
+
+    #---------------------------------------------#
+    #           check_file_termination            #
+    #---------------------------------------------#
+    @staticmethod
+    def check_file_termination(termination):
+        return False
