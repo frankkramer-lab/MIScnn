@@ -20,10 +20,16 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 #External libraries
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import os
+
+
+def luminosity(r, g, b):
+    return r * 0.2126 + g * 0.7152 + b * 0.0722
+vec_luminosity = np.vectorize(luminosity)
 
 def visualize_evaluation(case_id, vol, truth, pred, eva_path):
     # Squeeze image files to remove channel axis
@@ -66,11 +72,14 @@ def visualize_sample(img, seg, index, eva_path):
     # Squeeze image files to remove channel axis
     # THIS IS JUST A TEMPORARY SOLUTION
     # THIS JUST WORKS FOR GREYSCALE IMAGES!!
-    img = np.squeeze(img, axis=-1)
-    seg = np.squeeze(seg, axis=-1)
+    if (len(img.shape > 3))
+        if (img.shape[-1] == 3): #RGB converted via luminosity.
+            img[:, :, :] = vec_luminosity(img[:, :, :, 0], img[:, :, :, 1], img[:, :, :, 2])
+        img = np.squeeze(img, axis=-1)
     # Color image with segmentation if present
     if seg is not None:
-        img = overlay_segmentation(img, seg)
+        seg = np.squeeze(seg, axis=-1)
+        img = overlay_segmentation_greyscale(img, seg)
     # Create a figure and an axes object from matplot
     fig, ax = plt.subplots()
     # Initialize the plot with an empty image
@@ -95,12 +104,65 @@ def visualize_sample(img, seg, index, eva_path):
     # Close the matplot
     plt.close()
 
+def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "visualization", alpha = 0.6):
+    tp_color = [31,113,80]
+    fp_color = [153,12,12]
+    fn_color = [3,92,135]
+    
+    if classes is None:
+        classes = np.unique(sample.seg_data)
+    
+    vol_greyscale = (255*(sample.img_data - np.min(sample.img_data))/np.ptp(sample.img_data)).astype(int)
+    # Convert volume to RGB
+    vol_rgb = np.stack([vol_greyscale, vol_greyscale, vol_greyscale], axis=-1)
+    
+    for c in classes:
+        seg_rgb = np.zeros((sample.img_data[0], sample.img_data[1], sample.img_data[2], 3), dtype=np.int)
+    
+        seg_rgb[np.equal(sample.seg_data, c) & np.equal(sample.seg_data, c)] = tp_color
+        seg_rgb[np.logical_not(np.equal(sample.seg_data, c)) & np.equal(sample.seg_data, c)] = fp_color
+        seg_rgb[np.equal(sample.seg_data, c) & np.logical_not(np.equal(sample.seg_data, c))] = fn_color
+        
+        # Get binary array for places where an ROI lives
+        segbin = np.greater(sample.seg_data, 0) | np.greater(sample.pred_data, 0)
+        repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
+        
+        # Weighted sum where there's a value to overlay
+        vol_overlayed = np.where(
+            repeated_segbin,
+            np.round(alpha*seg_rgb+(1-alpha)*vol_rgb).astype(np.uint8),
+            np.round(vol_rgb).astype(np.uint8)
+        )
+        
+        
+        fig, ax = plt.subplots()
+        # Initialize the plot with an empty image
+        data = np.zeros(vol_overlayed.shape[1:3])
+        ax.set_title("Confulsion Overlap")
+        axis_img = ax.imshow(data)
+        # Update function for both images to show the slice for the current frame
+        def update(i):
+            plt.suptitle("Slice: " + str(i))
+            axis_img.set_data(vol_overlayed[i])
+            return [axis_img]
+        # Compute the animation (gif)
+        ani = animation.FuncAnimation(fig, update, frames=len(vol_overlayed), interval=15,
+                                      repeat_delay=0, blit=False)
+        # Set up the output path for the gif
+        if not os.path.exists(visualization_path):
+            os.mkdir(visualization_path)
+        file_name = "visualization." + str(index) + ".class_" + str(c) + ".gif"
+        out_path = os.path.join(visualization_path, file_name)
+        # Save the animation (gif)
+        ani.save(out_path, writer='imagemagick', fps=30)
+        # Close the matplot
+        plt.close()
 
 #-----------------------------------------------------#
 #                     Subroutines                     #
 #-----------------------------------------------------#
 # Based on: https://github.com/neheller/kits19/blob/master/starter_code/visualize.py
-def overlay_segmentation(vol, seg):
+def overlay_segmentation_greyscale(vol, seg, cm="hsv", alpha=0.3):
     # Scale volume to greyscale range
     vol_greyscale = (255*(vol - np.min(vol))/np.ptp(vol)).astype(int)
     # Convert volume to RGB
@@ -108,14 +170,17 @@ def overlay_segmentation(vol, seg):
     # Initialize segmentation in RGB
     shp = seg.shape
     seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
+    
     # Set class to appropriate color
-    seg_rgb[np.equal(seg, 1)] = [255, 0,   0]
-    seg_rgb[np.equal(seg, 2)] = [0,   0, 255]
+    cmap = matplotlib.cm.get_cmap(cm)
+    uniques = np.unique(seg)
+    for u in uniques:
+        seg_rgb[np.equal(seg, u)] = cmap(u / len(uniques))[0:3]
     # Get binary array for places where an ROI lives
     segbin = np.greater(seg, 0)
     repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
+    
     # Weighted sum where there's a value to overlay
-    alpha = 0.3
     vol_overlayed = np.where(
         repeated_segbin,
         np.round(alpha*seg_rgb+(1-alpha)*vol_rgb).astype(np.uint8),
