@@ -112,19 +112,22 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
     if classes is None:
         classes = np.unique(sample.seg_data)
     
-    vol_greyscale = (255*(sample.img_data - np.min(sample.img_data))/np.ptp(sample.img_data)).astype(int)
+    vol_greyscale = np.squeeze((255*(sample.img_data - np.min(sample.img_data))/np.ptp(sample.img_data)).astype(int), axis=-1)
     # Convert volume to RGB
     vol_rgb = np.stack([vol_greyscale, vol_greyscale, vol_greyscale], axis=-1)
     
     for c in classes:
-        seg_rgb = np.zeros((sample.img_data[0], sample.img_data[1], sample.img_data[2], 3), dtype=np.int)
-    
-        seg_rgb[np.equal(sample.seg_data, c) & np.equal(sample.seg_data, c)] = tp_color
-        seg_rgb[np.logical_not(np.equal(sample.seg_data, c)) & np.equal(sample.seg_data, c)] = fp_color
-        seg_rgb[np.equal(sample.seg_data, c) & np.logical_not(np.equal(sample.seg_data, c))] = fn_color
+        seg_rgb = np.zeros((sample.img_data.shape[0], sample.img_data.shape[1], sample.img_data.shape[2], 3), dtype=np.int)
+        
+        seg_broadcast_arr = np.squeeze(np.equal(sample.seg_data, c), axis=-1)
+        pred_broadcast_arr = np.equal(sample.pred_data, c)
+        
+        seg_rgb[ seg_broadcast_arr & pred_broadcast_arr ] = tp_color
+        seg_rgb[np.logical_not(seg_broadcast_arr) & pred_broadcast_arr] = fp_color
+        seg_rgb[seg_broadcast_arr & np.logical_not(pred_broadcast_arr)] = fn_color
         
         # Get binary array for places where an ROI lives
-        segbin = np.greater(sample.seg_data, 0) | np.greater(sample.pred_data, 0)
+        segbin = np.squeeze(np.greater(sample.seg_data, 0), axis=-1) | np.greater(sample.pred_data, 0)
         repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
         
         # Weighted sum where there's a value to overlay
@@ -151,7 +154,7 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
         # Set up the output path for the gif
         if not os.path.exists(visualization_path):
             os.mkdir(visualization_path)
-        file_name = "visualization." + str(index) + ".class_" + str(c) + ".gif"
+        file_name = "visualization." + str(sample.index) + ".class_" + str(c) + ".gif"
         out_path = os.path.join(visualization_path, file_name)
         # Save the animation (gif)
         ani.save(out_path, writer='imagemagick', fps=30)
