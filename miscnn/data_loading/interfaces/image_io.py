@@ -96,14 +96,17 @@ class Image_interface(Abstract_IO):
         img_raw = Image.open(os.path.join(img_path, "imaging" + "." + \
                                           self.img_format))
         # Convert image to rgb or grayscale
-        if self.img_type == "grayscale":
+        if self.img_type == "grayscale" and img_raw.mode != "L":
             img_pil = img_raw.convert("LA")
-        elif self.img_type == "rgb":
+        elif self.img_type == "rgb" and img_raw.mode != "RGB":
             img_pil = img_raw.convert("RGB")
+        else:
+            img_pil = img_raw
         # Convert Pillow image to numpy matrix
         img = np.array(img_pil)
         # Keep only intensity for grayscale images
-        if self.img_type =="grayscale" : img = img[:,:,0]
+        if self.img_type == "grayscale" and len(img.shape) > 2:
+            img = img[:, :, 0]
         # Return image
         return img, {"type": "image"}
 
