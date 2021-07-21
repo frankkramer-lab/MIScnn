@@ -90,15 +90,15 @@ class IO_interfacesTEST(unittest.TestCase):
     # Loading Images and Segmentations
     def test_IOI_IMAGE_loading(self):
         interface = Image_interface(pattern="image_\\d+")
-        sample_list = interface.initialize(self.tmp_data.name)
+        sample_list = sorted(interface.initialize(self.tmp_data.name))
         img_01 = interface.load_image(sample_list[0])
         seg_01 = interface.load_segmentation(sample_list[0])
-        true_img_01 = np.array(Image.fromarray(self.img[:, :, :3]).convert('LA'))
-        self.assertTrue(np.array_equal(img_01[0], true_img_01[:,:,0]))
+        self.assertTrue(np.array_equal(img_01[0], self.img[:, :, 0]))
         self.assertTrue(np.array_equal(seg_01, self.seg[:,:,0]))
         img_02 = interface.load_image(sample_list[1])
         seg_02 = interface.load_segmentation(sample_list[1])
-        self.assertTrue(np.array_equal(img_02[0], self.img[:, :, 0]))
+        true_img_02 = np.array(Image.fromarray(self.img[:, :, :3]).convert('LA'))
+        self.assertTrue(np.array_equal(img_02[0], true_img_02[:,:,0]))
         self.assertTrue(np.array_equal(seg_02, self.seg[:, :, 0]))
     # NIFTI_interface - Loading and Storage of Predictions
     def test_IOI_IMAGE_predictionhandling(self):
