@@ -8,5 +8,5 @@ pillow==8.2.0
 batchgenerators==0.21
 pydicom==2.0.0
 SimpleITK==2.0.2
-scikit-image==0.15.0
+scikit-image==0.18.2
 tqdm==4.51.0

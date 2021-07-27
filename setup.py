@@ -28,7 +28,7 @@ setup(
                      'batchgenerators>=0.21',
                      'pydicom==2.0.0',
                      'SimpleITK==2.0.2',
-                     'scikit-image==0.15.0'],
+                     'scikit-image==0.18.2'],
    classifiers=["Programming Language :: Python :: 3",
                 "Programming Language :: Python :: 3.6",
                 "Programming Language :: Python :: 3.7",
