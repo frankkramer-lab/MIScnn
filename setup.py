@@ -19,7 +19,7 @@ setup(
    python_requires='>=3.7',
    install_requires=['tensorflow==2.5.0',
                      'tensorflow-addons==0.13.0',
-                     'numpy==1.19.1',
+                     'numpy==1.19.2',
                      'pandas>=1.1.4',
                      'tqdm==4.51.0',
                      'nibabel>=3.1.0',
