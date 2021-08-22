@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 import os
+import random
 
 
 #-----------------------------------------------------#
@@ -50,6 +51,7 @@ def normalize_volume(sample, to_greyscale=False, normalize=True):
     
     if (normalize):
         img = 255 * (img - np.min(img)) / np.ptp(img)
+        img = img.astype(int)
     
     return img
     
@@ -68,6 +70,7 @@ def normalize_image(sample, to_greyscale=False, normalize=True):
     
     if (normalize):
         img = 255 * (img - np.min(img)) / np.ptp(img)
+        img = img.astype(int)
     
     return img
 
@@ -88,6 +91,13 @@ def detect_dimensionality(sample):
     else:
         raise RuntimeError("Too many dimensions.")
 
+def normalize(sample, to_greyscale=False, normalize=True):
+    dimensionality = detect_dimensionality(sample)
+    if dimensionality == 2:
+        return normalize_image(sample, to_greyscale, normalize)
+    elif dimensionality == 3:
+        return normalize_volume(sample, to_greyscale, normalize)
+    
 def compute_preprocessed_sample(sample, subfunctions):
     for func in subfunctions:
         func.preprocessing(sample)
@@ -95,8 +105,6 @@ def compute_preprocessed_sample(sample, subfunctions):
 
 def load_samples(sample_list, data_io, load_seg, load_pred):
     return [data_io.sample_loader(s, load_seg=load_seg, load_pred=load_pred) for s in sample_list]
-
-
 
 def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
 
@@ -123,7 +131,7 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
         elif isinstance(sample, str):
             res.append(load_samples([sample], data_io, seg, pred))
         elif isinstance(sample, np.ndarray):
-            s = Sample()
+            s = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0)
             s.img_data = sample
             res.append(s);
         else:
@@ -143,18 +151,13 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
     
     #normalize images both in data and structure
     for sample in samples:
-        normalize_func = None
-        if detect_dimensionality(sample) == 2:
-            normalize_func = normalize_image
-        elif detect_dimensionality(sample) == 3:
-            normalize_func = normalize_volume
-        sample.img_data = normalize_func(sample.img_data, to_greyscale=True, normalize=True)
+        sample.img_data = normalize(sample.img_data, to_greyscale=True, normalize=True)
         if sample.seg_data is not None:
-            sample.seg_data = normalize_func(sample.seg_data, to_greyscale=False, normalize=False)
+            sample.seg_data = normalize(sample.seg_data, to_greyscale=False, normalize=False)
         elif mask_seg:
             raise RuntimeError("Sample " + sample.index + " lacks the segmentation needed for generating the mask")
         if sample.pred_data is not None:
-            sample.pred_data = normalize_func(sample.pred_data, to_greyscale=False, normalize=False)
+            sample.pred_data = normalize(sample.pred_data, to_greyscale=False, normalize=False)
         elif mask_pred:
             raise RuntimeError("Sample " + sample.index + " lacks the prediction needed for generating the mask")
     
@@ -238,18 +241,26 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
     tp_color = [31,113,80]
     fp_color = [153,12,12]
     fn_color = [3,92,135]
+    #true negative is blank as it would create confusion
+    
+    if sample.seg_data is None or sample.pred_data is None:
+        raise ValueError("Sample needs to have both a segmentation and a prediction map.")
+    
+    sample = to_samples([sample])
+    
+    vol_greyscale = normalize(sample.img_data)
     
     if classes is None:
         classes = np.unique(sample.seg_data)
+        sample.seg_data = np.squeeze(sample.seg_data, axis=-1)
     
-    vol_greyscale = np.squeeze((255*(sample.img_data - np.min(sample.img_data))/np.ptp(sample.img_data)).astype(int), axis=-1)
     # Convert volume to RGB
     vol_rgb = np.stack([vol_greyscale, vol_greyscale, vol_greyscale], axis=-1)
     
     for c in classes:
         seg_rgb = np.zeros((sample.img_data.shape[0], sample.img_data.shape[1], sample.img_data.shape[2], 3), dtype=np.int)
         
-        seg_broadcast_arr = np.squeeze(np.equal(sample.seg_data, c), axis=-1)
+        seg_broadcast_arr = np.equal(sample.seg_data, c)
         pred_broadcast_arr = np.equal(sample.pred_data, c)
         
         seg_rgb[ seg_broadcast_arr & pred_broadcast_arr ] = tp_color
@@ -257,7 +268,7 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
         seg_rgb[seg_broadcast_arr & np.logical_not(pred_broadcast_arr)] = fn_color
         
         # Get binary array for places where an ROI lives
-        segbin = np.squeeze(np.greater(sample.seg_data, 0), axis=-1) | np.greater(sample.pred_data, 0)
+        segbin = np.greater(sample.seg_data, 0) | np.greater(sample.pred_data, 0)
         repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
         
         # Weighted sum where there's a value to overlay
@@ -296,10 +307,8 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
 #-----------------------------------------------------#
 # Based on: https://github.com/neheller/kits19/blob/master/starter_code/visualize.py
 def overlay_segmentation_greyscale(vol, seg, cm="hsv", alpha=0.3):
-    # Scale volume to greyscale range
-    vol_greyscale = (255*(vol - np.min(vol))/np.ptp(vol)).astype(int)
     # Convert volume to RGB
-    vol_rgb = np.stack([vol_greyscale, vol_greyscale, vol_greyscale], axis=-1)
+    vol_rgb = np.stack([vol, vol, vol], axis=-1)
     # Initialize segmentation in RGB
     shp = seg.shape
     seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
