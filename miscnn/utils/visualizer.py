@@ -120,7 +120,7 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
     
     res = []
     
-    for sample in sample_list
+    for sample in sample_list:
         if isinstance(sample, Sample):
             if load_seg is None:
                 seg &= sample.seg_data is not None
@@ -131,7 +131,7 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
         elif isinstance(sample, str):
             res.append(load_samples([sample], data_io, seg, pred))
         elif isinstance(sample, np.ndarray):
-            s = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0)
+            s = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0))
             s.img_data = sample
             res.append(s);
         else:
