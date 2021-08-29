@@ -131,9 +131,9 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
         elif isinstance(sample, str):
             res.append(load_samples([sample], data_io, seg, pred))
         elif isinstance(sample, np.ndarray):
-            s = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0))
-            s.img_data = sample
-            res.append(s);
+            sampleObj = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0))
+            sampleObj.img_data = sample
+            res.append(sampleObj);
         else:
             raise ValueError("Cannot interpret an object of type " + str(type(sample)) + " as a sample")
     

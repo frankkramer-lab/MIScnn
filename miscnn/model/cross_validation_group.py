@@ -60,6 +60,9 @@ class CrossValidationGroup(Model_Group):
                 cb_list = callbacks
             
             model.reset()
-            model.evaluate(training, validation, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=cb_list)
+            if (isinstance(model, Model_Group)):
+                model.evaluate(training, validation, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=cb_list)
+            else:
+                model.evaluate(training, validation, epochs=epochs, iterations=iterations, callbacks=cb_list)
         
         self.preprocessor.data_io.output_path = evaluation_path
