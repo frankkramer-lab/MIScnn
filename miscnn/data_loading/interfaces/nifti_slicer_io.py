@@ -168,3 +168,10 @@ class NIFTIslicer_interface(Abstract_IO):
         # Save segmentation to disk as a NumPy pickle
         pred_path = os.path.join(output_path, str(index) + ".npy")
         np.save(pred_path, pred, allow_pickle=True)
+
+    #---------------------------------------------#
+    #           check_file_termination            #
+    #---------------------------------------------#
+    @staticmethod
+    def check_file_termination(termination):
+        return termination in [".nii.gz"]

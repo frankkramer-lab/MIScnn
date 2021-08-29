@@ -132,3 +132,11 @@ class metricTEST(unittest.TestCase):
         self.model.loss = tversky_crossentropy
         self.model.metrics = [tversky_crossentropy]
         self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #            Focal Loss - Categorical             #
+    #-------------------------------------------------#
+    def test_METRICS_FocalCategorical(self):
+        self.model.loss = categorical_focal_loss([0.9, 0.1])
+        self.model.metrics = [categorical_focal_loss([0.1, 0.9])]
+        self.model.train(self.sample_list, epochs=1)

@@ -67,3 +67,38 @@ def plot_validation(history, metrics, evaluation_directory):
                                 "validation." + metric_name + ".png")
         plt.savefig(out_path)
         plt.close()
+
+def visualize_frequencies_1D(sample, out_path = "visualization", sample_rate = None):
+    arr = np.flatten(sample.img_data)
+    size = len(arr)
+    
+    transform = np.fft.rfft(arr)
+    freq = np.fft.rfftfreq(1/sample_rate, sample_rate)
+        
+    plt.plot(freq, np.absolute(transform)) # fft_data is a complex number, so the magnitude is computed here
+    
+    plt.xlim(np.amin(freq), np.amax(freq))
+    plt.savefig(sample.index + ".png")
+    plt.clf()
+        
+
+def visualize_pixel_dist(sample_list, functor, name = "graph", min = 0, max = 2000, cutoff = True):
+    plt.figure()
+    plt.title("Grayscale Histogram")
+    plt.xlabel("grayscale value")
+    plt.ylabel("pixels")
+    plt.xlim([min, max])
+    
+    for index in tqdm(sample_list):
+        sample = functor(index)
+        if (cutoff):
+            masked = sample.img_data[np.where((sample.img_data < max) & (sample.img_data > min))]
+        else:
+            masked = sample.img_data
+        histogram, bin_edges = np.histogram(masked, bins=(max - min), range=(min, max))
+        histogram = histogram / masked.size
+        plt.plot(bin_edges[0:-1], histogram)
+    
+    plt.savefig(name + ".png")
+    plt.clf()
+

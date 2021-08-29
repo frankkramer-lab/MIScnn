@@ -137,3 +137,18 @@ class Abstract_IO(ABC):
     @abstractmethod
     def save_prediction(self, sample, output_path):
         pass
+    
+    #---------------------------------------------#
+    #           check_file_termination            #
+    #---------------------------------------------#
+    """ check if the interface can interpret a file with that termination
+
+        Parameter:
+            termination (string):   a file termination string.
+        Return:
+            matches [boolean]:      The interface can load a file with this termination
+    """
+    @staticmethod
+    @abstractmethod
+    def check_file_termination(termination):
+        return False
