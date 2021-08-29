@@ -280,7 +280,7 @@ def execute_binning(context, df, binning, minmax_data = None):
     for i in range(binning):
         threshhold.append(minmax_data["shr_min"] + ratio * (1 + i))
     threshhold.append(minmax_data["glob_max"] + 1)
-    print("The threshholds is: " + str(threshhold))
+    print("The threshholds are: " + str(threshhold))
     sample_data = {}
     for index in tqdm(context["indices"]):
         if (not os.path.isdir(context["data_dir"] + "/" + index)):
