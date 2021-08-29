@@ -82,7 +82,7 @@ def visualize_frequencies_1D(sample, out_path = "visualization", sample_rate = N
     plt.clf()
         
 
-def visualize_histogram(sample_list, functor, name = "graph", min = 0, max = 2000):
+def visualize_pixel_dist(sample_list, functor, name = "graph", min = 0, max = 2000, cutoff = True):
     plt.figure()
     plt.title("Grayscale Histogram")
     plt.xlabel("grayscale value")
@@ -91,7 +91,10 @@ def visualize_histogram(sample_list, functor, name = "graph", min = 0, max = 200
     
     for index in tqdm(sample_list):
         sample = functor(index)
-        masked = sample.img_data[np.where((sample.img_data < max))]
+        if (cutoff):
+            masked = sample.img_data[np.where((sample.img_data < max) & (sample.img_data > min))]
+        else:
+            masked = sample.img_data
         histogram, bin_edges = np.histogram(masked, bins=(max - min), range=(min, max))
         histogram = histogram / masked.size
         plt.plot(bin_edges[0:-1], histogram)
