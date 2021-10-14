@@ -22,7 +22,7 @@
 # External libraries
 import numpy as np
 # Internal libraries/scripts
-from miscnn.utils.visualizer import visualize_evaluation
+from miscnn.utils.visualizer import visualize_samples
 from miscnn.data_loading.data_io import backup_evaluation
 
 #-----------------------------------------------------#
@@ -62,6 +62,7 @@ def detailed_validation(validation_samples, model, evaluation_path):
         scores.extend(dice_scores)
         backup_evaluation(scores, evaluation_path, start=False)
         # Visualize the truth and prediction segmentation
+        visualize_samples([sample], evaluation_path, True, True, model.preprocessor.data_io, model.preprocessor)
         visualize_evaluation(sample_index, img, seg, pred, evaluation_path)
 
 #-----------------------------------------------------#
