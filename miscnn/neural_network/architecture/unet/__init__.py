@@ -22,3 +22,5 @@ from miscnn.neural_network.architecture.unet.residual import Architecture as UNe
 from miscnn.neural_network.architecture.unet.dense import Architecture as UNet_dense
 from miscnn.neural_network.architecture.unet.multiRes import Architecture as UNet_multiRes
 from miscnn.neural_network.architecture.unet.compact import Architecture as UNet_compact
+from miscnn.neural_network.architecture.unet.attention import Architecture as UNet_attention
+from miscnn.neural_network.architecture.unet.attention_residual import Architecture as UNet_attention_residual
