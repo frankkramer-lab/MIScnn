@@ -43,14 +43,14 @@ def generateGradientMap(preprocessed_input, model, cls = 1, abs_w = False, posit
     if cam_max != 0 and normalize:
         cam = cam / cam_max
     
-    return cam
+    return np.expand_dims(cam, -1)
 
 
 def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False):
     pp = model.preprocessor
     preprocessed_input = [pp.run([s], training=False) for s in sample_list]
     preprocessed_input = [[a[0] for a in s] for s in preprocessed_input]
-    t = [len(s) for s in preprocessed_input]
+    t = [len(s) + 2 for s in preprocessed_input]
     patches = sum(t)
     pbar = tqdm(total=patches)
     
@@ -61,21 +61,8 @@ def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w
             p.append(generateGradientMap(patch, model, cls, abs_w, posit_w, normalize))
             pbar.update(1)
         
-        orig_shape = pp.cache["shape_" + index]
-        print(len(p))
-        heatmap = concat_matrices(patches=p,
-                                    image_size=orig_shape,
-                                    window=pp.patch_shape,
-                                    overlap=pp.patchwise_overlap,
-                                    three_dim=pp.data_io.interface.three_dim)
-        orig = concat_matrices(patches=sample,
-                                    image_size=orig_shape,
-                                    window=pp.patch_shape,
-                                    overlap=pp.patchwise_overlap,
-                                    three_dim=pp.data_io.interface.three_dim)
-        
-        s = pp.cache[index]
-        s.index = "grad_cam_" + s.index
-        s.img_data = orig.reshape(heatmap.shape)
-        s.pred_data = heatmap
+        s = pp.data_io.sample_loader(index, False, False)
+        s.pred_data = pp.postprocessing(pp.cache[index], p, activation_output=True)
+        pbar.update(1)
         visualize_samples([s], out_dir, mask_pred=True)
+        pbar.update(1)

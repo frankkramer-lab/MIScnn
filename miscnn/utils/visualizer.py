@@ -48,11 +48,14 @@ def normalize_volume(sample, to_greyscale=False, normalize=True):
         
     img = sample
     
-    if (to_greyscale and len(sample.shape) == 4):
+    if (len(sample.shape) == 4):
         if (sample.shape[-1] == 1):
             img = np.squeeze(img, axis=-1)
-        elif (sample.shape[-1] == 3): 
+        elif (to_greyscale and sample.shape[-1] == 3): 
             img[:, :, :] = vec_luminosity(img[:, :, :, 0], img[:, :, :, 1], img[:, :, :, 2])
+    
+        
+        
     
     if (normalize):
         img = 255 * (img - np.min(img)) / np.ptp(img)
@@ -145,7 +148,6 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
     return res
 
 
-
 def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred = True, data_io = None, preprocessing = None, progress = False):
     #create a homogenous datastructure
     samples = to_samples(sample_list, data_io, mask_seg, mask_pred)
@@ -209,6 +211,8 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             ani = animation.FuncAnimation(fig, update, frames=len(vol_truth), interval=10,
                                           repeat_delay=0, blit=False)
         elif mask_pred:
+            print(sample.img_data.shape)
+            print(sample.pred_data.shape)
             vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
             fig, ax = plt.subplots()
             # Initialize the two subplots (axes) with an empty 512x512 image
@@ -324,7 +328,6 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     # Initialize segmentation in RGB
     shp = seg.shape
     seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
-    
     
     # Set class to appropriate color
     cmap = matplotlib.cm.get_cmap(cm)
