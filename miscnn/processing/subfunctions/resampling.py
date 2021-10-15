@@ -68,7 +68,7 @@ class Resampling(Abstract_Subfunction):
         if training : seg_data = np.moveaxis(seg_data, -1, 0)
         # Resample imaging data
         img_data, seg_data = augment_resize(img_data, seg_data, new_shape,
-                                            order=3, order_seg=1, cval_seg=0)
+                                            order=3, order_seg=1)
         # Transform data from channel-first back to channel-last structure
         img_data = np.moveaxis(img_data, 0, -1)
         if training : seg_data = np.moveaxis(seg_data, 0, -1)

@@ -1,0 +1,81 @@
+from miscnn.data_loading.sample import Sample
+from tqdm import tqdm
+import numpy as np
+import tensorflow as tf
+from miscnn.utils.visualizer import visualize_samples
+from miscnn.utils.patch_operations import concat_matrices
+
+def generateGradientMap(preprocessed_input, model, cls = 1, abs_w = False, posit_w = False, normalize = False):
+    # First, we create a model that maps the input image to the activations
+    # of the last conv layer as well as the output predictions
+    grad_model = tf.keras.models.Model(
+        [model.model.inputs], [model.model.layers[-2].output, model.model.output]
+    )
+
+    # Then, we compute the gradient of the top predicted class for our input image
+    # with respect to the activations of the last conv layer
+    with tf.GradientTape() as tape:
+        last_conv_layer_output, preds = grad_model(preprocessed_input)
+        A = preds[..., cls]
+
+        # This is the gradient of the output neuron (top predicted or chosen)
+        # with regard to the output feature map of the last conv layer
+    grads = tape.gradient(A, last_conv_layer_output)
+    
+    A, grads = A[0, :], grads[0]
+
+    """Defines a matrix of alpha^k_c. Each alpha^k_c denotes importance (weights) of a feature map A^k for class c.
+    If abs_w=True, absolute values of the matrix are processed and returned as weights.
+    If posit_w=True, ReLU is applied to the matrix."""
+    alpha_c = np.mean(grads[0, ...], axis=(0, 1, 2))
+    if abs_w:
+        alpha_c = abs(alpha_c)
+    if posit_w:
+        alpha_c = np.maximum(alpha_c, 0)
+
+    """The last step to get the activation map. Should be called after outputGradients and gradientWeights."""
+    # weighted sum of feature maps: sum of alpha^k_c * A^k
+    cam = np.dot(A, alpha_c)  # *abs(grads) or max(grads,0)
+    # apply ReLU to te sum
+    cam = np.maximum(cam, 0)
+    # normalize non-negative weighted sum
+    cam_max = cam.max()
+    if cam_max != 0 and normalize:
+        cam = cam / cam_max
+    
+    return cam
+
+
+def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False):
+    pp = model.preprocessor
+    preprocessed_input = [pp.run([s], training=False) for s in sample_list]
+    preprocessed_input = [[a[0] for a in s] for s in preprocessed_input]
+    t = [len(s) for s in preprocessed_input]
+    patches = sum(t)
+    pbar = tqdm(total=patches)
+    
+    for index, sample in zip(sample_list, preprocessed_input):
+        p = []
+        
+        for patch in sample:
+            p.append(generateGradientMap(patch, model, cls, abs_w, posit_w, normalize))
+            pbar.update(1)
+        
+        orig_shape = pp.cache["shape_" + index]
+        print(len(p))
+        heatmap = concat_matrices(patches=p,
+                                    image_size=orig_shape,
+                                    window=pp.patch_shape,
+                                    overlap=pp.patchwise_overlap,
+                                    three_dim=pp.data_io.interface.three_dim)
+        orig = concat_matrices(patches=sample,
+                                    image_size=orig_shape,
+                                    window=pp.patch_shape,
+                                    overlap=pp.patchwise_overlap,
+                                    three_dim=pp.data_io.interface.three_dim)
+        
+        s = pp.cache[index]
+        s.index = "grad_cam_" + s.index
+        s.img_data = orig.reshape(heatmap.shape)
+        s.pred_data = heatmap
+        visualize_samples([s], out_dir, mask_pred=True)
