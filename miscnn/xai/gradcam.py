@@ -48,7 +48,10 @@ def generateGradientMap(preprocessed_input, model, cls = 1, abs_w = False, posit
 
 def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False):
     pp = model.preprocessor
+    skip_blanks = pp.patchwise_skip_blanks
+    pp.patchwise_skip_blanks = False
     preprocessed_input = [pp.run([s], training=False) for s in sample_list]
+    pp.patchwise_skip_blanks = skip_blanks
     preprocessed_input = [[a[0] for a in s] for s in preprocessed_input]
     t = [len(s) + 2 for s in preprocessed_input]
     patches = sum(t)
@@ -58,11 +61,17 @@ def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w
         p = []
         
         for patch in sample:
-            p.append(generateGradientMap(patch, model, cls, abs_w, posit_w, normalize))
+            patchPred = generateGradientMap(patch, model, cls, abs_w, posit_w, normalize)
+            p.append(patchPred)
             pbar.update(1)
         
+        npp = np.asarray(p)
+        
+        npp -= npp.min()
+        
         s = pp.data_io.sample_loader(index, False, False)
-        s.pred_data = pp.postprocessing(pp.cache[index], p, activation_output=True)
+        s.index = s.index + ".gradcam"
+        s.pred_data = pp.postprocessing(pp.cache.pop(index), npp, activation_output=True)
         pbar.update(1)
-        visualize_samples([s], out_dir, mask_pred=True)
+        visualize_samples([s], mask_pred=True)
         pbar.update(1)

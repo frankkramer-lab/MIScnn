@@ -211,8 +211,6 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             ani = animation.FuncAnimation(fig, update, frames=len(vol_truth), interval=10,
                                           repeat_delay=0, blit=False)
         elif mask_pred:
-            print(sample.img_data.shape)
-            print(sample.pred_data.shape)
             vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
             fig, ax = plt.subplots()
             # Initialize the two subplots (axes) with an empty 512x512 image
@@ -344,7 +342,7 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     
     # Get binary array for places where an ROI lives
     
-    segbin = seg > 0
+    segbin = seg >= 0
     
     repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
     
