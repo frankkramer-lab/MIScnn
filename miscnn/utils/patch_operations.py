@@ -1,5 +1,5 @@
 #==============================================================================#
-#  Author:       Dominik Müller                                                #
+#  Author:       Dominik Müller, Philip Meyer                                  #
 #  Copyright:    2020 IT-Infrastructure for Translational Medical Research,    #
 #                University of Augsburg                                        #
 #                                                                              #
@@ -21,12 +21,18 @@
 #-----------------------------------------------------#
 #External libraries
 import numpy as np
+from skimage.util import pad as ski_pad
+from skimage.util import view_as_windows
 import math
+
 from batchgenerators.augmentations.utils import pad_nd_image
+
 
 #-----------------------------------------------------#
 #      Pad and crop patch to desired patch shape      #
 #-----------------------------------------------------#
+
+
 def pad_patch(patch, patch_shape, return_slicer=False):
     # Initialize stat length to overwrite batchgenerators default
     kwargs = {"stat_length": None}
@@ -63,250 +69,115 @@ def crop_patch(patch, slicer):
 #         Slice and Concatenate Function Hubs         #
 #-----------------------------------------------------#
 # Slice a matrix
-def slice_matrix(array, window, overlap, three_dim):
-    if three_dim: return slice_3Dmatrix(array, window, overlap)
-    else: return slice_2Dmatrix(array, window, overlap)
+def slice_matrix(A, window, overlap, three_dim):
+    A = np.ascontiguousarray(A)  #A contigous array is required for restriding for restriding
+    
+    stride, pad_shape, _ = calcPadding(A.shape, window, overlap)
+    
+    if any([ a[1] > 0 for a in pad_shape]): 
+        A = pad(A, window, overlap)
+    
+    ret = view_as_windows(A, window + A.shape[len(window):], stride + A.shape[len(window):])
+    
+    #stack the patches in one dimension for batch computation.
+    ret = np.reshape(ret, [np.prod(ret.shape[:len(window)]), *window, *A.shape[len(window):]])
+    
+    return ret
 
 # Concatenate a matrix
+# Important note, this method of equially merging the patches currently doesn't handle the case that more than just adjacentpatches overlap i.e. overlap > patch_size / 2
 def concat_matrices(patches, image_size, window, overlap, three_dim):
-    if three_dim: return concat_3Dmatrices(patches, image_size, window, overlap)
-    else: return concat_2Dmatrices(patches, image_size, window, overlap)
+    if three_dim: return unpatch_3D(patches, image_size, overlap)
+    else: return unpatch_2D(patches, image_size, overlap)
 
-#-----------------------------------------------------#
-#          Slice and Concatenate 2D Matrices          #
-#-----------------------------------------------------#
-# Slice a 2D matrix
-def slice_2Dmatrix(array, window, overlap):
-    # Calculate steps
-    steps_x = int(math.ceil((len(array) - overlap[0]) /
-                            float(window[0] - overlap[0])))
-    steps_y = int(math.ceil((len(array[0]) - overlap[1]) /
-                            float(window[1] - overlap[1])))
-    # Exception Handling: patch overlap smaller than patches
-    if steps_x < 1 : steps_x = 1
-    if steps_y < 1 : steps_y = 1
+
+def calcPadding(orig_size, patch_size, overlap):
+    stride = tuple([s - o for s, o in zip(patch_size, overlap)])
     
-    # Iterate over it x,y
-    patches = []
-    for x in range(0, steps_x):
-        for y in range(0, steps_y):
-            # Define window edges
-            x_start = x*window[0] - x*overlap[0]
-            x_end = x_start + window[0]
-            y_start = y*window[1] - y*overlap[1]
-            y_end = y_start + window[1]
-            # Adjust ends
-            if(x_end > len(array)):
-                # Create an overlapping patch for the last images / edges
-                # to ensure the fixed patch/window sizes
-                x_start = len(array) - window[0]
-                x_end = len(array)
-                # Fix for MRIs which are smaller than patch size
-                if x_start < 0 : x_start = 0
-            if(y_end > len(array[0])):
-                y_start = len(array[0]) - window[1]
-                y_end = len(array[0])
-                # Fix for MRIs which are smaller than patch size
-                if y_start < 0 : y_start = 0
-            # Cut window
-            window_cut = array[x_start:x_end,y_start:y_end]
-            # Add to result list
-            patches.append(window_cut)
-    return patches
+    pad_shape = []
+    padded_shape = []
+    for sh, st in zip(orig_size, stride):
+        res = (math.ceil(sh/st) * st) - sh
+        resL = math.floor(res/2)
+        pad_shape.append((resL, res - resL))
+        padded_shape.append(sh + res)
+    
+    return stride, pad_shape, padded_shape
 
-# Concatenate a list of patches together to a numpy matrix
-def concat_2Dmatrices(patches, image_size, window, overlap):
-    # Calculate steps
-    steps_x = int(math.ceil((image_size[0] - overlap[0]) /
-                            float(window[0] - overlap[0])))
-    steps_y = int(math.ceil((image_size[1] - overlap[1]) /
-                            float(window[1] - overlap[1])))
-    # Exception Handling: patch overlap smaller than patches
-    if steps_x < 1 : steps_x = 1
-    if steps_y < 1 : steps_y = 1
+def pad(A, size, overlap):
+    _, pad_shape, _ = calcPadding(A.shape, size, overlap)
+    return ski_pad(A, tuple(pad_shape) + tuple([(0, 0)] * (len(A.shape) - len(size))), "minimum")
 
-    # Iterate over it x,y,z
-    matrix_x = None
-    matrix_y = None
-    matrix_z = None
-    pointer = 0
-    for x in range(0, steps_x):
-        for y in range(0, steps_y):
-            # Calculate pointer from 2D steps to 1D list of patches
-            pointer = x*steps_y + y
-            # Connect current tmp Matrix Z to tmp Matrix Y
-            if y == 0:
-                matrix_y = patches[pointer]
-            else:
-                matrix_p = patches[pointer]
-                # Handle y-axis overlap
-                slice_overlap = calculate_overlap(y, steps_y, overlap,
-                                                  image_size, window, 1)
-                matrix_y, matrix_p = handle_overlap(matrix_y, matrix_p,
-                                                    slice_overlap,
-                                                    axis=1)
-                matrix_y = np.concatenate((matrix_y, matrix_p), axis=1)
-        # Connect current tmp Matrix Y to final Matrix X
-        if x == 0:
-            matrix_x = matrix_y
-        else:
-            # Handle x-axis overlap
-            slice_overlap = calculate_overlap(x, steps_x, overlap,
-                                              image_size, window, 0)
-            matrix_x, matrix_y = handle_overlap(matrix_x, matrix_y,
-                                                slice_overlap,
-                                                axis=0)
-            matrix_x = np.concatenate((matrix_x, matrix_y), axis=0)
-    # Return final combined matrix
-    return(matrix_x)
+def crop(A, size, patch_size, overlap):
+    print(patch_size)
+    _, pad_shape, _ = calcPadding(size, patch_size, overlap)
+    
+    if (len(pad_shape) >= 3):
+        return A[pad_shape[0][0]:-pad_shape[0][1], pad_shape[1][0]:-pad_shape[1][1], pad_shape[2][0]:-pad_shape[2][1]]
+    elif (len(pad_shape) >= 2):
+        return A[pad_shape[0][0]:-pad_shape[0][1], pad_shape[1][0]:-pad_shape[1][1]]
 
-#-----------------------------------------------------#
-#          Slice and Concatenate 3D Matrices          #
-#-----------------------------------------------------#
-# Slice a 3D matrix
-def slice_3Dmatrix(array, window, overlap):
-    # Calculate steps
-    steps_x = int(math.ceil((len(array) - overlap[0]) /
-                            float(window[0] - overlap[0])))
-    steps_y = int(math.ceil((len(array[0]) - overlap[1]) /
-                            float(window[1] - overlap[1])))
-    steps_z = int(math.ceil((len(array[0][0]) - overlap[2]) /
-                            float(window[2] - overlap[2])))
-    # Exception Handling: patch overlap smaller than patches
-    if steps_x < 1 : steps_x = 1
-    if steps_y < 1 : steps_y = 1
-    if steps_z < 1 : steps_z = 1
+def unpatch_3D(A, orig_size, overlap):
+    stride, pad_shape, padded_shape = calcPadding(orig_size, A.shape[1:], overlap)
+    
+    extra = A.shape[1 + len(overlap):]
+    
+    #reconstruct the structure that skimage computed for simplicity
+    patch_pattern = tuple([math.floor(sh / st) - 1 if o > 0 else math.floor(sh / st) for sh, st, o in zip(padded_shape, stride, overlap)])
+    
+    A = np.reshape(A, patch_pattern + tuple([1] * (len(orig_size) - len(patch_pattern))) + A.shape[1:])
+    
+    res = np.zeros(tuple(padded_shape) + extra + (8,))
+    res[True] = np.nan #enter invalid value since not all slots are guaranteed to be used and should be dropped for data merging
+    
+    #reassemble the image.
+    #this can be done theoretically over every dimension but it doubles the required bitset (id) every time in order to maintain all patches in one array simultaneously.
+    for x in range(patch_pattern[0]):
+        for y in range(patch_pattern[1]):
+            for z in range(patch_pattern[2]):
+                x_pos = x * stride[0]
+                y_pos = y * stride[1]
+                z_pos = z * stride[2]
+                
+                id = ((x + y) % 2) + 2 * (z % 4)
+                
+                res[x_pos:x_pos + A.shape[4], y_pos:y_pos + A.shape[5], z_pos:z_pos + A.shape[6], ..., id] = A[x, y, z]
+    
+    #unpad the image according to the calculated values
+    if any([ a[1] > 0 for a in pad_shape]): 
+        unpad = crop(res, orig_size, A.shape[len(overlap) + 1:], overlap)
+    else:
+        unpad = res
+    
+    return np.nanmean(unpad, axis = -1)
 
-    # Iterate over it x,y,z
-    patches = []
-    for x in range(0, steps_x):
-        for y in range(0, steps_y):
-            for z in range(0, steps_z):
-                # Define window edges
-                x_start = x*window[0] - x*overlap[0]
-                x_end = x_start + window[0]
-                y_start = y*window[1] - y*overlap[1]
-                y_end = y_start + window[1]
-                z_start = z*window[2] - z*overlap[2]
-                z_end = z_start + window[2]
-                # Adjust ends
-                if(x_end > len(array)):
-                    # Create an overlapping patch for the last images / edges
-                    # to ensure the fixed patch/window sizes
-                    x_start = len(array) - window[0]
-                    x_end = len(array)
-                    # Fix for MRIs which are smaller than patch size
-                    if x_start < 0 : x_start = 0
-                if(y_end > len(array[0])):
-                    y_start = len(array[0]) - window[1]
-                    y_end = len(array[0])
-                    # Fix for MRIs which are smaller than patch size
-                    if y_start < 0 : y_start = 0
-                if(z_end > len(array[0][0])):
-                    z_start = len(array[0][0]) - window[2]
-                    z_end = len(array[0][0])
-                    # Fix for MRIs which are smaller than patch size
-                    if z_start < 0 : z_start = 0
-                # Cut window
-                window_cut = array[x_start:x_end,y_start:y_end,z_start:z_end]
-                # Add to result list
-                patches.append(window_cut)
-    return patches
+def unpatch_2D(A, orig_size, overlap):
+    stride, pad_shape, padded_shape = calcPadding(orig_size, A.shape[1:], overlap)
+    
+    extra = A.shape[1 + len(overlap):]
+    
+    #reconstruct the structure that skimage computed for simplicity
+    patch_pattern = tuple([math.floor(sh / st) - 1 if o > 0 else math.floor(sh / st) for sh, st, o in zip(padded_shape, stride, overlap)])
 
-# Concatenate a list of patches together to a numpy matrix
-def concat_3Dmatrices(patches, image_size, window, overlap):
-    # Calculate steps
-    steps_x = int(math.ceil((image_size[0] - overlap[0]) /
-                            float(window[0] - overlap[0])))
-    steps_y = int(math.ceil((image_size[1] - overlap[1]) /
-                            float(window[1] - overlap[1])))
-    steps_z = int(math.ceil((image_size[2] - overlap[2]) /
-                            float(window[2] - overlap[2])))
-    # Exception Handling: patch overlap smaller than patches
-    if steps_x < 1 : steps_x = 1
-    if steps_y < 1 : steps_y = 1
-    if steps_z < 1 : steps_z = 1
-
-    # Iterate over it x,y,z
-    matrix_x = None
-    matrix_y = None
-    matrix_z = None
-    pointer = 0
-    for x in range(0, steps_x):
-        for y in range(0, steps_y):
-            for z in range(0, steps_z):
-                # Calculate pointer from 3D steps to 1D list of patches
-                pointer = z + y*steps_z + x*steps_y*steps_z
-                # Connect current patch to temporary Matrix Z
-                if z == 0:
-                    matrix_z = patches[pointer]
-                else:
-                    matrix_p = patches[pointer]
-                    # Handle z-axis overlap
-                    slice_overlap = calculate_overlap(z, steps_z, overlap,
-                                                      image_size, window, 2)
-                    matrix_z, matrix_p = handle_overlap(matrix_z, matrix_p,
-                                                        slice_overlap,
-                                                        axis=2)
-                    matrix_z = np.concatenate((matrix_z, matrix_p),
-                                              axis=2)
-            # Connect current tmp Matrix Z to tmp Matrix Y
-            if y == 0:
-                matrix_y = matrix_z
-            else:
-                # Handle y-axis overlap
-                slice_overlap = calculate_overlap(y, steps_y, overlap,
-                                                  image_size, window, 1)
-                matrix_y, matrix_z = handle_overlap(matrix_y, matrix_z,
-                                                    slice_overlap,
-                                                    axis=1)
-                matrix_y = np.concatenate((matrix_y, matrix_z), axis=1)
-        # Connect current tmp Matrix Y to final Matrix X
-        if x == 0:
-            matrix_x = matrix_y
-        else:
-            # Handle x-axis overlap
-            slice_overlap = calculate_overlap(x, steps_x, overlap,
-                                              image_size, window, 0)
-            matrix_x, matrix_y = handle_overlap(matrix_x, matrix_y,
-                                                slice_overlap,
-                                                axis=0)
-            matrix_x = np.concatenate((matrix_x, matrix_y), axis=0)
-    # Return final combined matrix
-    return(matrix_x)
-
-#-----------------------------------------------------#
-#          Subroutines for the Concatenation          #
-#-----------------------------------------------------#
-# Calculate the overlap of the current matrix slice
-def calculate_overlap(pointer, steps, overlap, image_size, window, axis):
-            # Overlap: IF last axis-layer -> use special overlap size
-            if pointer == steps-1 and not (image_size[axis]-overlap[axis]) \
-                                            % (window[axis]-overlap[axis]) == 0:
-                current_overlap = window[axis] - \
-                                  (image_size[axis] - overlap[axis]) % \
-                                  (window[axis] - overlap[axis])
-            # Overlap: ELSE -> use default overlap size
-            else:
-                current_overlap = overlap[axis]
-            # Return overlap
-            return current_overlap
-
-# Handle the overlap of two overlapping matrices
-def handle_overlap(matrixA, matrixB, overlap, axis):
-    # Access overllaping slice from matrix A
-    idxA = [slice(None)] * matrixA.ndim
-    matrixA_shape = matrixA.shape
-    idxA[axis] = range(matrixA_shape[axis] - overlap, matrixA_shape[axis])
-    sliceA = matrixA[tuple(idxA)]
-    # Access overllaping slice from matrix B
-    idxB = [slice(None)] * matrixB.ndim
-    idxB[axis] = range(0, overlap)
-    sliceB = matrixB[tuple(idxB)]
-    # Calculate Average prediction values between the two matrices
-    # and save them in matrix A
-    matrixA[tuple(idxA)] = np.mean(np.array([sliceA, sliceB]), axis=0)
-    # Remove overlap from matrix B
-    matrixB = np.delete(matrixB, [range(0, overlap)], axis=axis)
-    # Return processed matrices
-    return matrixA, matrixB
+    A = np.reshape(A, patch_pattern + tuple([1] * (len(orig_size) - len(patch_pattern))) + A.shape[1:])
+    
+    res = np.zeros(tuple(padded_shape) + extra + (4,))
+    res[True] = np.nan #enter invalid value since not all slots are guaranteed to be used and should be dropped for data merging
+    #reassemble the image.
+    #this can be done theoretically over every dimension but it doubles the required bitset (id) every time in order to maintain all patches in one array simultaneously.
+    for x in range(patch_pattern[0]):
+        for y in range(patch_pattern[1]):
+                x_pos = x * stride[0]
+                y_pos = y * stride[1]
+                
+                id = x % 2 + 2 * (y % 2) #this should generate a pattern that all adjacent patches have different values.
+                
+                res[x_pos:x_pos + A.shape[3], y_pos:y_pos + A.shape[4], ..., id] = A[x, y]
+    
+    #unpad the image according to the calculated values
+    if any([ a[1] > 0 for a in pad_shape]): 
+        unpad = crop(res, orig_size, A.shape[len(overlap) + 1:], overlap)
+    else:
+        unpad = res
+    return np.nanmean(unpad, axis = -1)
+    

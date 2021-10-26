@@ -154,7 +154,7 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
     
     #apply potential preprocessing
     if preprocessing is not None:
-        samples = [compute_preprocessed_sample(s, preprocessing) for s in samples]
+        samples = [compute_preprocessed_sample(s, preprocessing.subfunctions) for s in samples]
     
     #normalize images both in data and structure
     

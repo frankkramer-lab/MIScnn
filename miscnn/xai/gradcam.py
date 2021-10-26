@@ -67,7 +67,7 @@ def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w
         
         npp = np.asarray(p)
         
-        npp -= npp.min()
+        npp -= npp.min() #account for negative weights
         
         s = pp.data_io.sample_loader(index, False, False)
         s.index = s.index + ".gradcam"
