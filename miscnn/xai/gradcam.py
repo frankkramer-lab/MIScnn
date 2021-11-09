@@ -5,7 +5,7 @@ import tensorflow as tf
 from miscnn.utils.visualizer import visualize_samples
 from miscnn.utils.patch_operations import concat_matrices
 
-def generateGradientMap(preprocessed_input, model, cls = 1, abs_w = False, posit_w = False, normalize = False):
+def generateGradientMap(preprocessed_input, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False):
     # First, we create a model that maps the input image to the activations
     # of the last conv layer as well as the output predictions
     grad_model = tf.keras.models.Model(
@@ -27,7 +27,10 @@ def generateGradientMap(preprocessed_input, model, cls = 1, abs_w = False, posit
     """Defines a matrix of alpha^k_c. Each alpha^k_c denotes importance (weights) of a feature map A^k for class c.
     If abs_w=True, absolute values of the matrix are processed and returned as weights.
     If posit_w=True, ReLU is applied to the matrix."""
-    alpha_c = np.mean(grads[0, ...], axis=(0, 1, 2))
+    if (three_dim):
+        alpha_c = np.mean(grads[0, ...], axis=(0, 1, 2))
+    else:
+        alpha_c = np.mean(grads[0, ...], axis=(0, 1))
     if abs_w:
         alpha_c = abs(alpha_c)
     if posit_w:
@@ -46,7 +49,7 @@ def generateGradientMap(preprocessed_input, model, cls = 1, abs_w = False, posit
     return np.expand_dims(cam, -1)
 
 
-def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False):
+def visualizeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False):
     pp = model.preprocessor
     skip_blanks = pp.patchwise_skip_blanks
     pp.patchwise_skip_blanks = False
@@ -61,7 +64,7 @@ def visualizeGradientHeatmap(sample_list, model, cls = 1, abs_w = False, posit_w
         p = []
         
         for patch in sample:
-            patchPred = generateGradientMap(patch, model, cls, abs_w, posit_w, normalize)
+            patchPred = generateGradientMap(patch, model, cls, three_dim, abs_w, posit_w, normalize)
             p.append(patchPred)
             pbar.update(1)
         
