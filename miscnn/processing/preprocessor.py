@@ -254,7 +254,11 @@ class Preprocessor:
             sample.seg_data = np.array(sample.seg_data, dtype=np.uint8)
         # Backup sample as pickle to disk
         self.data_io.backup_sample(sample)
-
+    
+    def batch_cleanup(self):
+        if self.prepare_batches or self.prepare_subfunctions:
+            self.data_io.batch_cleanup()
+    
     #---------------------------------------------#
     #           Patch-wise grid Analysis          #
     #---------------------------------------------#

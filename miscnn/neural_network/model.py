@@ -60,7 +60,7 @@ class Neural_Network:
     def __init__(self, preprocessor, architecture=Architecture(),
                  loss=tversky_loss, metrics=[dice_soft],
                  learninig_rate=0.0001, batch_queue_size=2,
-                 workers=1, multi_gpu=False):
+                 workers=1, multi_gpu=False, keep_batches=False):
         # Identify data parameters
         self.three_dim = preprocessor.data_io.interface.three_dim
         self.channels = preprocessor.data_io.interface.channels
@@ -72,6 +72,7 @@ class Neural_Network:
         self.learninig_rate = learninig_rate
         self.batch_queue_size = batch_queue_size
         self.workers = workers
+        self.keep_batches = keep_batches
         # Build model with multiple GPUs (MirroredStrategy)
         if multi_gpu:
             strategy = MirroredStrategy(cross_device_ops=HierarchicalCopyAllReduce())
@@ -139,8 +140,8 @@ class Neural_Network:
                        workers=self.workers,
                        max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
 
     #---------------------------------------------#
     #                 Prediction                  #
@@ -182,8 +183,8 @@ class Neural_Network:
               sampleObj.add_prediction(pred_seg)
               self.preprocessor.data_io.save_prediction(sampleObj)
             # Clean up temporary files if necessary
-            if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-                self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Output predictions results if direct output modus is active
         if return_output : return results
 
@@ -275,8 +276,8 @@ class Neural_Network:
                                  workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Return the training & validation history
         return history
 
