@@ -321,6 +321,10 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
 #-----------------------------------------------------#
 # Based on: https://github.com/neheller/kits19/blob/master/starter_code/visualize.py
 def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolerance = -0.1):
+    
+    vol = np.squeeze(vol)
+    seg = np.squeeze(seg)
+    
     # Convert volume to RGB
     vol_rgb = np.stack([vol, vol, vol], axis=-1)
     # Initialize segmentation in RGB
@@ -342,7 +346,7 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     
     # Get binary array for places where an ROI lives
     
-    segbin = seg >= 0
+    segbin = seg >= min_tolerance
     
     repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
     

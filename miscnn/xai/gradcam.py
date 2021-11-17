@@ -5,7 +5,7 @@ import tensorflow as tf
 from miscnn.utils.visualizer import visualize_samples
 from miscnn.utils.patch_operations import concat_matrices
 
-def generateGradientMap(preprocessed_input, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False):
+def generateGradients(preprocessed_input, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False):
     # First, we create a model that maps the input image to the activations
     # of the last conv layer as well as the output predictions
     grad_model = tf.keras.models.Model(
@@ -48,33 +48,97 @@ def generateGradientMap(preprocessed_input, model, cls = 1, three_dim=True, abs_
     
     return np.expand_dims(cam, -1)
 
-
-def visualizeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False):
+def computeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False, return_data=False):
+    
+    
     pp = model.preprocessor
     skip_blanks = pp.patchwise_skip_blanks
     pp.patchwise_skip_blanks = False
     preprocessed_input = [pp.run([s], training=False) for s in sample_list]
     pp.patchwise_skip_blanks = skip_blanks
     preprocessed_input = [[a[0] for a in s] for s in preprocessed_input]
-    t = [len(s) + 2 for s in preprocessed_input]
+    
+    time_addition = 2
+    
+    if return_data:
+        time_addition = 0
+    
+    t = [len(s) + time_addition for s in preprocessed_input]
     patches = sum(t)
     pbar = tqdm(total=patches)
+    
+    if return_data:
+        ret = []
     
     for index, sample in zip(sample_list, preprocessed_input):
         p = []
         
         for patch in sample:
-            patchPred = generateGradientMap(patch, model, cls, three_dim, abs_w, posit_w, normalize)
+            patchPred = generateGradients(patch, model, cls, three_dim, abs_w, posit_w, normalize)
             p.append(patchPred)
             pbar.update(1)
         
         npp = np.asarray(p)
         
-        npp -= npp.min() #account for negative weights
+        if npp.min() < 0:
+            npp -= npp.min() #account for negative weights
         
-        s = pp.data_io.sample_loader(index, False, False)
-        s.index = s.index + ".gradcam"
-        s.pred_data = pp.postprocessing(pp.cache.pop(index), npp, activation_output=True)
-        pbar.update(1)
-        visualize_samples([s], mask_pred=True)
-        pbar.update(1)
+        grad_img = pp.postprocessing(pp.cache.pop(index), npp, activation_output=True)
+        
+        if not return_data:
+            s = pp.data_io.sample_loader(index, False, False)
+            s.index = s.index + ".gradcam"
+            s.pred_data = grad_img
+            pbar.update(1)
+            visualize_samples([s], mask_pred=True)
+            pbar.update(1)
+        else:
+            ret.append(grad_img)
+    
+    if return_data:
+        return ret
+
+def computeMulticlassGradients(sample_list, model, class_list=[0, 1], three_dim=True, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False):
+    
+    pp = model.preprocessor
+    skip_blanks = pp.patchwise_skip_blanks
+    pp.patchwise_skip_blanks = False
+    preprocessed_input = [pp.run([s], training=False) for s in sample_list]
+    pp.patchwise_skip_blanks = skip_blanks
+    preprocessed_input = [[a[0] for a in s] for s in preprocessed_input]
+    
+    t = [len(s) * len(class_list) for s in preprocessed_input]
+    patches = sum(t)
+    pbar = tqdm(total=patches)
+    
+    ret = []
+    
+    for index, sample in zip(sample_list, preprocessed_input):
+        
+        grad_img = np.zeros((len(class_list),) + pp.cache["shape_" + str(index)])
+        
+        for cls in class_list:
+            p = []
+            
+            for patch in sample:
+                patchPred = generateGradients(patch, model, cls, three_dim, abs_w, posit_w, normalize)
+                p.append(patchPred)
+                pbar.update(1)
+            
+            npp = np.asarray(p)
+            
+            if npp.min() < 0:
+                npp -= npp.min() #account for negative weights
+            pre_shp = pp.cache["shape_" + str(index)]
+            grad_img[cls] = pp.postprocessing(pp.cache[index], npp, activation_output=True)
+            pp.cache["shape_" + str(index)] = pre_shp
+        
+        pp.cache.pop("shape_" + str(index))
+        pp.cache.pop(index)
+        
+        #grad_img = np.squeeze(grad_img)
+        
+        ret.append(grad_img[ ..., 0])
+    
+    return ret
+

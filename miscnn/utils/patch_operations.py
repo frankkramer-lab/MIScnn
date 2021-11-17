@@ -109,7 +109,6 @@ def pad(A, size, overlap):
     return ski_pad(A, tuple(pad_shape) + tuple([(0, 0)] * (len(A.shape) - len(size))), "minimum")
 
 def crop(A, size, patch_size, overlap):
-    print(patch_size)
     _, pad_shape, _ = calcPadding(size, patch_size, overlap)
     
     if (len(pad_shape) >= 3):
