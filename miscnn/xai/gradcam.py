@@ -63,9 +63,10 @@ def computeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = 
     if return_data:
         time_addition = 0
     
-    t = [len(s) + time_addition for s in preprocessed_input]
-    patches = sum(t)
-    pbar = tqdm(total=patches)
+    if progress:
+        t = [len(s) + time_addition for s in preprocessed_input]
+        patches = sum(t)
+        pbar = tqdm(total=patches)
     
     if return_data:
         ret = []
@@ -76,7 +77,8 @@ def computeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = 
         for patch in sample:
             patchPred = generateGradients(patch, model, cls, three_dim, abs_w, posit_w, normalize)
             p.append(patchPred)
-            pbar.update(1)
+            if progress:
+                pbar.update(1)
         
         npp = np.asarray(p)
         
@@ -89,9 +91,11 @@ def computeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = 
             s = pp.data_io.sample_loader(index, False, False)
             s.index = s.index + ".gradcam"
             s.pred_data = grad_img
-            pbar.update(1)
+            if progress:
+                pbar.update(1)
             visualize_samples([s], mask_pred=True)
-            pbar.update(1)
+            if progress:
+                pbar.update(1)
         else:
             ret.append(grad_img)
     
@@ -107,9 +111,10 @@ def computeMulticlassGradients(sample_list, model, class_list=[0, 1], three_dim=
     pp.patchwise_skip_blanks = skip_blanks
     preprocessed_input = [[a[0] for a in s] for s in preprocessed_input]
     
-    t = [len(s) * len(class_list) for s in preprocessed_input]
-    patches = sum(t)
-    pbar = tqdm(total=patches)
+    if progress:
+        t = [len(s) * len(class_list) for s in preprocessed_input]
+        patches = sum(t)
+        pbar = tqdm(total=patches)
     
     ret = []
     
@@ -123,7 +128,8 @@ def computeMulticlassGradients(sample_list, model, class_list=[0, 1], three_dim=
             for patch in sample:
                 patchPred = generateGradients(patch, model, cls, three_dim, abs_w, posit_w, normalize)
                 p.append(patchPred)
-                pbar.update(1)
+                if progress:
+                    pbar.update(1)
             
             npp = np.asarray(p)
             
