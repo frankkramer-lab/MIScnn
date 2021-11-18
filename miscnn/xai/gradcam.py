@@ -5,7 +5,7 @@ import tensorflow as tf
 from miscnn.utils.visualizer import visualize_samples
 from miscnn.utils.patch_operations import concat_matrices
 
-def generateGradients(preprocessed_input, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False):
+def generateGradients(preprocessed_input, model, cls = 1):
     # First, we create a model that maps the input image to the activations
     # of the last conv layer as well as the output predictions
     grad_model = tf.keras.models.Model(
@@ -18,12 +18,13 @@ def generateGradients(preprocessed_input, model, cls = 1, three_dim=True, abs_w 
         last_conv_layer_output, preds = grad_model(preprocessed_input)
         A = preds[..., cls]
 
-        # This is the gradient of the output neuron (top predicted or chosen)
-        # with regard to the output feature map of the last conv layer
+    # This is the gradient of the output neuron (top predicted or chosen)
+    # with regard to the output feature map of the last conv layer
     grads = tape.gradient(A, last_conv_layer_output)
     
-    A, grads = A[0, :], grads[0]
+    return A[0, :], grads[0]
 
+def apply_alpha(A, grads, three_dim=True, abs_w = False, posit_w = False, normalize = False):
     """Defines a matrix of alpha^k_c. Each alpha^k_c denotes importance (weights) of a feature map A^k for class c.
     If abs_w=True, absolute values of the matrix are processed and returned as weights.
     If posit_w=True, ReLU is applied to the matrix."""
@@ -50,7 +51,6 @@ def generateGradients(preprocessed_input, model, cls = 1, three_dim=True, abs_w 
 
 def computeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = False, posit_w = False, normalize = False, out_dir = "vis", progress = False, return_data=False):
     
-    
     pp = model.preprocessor
     skip_blanks = pp.patchwise_skip_blanks
     pp.patchwise_skip_blanks = False
@@ -72,20 +72,25 @@ def computeGradientHeatmap(sample_list, model, cls = 1, three_dim=True, abs_w = 
         ret = []
     
     for index, sample in zip(sample_list, preprocessed_input):
-        p = []
+        p_A = []
+        p_g = []
         
         for patch in sample:
-            patchPred = generateGradients(patch, model, cls, three_dim, abs_w, posit_w, normalize)
-            p.append(patchPred)
+            patchA, patchGrad = generateGradients(patch, model, cls)
+            p_A.append(patchA)
+            p_g.append(patchGrad)
             if progress:
                 pbar.update(1)
         
-        npp = np.asarray(p)
+        np_a = np.asarray(p_A)
+        np_g = np.asarray(p_g)
         
-        if npp.min() < 0:
-            npp -= npp.min() #account for negative weights
+        pre_shp = pp.cache["shape_" + str(index)]
+        A = pp.postprocessing(pp.cache[index], np_a, activation_output=True)
+        pp.cache["shape_" + str(index)] = pre_shp
+        grad = pp.postprocessing(pp.cache.pop(index), np_g, activation_output=True)
         
-        grad_img = pp.postprocessing(pp.cache.pop(index), npp, activation_output=True)
+        grad_img = apply_alpha(A, grad, three_dim, abs_w, posit_w, normalize)
         
         if not return_data:
             s = pp.data_io.sample_loader(index, False, False)
@@ -123,22 +128,27 @@ def computeMulticlassGradients(sample_list, model, class_list=[0, 1], three_dim=
         grad_img = np.zeros((len(class_list),) + pp.cache["shape_" + str(index)])
         
         for cls in class_list:
-            p = []
+            p_A = []
+            p_g = []
             
             for patch in sample:
-                patchPred = generateGradients(patch, model, cls, three_dim, abs_w, posit_w, normalize)
-                p.append(patchPred)
+                patchA, patchGrad = generateGradients(patch, model, cls)
+                p_A.append(patchA)
+                p_g.append(patchGrad)
                 if progress:
                     pbar.update(1)
             
-            npp = np.asarray(p)
+            np_a = np.asarray(p_A)
+            np_g = np.asarray(p_g)
             
-            if npp.min() < 0:
-                npp -= npp.min() #account for negative weights
             pre_shp = pp.cache["shape_" + str(index)]
-            grad_img[cls] = pp.postprocessing(pp.cache[index], npp, activation_output=True)
+            A = pp.postprocessing(pp.cache[index], np_a, activation_output=True)
             pp.cache["shape_" + str(index)] = pre_shp
-        
+            grad = pp.postprocessing(pp.cache[index], np_g, activation_output=True)
+            pp.cache["shape_" + str(index)] = pre_shp
+            
+            grad_img[cls] = apply_alpha(A, grad, three_dim, abs_w, posit_w, normalize)
+            
         pp.cache.pop("shape_" + str(index))
         pp.cache.pop(index)
         

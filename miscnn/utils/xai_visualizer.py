@@ -41,8 +41,6 @@ def display_3D(out_path, fig, axes, grad_overlay, activation_overlay = None):
     
     data = np.zeros(grad_overlay.shape[2:4])
     
-    print(grad_overlay.shape)
-    print(activation_overlay.shape)
     
     if activation_overlay is not None:
         fig.supylabel('Gradient vs Activation')
@@ -70,6 +68,18 @@ def display_3D(out_path, fig, axes, grad_overlay, activation_overlay = None):
     # Save the animation (gif)
     ani.save(out_path, writer='imagemagick', fps=30)
 
+
+def compute_certainty_score(*args):
+    s = 0
+    
+    m = 1 - np.max(args)
+    
+    for i in args:
+        n = i + m
+        s += n * n 
+    return np.sqrt(s)
+    
+vectorized_compute_certainty_score = np.vectorize(compute_certainty_score)
 
 
 def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method="grid_display", alpha = 0.3):
@@ -124,10 +134,40 @@ def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method
             
             display(out_path, fig, axes, grad_overlayed, activation_overlayed)
             
-    elif method == "grid_activation_delta":
+    elif method == "grid_certainty":
         if not is_activation_pred(sample.pred_data, expected_classes):
             raise ValueError("Activation Output of the neural network prediction is required in the sample.")
-        pass #compute derivative of activation and compute normalized delta to gradient attention for class
+        
+        #the certainty map distance is disported from a (hyper-)sphere to a (hyper-)cube. the intention is to weigh uncertain areas higher
+        certainty_map = vectorized_compute_certainty_score(*[sample.pred_data[..., i] for i in range(sample.pred_data.shape[-1])])
+        
+        normalized_act = sample.pred_data / np.expand_dims(np.linalg.norm(sample.pred_data, axis = -1), -1)
+        normalized_grad = gradcam / np.expand_dims(np.linalg.norm(gradcam, axis = 0) + 0.1, 0) #note the epsilon to avoid division by zero
+        
+        normalized_act = np.moveaxis(normalized_act, -1, 0)
+        
+        angle = np.sum(np.multiply(normalized_act, normalized_grad), axis = 0) #compute dot product along the vectors of the according dimension
+        
+        #angle = np.multiply(np.expand_dims(angle, -1), np.expand_dims(certainty_map, -1))
+        
+        certainty_map = vis.normalize(certainty_map)
+        angle = vis.normalize(angle)
+        
+        angle = np.stack([angle, certainty_map], axis = 0)
+        
+        angle = np.stack([angle, angle, angle], axis = -1)
+        
+        fig, axes = plt.subplots(1, 2)
+        
+        # Set up the output path for the gif
+        if not os.path.exists(out_dir):
+            os.mkdir(out_dir)
+        file_name = "visualization.certainty.case_" + str(sample.index).zfill(5) + ".gif"
+        out_path = os.path.join(out_dir, file_name)
+        
+        display(out_path, fig, axes, angle)
+        
+        pass #compute certainty score of activation map. use certainty to weight activation. then compute angle between activation and gradient vector
     elif method == "col_mapping":
         
         if not gradcam.shape[0] == 3:
@@ -192,7 +232,3 @@ def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method
         pass #display gradients mean/maximum/sum of gradients for each pixel 
         
         
-
-#compute linear regression across all given samples attempting to correlate the provided data
-def compute_corr_p_value():
-    pass
