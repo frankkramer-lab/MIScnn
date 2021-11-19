@@ -147,10 +147,59 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
     
     return res
 
+def display_2D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_overlay = None):
+    grad_overlay = grad_overlay.astype(np.uint8)
+    if activation_overlay is not None:
+        activation_overlay = activation_overlay.astype(np.uint8)
+    
+    fig.supxlabel(x_name)
+    fig.supylabel(y_name)
+    
+    if activation_overlay is not None:
+        imgs = [[img.imshow(activation_overlay[cls, i]) for cls, img in enumerate(img)] if k == 0 else [img.imshow(grad_overlay[cls, i]) for cls, img in enumerate(img_1)] for k, img_1 in enumerate(axes)]
+    else:
+        imgs = [img.imshow(grad_overlay[cls, i]) for cls, img in enumerate(axes)]
+    
+
+def display_3D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_overlay = None):
+    grad_overlay = grad_overlay.astype(np.uint8)
+    if activation_overlay is not None:
+        activation_overlay = activation_overlay.astype(np.uint8)
+    
+    fig.supxlabel(x_name)
+    fig.supylabel(y_name)
+    
+    data = np.zeros(grad_overlay.shape[2:4])
+    
+    
+    if activation_overlay is not None:
+        imgs = [[a.imshow(data) for a in _a] for _a in axes] #axes are assumed to be 2D
+        # Update function for both images to show the slice for the current frame
+        def update(imgs, i):
+            for _a in axes:
+                for a in _a:
+                    a.set_title("Slice: " + str(i))
+            imgs = [[im.set_data(activation_overlay[cls, i]) for cls, im in enumerate(img_1)] if k == 0 else [im.set_data(grad_overlay[cls, i]) for cls, im in enumerate(img_1)] for k, img_1 in enumerate(imgs)]
+            return imgs
+    else:
+        imgs = [a.imshow(data) for a in axes] #axes are assumed to be flat
+        # Update function for both images to show the slice for the current frame
+        def update(imgs, i):
+            for a in axes:
+                a.set_title("Slice: " + str(i))
+            imgs = [img.set_data(grad_overlay[cls, i]) for cls, img in enumerate(imgs)]
+            return imgs
+    # Compute the animation (gif)
+    ani = animation.FuncAnimation(fig, functools.partial(update, imgs), frames=len(grad_overlay[0]), interval=10,
+                                  repeat_delay=0, blit=False)
+    
+    # Save the animation (gif)
+    ani.save(out_path, writer='imagemagick', fps=30)
 
 def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred = True, data_io = None, preprocessing = None, progress = False):
     #create a homogenous datastructure
     samples = to_samples(sample_list, data_io, mask_seg, mask_pred)
+    
     
     #apply potential preprocessing
     if preprocessing is not None:
@@ -164,6 +213,9 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
         it = samples
     
     for sample in it:
+        display = display_2D
+        if detect_dimensionality(sample.img_data) == 3:
+            display = display_3D
         
         sample.img_data = normalize(sample.img_data, to_greyscale=True, normalize=True)
         if sample.seg_data is not None:
@@ -174,71 +226,6 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             sample.pred_data = normalize(sample.pred_data, to_greyscale=False, normalize=False)
         elif mask_pred:
             raise RuntimeError("Sample " + sample.index + " lacks the prediction needed for generating the mask")
-    
-        ani = None
-        if mask_seg and mask_pred:
-            vol_truth = overlay_segmentation_greyscale(sample.img_data, sample.seg_data)
-            vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
-            fig, (ax1, ax2) = plt.subplots(1, 2)
-            # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(vol_truth.shape[1:3])
-            ax1.set_title("Ground Truth")
-            ax2.set_title("Prediction")
-            img1 = ax1.imshow(data)
-            img2 = ax2.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img1.set_data(vol_truth[i])
-                img2.set_data(vol_pred[i])
-                return [img1, img2]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(truth), interval=10,
-                                          repeat_delay=0, blit=False)
-        elif mask_seg:
-            vol_truth = overlay_segmentation_greyscale(sample.img_data, sample.seg_data)
-            fig, ax = plt.subplots()
-            # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(vol_truth.shape[1:3])
-            ax.set_title("Segmentation")
-            img = ax.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img.set_data(vol_truth[i])
-                return [img]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(vol_truth), interval=10,
-                                          repeat_delay=0, blit=False)
-        elif mask_pred:
-            vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
-            fig, ax = plt.subplots()
-            # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(vol_pred.shape[1:3])
-            ax.set_title("Segmentation")
-            img = ax.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img.set_data(vol_pred[i])
-                return [img]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(vol_pred), interval=10,
-                                          repeat_delay=0, blit=False)
-        else:
-            fig, ax = plt.subplots()
-            # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(sample.img_data.shape[1:3])
-            ax.set_title("Segmentation")
-            img = ax.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img.set_data(sample.img_data[i])
-                return [img]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(sample.img_data), interval=10,
-                                          repeat_delay=0, blit=False)
         
         
         # Set up the output path for the gif
@@ -246,8 +233,32 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             os.mkdir(out_dir)
         file_name = "visualization.case_" + str(sample.index).zfill(5) + ".gif"
         out_path = os.path.join(out_dir, file_name)
-        # Save the animation (gif)
-        ani.save(out_path, writer='imagemagick', fps=30)
+        
+        if mask_seg and mask_pred:
+            vol_truth = overlay_segmentation_greyscale(sample.img_data, sample.seg_data)
+            vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
+            fig, (ax1, ax2) = plt.subplots(1, 2)
+            ax1.set_title("Ground Truth")
+            ax2.set_title("Prediction")
+            display(out_path, fig, [ax1, ax2], "", "", np.stack([vol_truth, vol_pred], axis = 0))
+            
+            
+        elif mask_seg:
+            vol_truth = overlay_segmentation_greyscale(sample.img_data, sample.seg_data)
+            fig, ax = plt.subplots()
+            ax.set_title("Segmentation")
+            display(out_path, fig, [ax], "", "", np.expand_dims(vol_truth, axis = 0))
+        elif mask_pred:
+            vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
+            fig, ax = plt.subplots()
+            # Initialize the two subplots (axes) with an empty 512x512 image
+            ax.set_title("Segmentation")
+            display(out_path, fig, [ax], "", "", np.expand_dims(vol_pred, axis = 0))
+        else:
+            fig, ax = plt.subplots()
+            ax.set_title("Image")
+            display(out_path, fig, [ax], "", "", np.expand_dims(sample.img_data, axis = 0))
+        
         # Close the matplot
         plt.close()
 
@@ -329,7 +340,7 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     vol_rgb = np.stack([vol, vol, vol], axis=-1)
     # Initialize segmentation in RGB
     shp = seg.shape
-    seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
+    seg_rgb = np.zeros(shp + (3,), dtype=np.int)
     
     # Set class to appropriate color
     cmap = matplotlib.cm.get_cmap(cm)
@@ -337,10 +348,10 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     if np.issubdtype(seg.dtype, np.integer):
         uniques = np.unique(seg)
         for u in uniques:
-            seg_rgb[np.equal(seg, u)] = cmap(u / len(uniques))[0:3] * 255
+            seg_rgb[np.equal(seg, u)] = np.asarray(cmap(u / len(uniques))[:3]) * 255
     else:
         seg = (seg-np.min(seg)) / np.ptp(seg)
-        seg_rgb = cmap(seg)[..., 0:3] * 255
+        seg_rgb = cmap(seg)[..., :3] * 255
     
     seg_rgb = seg_rgb.astype(np.uint8)
     

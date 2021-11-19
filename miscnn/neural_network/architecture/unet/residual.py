@@ -30,7 +30,7 @@
 #-----------------------------------------------------#
 # External libraries
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, concatenate, add
+from tensorflow.keras.layers import Input, concatenate, add, Activation
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from tensorflow.keras.layers import BatchNormalization

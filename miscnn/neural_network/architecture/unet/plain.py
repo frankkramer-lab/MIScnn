@@ -28,7 +28,7 @@
 # External libraries
 import tensorflow_addons as tfa
 
-from tensorflow.keras.layers import Activation, Dropout, LeakyReLU
+from tensorflow.keras.layers import Activation, Dropout, LeakyReLU, Activation
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from tensorflow.keras.layers import Input, concatenate

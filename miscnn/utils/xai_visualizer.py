@@ -17,57 +17,6 @@ def is_activation_pred(pred_data, expected_classes):
         print("Activation Array is not using a floating-point value type. Assuming this is erroneous data.")
         return False
     return True
-        
-
-def display_2D(out_path, fig, axes, grad_overlay, activation_overlay = None):
-    grad_overlay = grad_overlay.astype(np.uint8)
-    if activation_overlay is not None:
-        activation_overlay = activation_overlay.astype(np.uint8)
-    
-    fig.supxlabel('Classes')
-    
-    if activation_overlay is not None:
-        imgs = [[img.imshow(activation_overlay[cls, i]) for cls, img in enumerate(img)] if k == 0 else [img.imshow(grad_overlay[cls, i]) for cls, img in enumerate(img_1)] for k, img_1 in enumerate(axes)]
-    else:
-        imgs = [img.imshow(grad_overlay[cls, i]) for cls, img in enumerate(axes)]
-    
-
-def display_3D(out_path, fig, axes, grad_overlay, activation_overlay = None):
-    grad_overlay = grad_overlay.astype(np.uint8)
-    if activation_overlay is not None:
-        activation_overlay = activation_overlay.astype(np.uint8)
-    
-    fig.supxlabel('Classes')
-    
-    data = np.zeros(grad_overlay.shape[2:4])
-    
-    
-    if activation_overlay is not None:
-        fig.supylabel('Gradient vs Activation')
-        imgs = [[a.imshow(data) for a in _a] for _a in axes] #axes are assumed to be 2D
-        # Update function for both images to show the slice for the current frame
-        def update(imgs, i):
-            for _a in axes:
-                for a in _a:
-                    a.set_title("Slice: " + str(i))
-            imgs = [[im.set_data(activation_overlay[cls, i]) for cls, im in enumerate(img_1)] if k == 0 else [im.set_data(grad_overlay[cls, i]) for cls, im in enumerate(img_1)] for k, img_1 in enumerate(imgs)]
-            return imgs
-    else:
-        fig.supylabel('Gradients')
-        imgs = [a.imshow(data) for a in axes] #axes are assumed to be flat
-        # Update function for both images to show the slice for the current frame
-        def update(imgs, i):
-            for a in axes:
-                a.set_title("Slice: " + str(i))
-            imgs = [img.set_data(grad_overlay[cls, i]) for cls, img in enumerate(imgs)]
-            return imgs
-    # Compute the animation (gif)
-    ani = animation.FuncAnimation(fig, functools.partial(update, imgs), frames=len(grad_overlay[0]), interval=10,
-                                  repeat_delay=0, blit=False)
-    
-    # Save the animation (gif)
-    ani.save(out_path, writer='imagemagick', fps=30)
-
 
 def compute_certainty_score(*args):
     s = 0
@@ -84,9 +33,9 @@ vectorized_compute_certainty_score = np.vectorize(compute_certainty_score)
 
 def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method="grid_display", alpha = 0.3):
     
-    display = display_2D
+    display = vis.display_2D
     if three_dim:
-        display = display_3D
+        display = vis.display_3D
     
     sample = vis.to_samples([sample])[0] #normalize data to sample object
     
@@ -115,7 +64,7 @@ def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method
             file_name = "visualization.comp.case_" + str(sample.index).zfill(5) + ".gif"
             out_path = os.path.join(out_dir, file_name)
             
-            display(out_path, fig, axes, grad_overlayed)
+            display(out_path, fig, axes, "Classes", "Gradients", grad_overlayed)
             
         else:
             activation_overlayed = np.zeros((sample.pred_data.shape[-1],) + sample.pred_data.shape[:-1] + (3,))
@@ -132,9 +81,9 @@ def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method
             file_name = "visualization.grad.comp.case_" + str(sample.index).zfill(5) + ".gif"
             out_path = os.path.join(out_dir, file_name)
             
-            display(out_path, fig, axes, grad_overlayed, activation_overlayed)
+            display(out_path, fig, axes, "Classes", "Activation vbs Gradients", grad_overlayed, activation_overlayed)
             
-    elif method == "grid_certainty":
+    elif method == "grid_certainty": #compute certainty score of activation map. then compute angle between activation and gradient vector
         if not is_activation_pred(sample.pred_data, expected_classes):
             raise ValueError("Activation Output of the neural network prediction is required in the sample.")
         
@@ -165,14 +114,12 @@ def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method
         file_name = "visualization.certainty.case_" + str(sample.index).zfill(5) + ".gif"
         out_path = os.path.join(out_dir, file_name)
         
-        display(out_path, fig, axes, angle)
+        display(out_path, fig, axes, "Certainty vs Angle", "", angle)
         
-        pass #compute certainty score of activation map. use certainty to weight activation. then compute angle between activation and gradient vector
-    elif method == "col_mapping":
+    elif method == "col_mapping":#map each class to a color channel for both activation and gradient
         
         if not gradcam.shape[0] == 3:
             raise ValueError("Currently anything but a 1:1 mappping is not supported")
-        
         
         gradcam = np.moveaxis(gradcam, 0, -1)
         
@@ -198,7 +145,7 @@ def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method
             file_name = "visualization.grad.col_map.case_" + str(sample.index).zfill(5) + ".gif"
             out_path = os.path.join(out_dir, file_name)
             
-            display(out_path, fig, [axes], grad_overlayed)
+            display(out_path, fig, [axes], "", "", grad_overlayed)
         else:
             pred = sample.pred_data
             
@@ -219,9 +166,8 @@ def group_visualization(sample, gradcam, three_dim=True, out_dir = "vis", method
             file_name = "visualization.grad.col_map.case_" + str(sample.index).zfill(5) + ".gif"
             out_path = os.path.join(out_dir, file_name)
             
-            display(out_path, fig, [[a] for a in axes], grad_overlayed, act_overlayed)
+            display(out_path, fig, [[a] for a in axes], "Activation vs Gradients", "", grad_overlayed, act_overlayed)
         
-        pass #map each class to a color channel for both activation and gradient
     elif method == "col_map_activ_delta":
         if not is_activation_pred(sample.pred_data):
             raise ValueError("Activation Output of the neural network prediction is required in the sample.")
