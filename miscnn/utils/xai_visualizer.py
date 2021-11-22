@@ -24,7 +24,7 @@ def compute_certainty_score(*args):
     m = 1 - np.max(args)
     
     for i in args:
-        n = i + m
+        n = i/m
         s += n * n 
     return np.sqrt(s)
     
