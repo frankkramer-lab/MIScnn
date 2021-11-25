@@ -145,8 +145,6 @@ class Model_Group(Model):
         epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
         iterations (integer):                   Number of iterations (batches) in a single epoch.
         callbacks (list of Callback classes):   A list of Callback classes for custom evaluation
-    Return:
-        history (Keras history object):         Gathered fitting information and evaluation results of the validation
     """
     def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[]):
         for model in self.models:

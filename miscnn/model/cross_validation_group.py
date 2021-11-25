@@ -23,13 +23,42 @@ from miscnn.data_loading.data_io import create_directories
 from tensorflow.keras.callbacks import ModelCheckpoint
 import os
 
+#-----------------------------------------------------#
+#          Cross Validation Model Group class         #
+#-----------------------------------------------------#
+# Cross validation using a Model Group.
 class CrossValidationGroup(Model_Group):
     
+    """ Initialization function for creating a Model Group object. This object will train and predict sub models.
+        The predictions are merged using an aggregation function.
+
+    Args:
+        model (Model):                          Model that should be used for cross validation.
+        preprocessor (Preprocessor):            Preprocessor class that the Model Group should refer to for pipeline structure.
+                                                This does not necissarily mean that all models share that preprocessor.
+        folds (integer):                        the number of folds or models that should be used.
+        verify_preprocessor (Boolean):          Enable checking whether all models share the preprocessor of the model group.
+                                                EWnabled by default. Disable to use models in combination with different preprocessing methods.
+    """
     def __init__(self, model, preprocessor, folds, verify_preprocessor=True):
         modelList = [model] + [model.copy() for i in range(folds)]
         Model_Group.__init__(self, modelList, preprocessor, verify_preprocessor)
         self.folds = folds
     
+    #---------------------------------------------#
+    #                 Evaluation                  #
+    #---------------------------------------------#
+    """ Evaluation function for the model group using the provided lists of sample indices
+        for training and validation. It is also possible to pass custom Callback classes in order to
+        obtain more information.
+
+    Args:
+        samples (list of indices):              A list of sample indicies which will be used
+        evaluation_path (string):               The base path for the evaluation.
+        epochs (integer):                       Number of epochs. A single epoch is defined as one iteration through the complete data set.
+        iterations (integer):                   Number of iterations (batches) in a single epoch.
+        callbacks (list of Callback classes):   A list of Callback classes for custom evaluation
+    """
     def evaluate(self, samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[], *args, **kwargs):
         samples_permuted = np.random.permutation(samples)
         # Split sample list into folds
