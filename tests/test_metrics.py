@@ -132,3 +132,75 @@ class metricTEST(unittest.TestCase):
         self.model.loss = tversky_crossentropy
         self.model.metrics = [tversky_crossentropy]
         self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #            Focal Loss - Categorical             #
+    #-------------------------------------------------#
+    def test_METRICS_FocalCategorical(self):
+        self.model.loss = categorical_focal_loss([0.9, 0.1])
+        self.model.metrics = [categorical_focal_loss([0.1, 0.9])]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #                    Combo loss                   #
+    #-------------------------------------------------#
+    def test_METRICS_Combo(self):
+        self.model.loss = combo_loss
+        self.model.metrics = [combo_loss]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #                Focal Tversky loss               #
+    #-------------------------------------------------#
+    def test_METRICS_FocalTversky(self):
+        self.model.loss = focal_tversky_loss
+        self.model.metrics = [focal_tversky_loss]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #              Symmetric Focal loss               #
+    #-------------------------------------------------#
+    def test_METRICS_SymmetricFocal(self):
+        self.model.loss = symmetric_focal_loss
+        self.model.metrics = [symmetric_focal_loss]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #           Symmetric Focal Tversky loss          #
+    #-------------------------------------------------#
+    def test_METRICS_SymmetricFocalTversky(self):
+        self.model.loss = symmetric_focal_tversky_loss
+        self.model.metrics = [symmetric_focal_tversky_loss]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #              Asymmetric Focal loss              #
+    #-------------------------------------------------#
+    def test_METRICS_AsymmetricFocal(self):
+        self.model.loss = asymmetric_focal_loss
+        self.model.metrics = [asymmetric_focal_loss]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #          Asymmetric Focal Tversky loss          #
+    #-------------------------------------------------#
+    def test_METRICS_AsymmetricFocalTversky(self):
+        self.model.loss = asymmetric_focal_tversky_loss
+        self.model.metrics = [asymmetric_focal_tversky_loss]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #           Symmetric Unified Focal loss          #
+    #-------------------------------------------------#
+    def test_METRICS_SymmetricUnifiedFocal(self):
+        self.model.loss = sym_unified_focal_loss
+        self.model.metrics = [sym_unified_focal_loss]
+        self.model.train(self.sample_list, epochs=1)
+
+    #-------------------------------------------------#
+    #          Asymmetric Unified Focal loss          #
+    #-------------------------------------------------#
+    def test_METRICS_AsymmetricUnifiedFocal(self):
+        self.model.loss = asym_unified_focal_loss
+        self.model.metrics = [asym_unified_focal_loss]
+        self.model.train(self.sample_list, epochs=1)
