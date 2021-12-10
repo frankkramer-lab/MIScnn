@@ -51,7 +51,7 @@ class Model_Group(Model):
                 raise RuntimeError("Model Groups can only be comprised of objects inheriting from Model")
             if verify_preprocessor and not model.preprocessor == self.preprocessor:
                 raise RuntimeError("not all models use the same preprocessor. This can have have unintended effects and instabilities. To disable this warning pass \"verify_preprocessor=False\"")
-    
+
     #---------------------------------------------#
     #                  Training                   #
     #---------------------------------------------#

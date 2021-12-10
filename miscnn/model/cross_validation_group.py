@@ -89,6 +89,7 @@ class CrossValidationGroup(Model_Group):
                 cb_list = callbacks
             
             model.reset()
+            
             if (isinstance(model, Model_Group)):
                 model.evaluate(training, validation, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=cb_list)
             else:
