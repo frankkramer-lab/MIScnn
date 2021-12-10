@@ -26,7 +26,7 @@ from tensorflow.keras.optimizers import Adam
 import numpy as np
 import copy
 # Internal libraries/scripts
-from miscnn.model.model import Model as BaseModel
+from miscnn.multi_model.model import Model as BaseModel
 from miscnn.neural_network.metrics import dice_soft, tversky_loss
 from miscnn.neural_network.architecture.unet.standard import Architecture
 from miscnn.neural_network.data_generator import DataGenerator
@@ -288,13 +288,13 @@ class Neural_Network(BaseModel):
         self.reset_weights()
         self.model.compile(optimizer=Adam(lr=self.learning_rate),
                            loss=self.loss, metrics=self.metrics)
-   
+
     def copy(self):
-        new_model = Neural_Network(self.preprocessor, self.architecture, self.loss, copy.deepcopy(self.metrics), 
+        new_model = Neural_Network(self.preprocessor, self.architecture, self.loss, copy.deepcopy(self.metrics),
             self.learning_rate, self.batch_queue_size, self.workers, False) #assume multi_gpu false because mirroring wqould be expensive with multiple models
         new_model.model.set_weights(self.model.get_weights())
         return new_model
-    
+
     # Re-initialize model weights
     def reset_weights(self):
         self.model.set_weights(self.initialization_weights)

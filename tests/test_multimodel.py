@@ -27,21 +27,21 @@ import numpy as np
 #Internal libraries
 from miscnn.data_loading.interfaces import Dictionary_interface
 
-from miscnn.model.model import Model as BaseModel
-from miscnn.model.model_group import Model_Group
+from miscnn.multi_model.model import Model as BaseModel
+from miscnn.multi_model.model_group import Model_Group
 from miscnn import Data_IO, Preprocessor, Neural_Network
 
 
 class ModelStub(BaseModel):
-    
+
     def __init__(self, preprocessor):
         BaseModel.__init__(self, preprocessor)
-        
+
         self.trained = False
-        
+
     def train(self, sample_list, epochs=20, iterations=None, callbacks=[]):
         self.trained = True
-    
+
     def predict(self, sample_list, activation_output=False):
         for sample in sample_list:
             s = self.preprocessor.data_io.sample_loader(sample)
@@ -54,22 +54,22 @@ class ModelStub(BaseModel):
             s = self.preprocessor.data_io.sample_loader(sample)
             s.pred_data = np.zeros((16, 16, 16))
             self.preprocessor.data_io.save_prediction(s)
-    
+
     def reset(self):
         self.trained = False
-    
+
     def copy(self):
         stub = ModelStub(self.preprocessor)
         stub.trained = self.trained
         return stub
-    
+
     # Dump model to file
     def dump(self, file_path):
         pass
     # Load model from file
     def load(self, file_path, custom_objects={}):
         pass
-    
+
 
 def drop (x, y):
     pass
@@ -119,7 +119,7 @@ class ModelTEST(unittest.TestCase):
     def test_MODEL_create(self):
         group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
         self.assertIsInstance(group, Model_Group)
-        
+
 
     # Model storage
     def test_MODEL_storage(self):
@@ -152,7 +152,7 @@ class ModelTEST(unittest.TestCase):
     #-------------------------------------------------#
     #                    Prediction                   #
     #-------------------------------------------------#
-    
+
     def test_MODEL_prediction2D(self):
         group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
         group.predict(self.sample_list2D, drop)
@@ -160,7 +160,7 @@ class ModelTEST(unittest.TestCase):
             sample = self.data_io2D.sample_loader(index, load_seg=True,
                                                   load_pred=True)
             self.assertIsNotNone(sample.pred_data)
-    
+
     #-------------------------------------------------#
     #                    Validation                   #
     #-------------------------------------------------#
@@ -168,5 +168,3 @@ class ModelTEST(unittest.TestCase):
         group = Model_Group([ModelStub(self.pp2D), ModelStub(self.pp2D), ModelStub(self.pp2D)], self.pp2D, verify_preprocessor=True)
         history = group.evaluate(self.sample_list2D[0:4], self.sample_list2D[4:6],
                               epochs=3)
-                              
-    

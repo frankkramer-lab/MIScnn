@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License           #
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
-from miscnn.model.model import Model
+from miscnn.multi_model.model import Model
 from miscnn.neural_network.model import Neural_Network
 import json
 from miscnn.data_loading.data_io import create_directories
@@ -28,7 +28,7 @@ import os
 #-----------------------------------------------------#
 # This class exposes the model functionality using multiple sub-models as components.
 class Model_Group(Model):
-    
+
     """ Initialization function for creating a Model Group object. This object will train and predict sub models.
         The predictions are merged using an aggregation function.
 
@@ -41,9 +41,9 @@ class Model_Group(Model):
     """
     def __init__ (self, models, preprocessor, verify_preprocessor=True):
         Model.__init__(self, preprocessor)
-        
+
         self.models = models
-        
+
         #Verify the properties of the list.
         for model in self.models:
             #Check early if all items in the collection are indeed models.
@@ -68,7 +68,7 @@ class Model_Group(Model):
     def train(self, sample_list, epochs=20, iterations=None, callbacks=[], class_weight=None):
         #Get the root path from model group preprocessor
         tmp = self.preprocessor.data_io.output_path
-        
+
         for model in self.models:
             #Create subdirectories and reroute each model to their respective one
             out_dir = create_directories(tmp, "group_" + str(model.id))
@@ -83,11 +83,11 @@ class Model_Group(Model):
                 cb_list = callbacks + [cb_model]
             else:
                 cb_list = callbacks
-                
+
             # Reset Neural Network model weights. This is to ensure tensorflow state of the model. As the same model can be used multiple times as a child.
             model.reset()
-            model.train(sample_list, epochs=epochs, iterations=iterations, callbacks=cb_list, class_weight)
-    
+            model.train(sample_list, epochs=epochs, iterations=iterations, callbacks=cb_list, class_weight=class_weight)
+
     #---------------------------------------------#
     #                 Prediction                  #
     #---------------------------------------------#
@@ -112,12 +112,12 @@ class Model_Group(Model):
             out_dir = create_directories(tmp, "group_" + str(model.id))
             model.preprocessor.data_io.output_path = out_dir
             model.predict(sample_list, activation_output=activation_output)
-        
+
         #Handle merging of all samples after prediction.
         for sample in sample_list:
             s = None
             prediction_list = []
-            
+
             #Load predictions for all models. and collect them
             for model in self.models:
                 out_dir = os.path.join(tmp, "group_" + str(model.id))
@@ -130,7 +130,7 @@ class Model_Group(Model):
             self.preprocessor.data_io.output_path = tmp #preprocessor is likely a reference so this needs to be reset
             s.pred_data = res
             self.preprocessor.data_io.save_prediction(s)
-    
+
     #---------------------------------------------#
     #                 Evaluation                  #
     #---------------------------------------------#
@@ -164,28 +164,28 @@ class Model_Group(Model):
             model.reset()
             model.evaluate(training_samples, validation_samples, evaluation_path=out_dir, epochs=epochs, iterations=iterations, callbacks=cb_list)
         self.preprocessor.data_io.output_path = evaluation_path
-    
+
     def reset(self):
         for model in self.models: #propagate
             model.reset()
-    
+
     def copy(self):
         return ModelGroup([model.copy() for model in self.models], self.preprocessor, False) #validity is implied and it accelerates cloning
-    
+
     # Dump model to file
     def dump(self, file_path):
         subdir = create_directories(file_path, "group_" + str(self.id))
-        
+
         with open(os.path.join(subdir, "metadata.json"), "w") as f:
             json.dump({"type": "group"}, f)
-        
+
         for model in self.models:
             model.dump(subdir)
-    
+
     # Load model from file
     def load(self, file_path, custom_objects={}):
         collection = [dir for dir in os.listdir(file_path) if os.path.isdir(dir)]
-        
+
         for obj in collection:
             metadata = {}
             metadata_path = os.path.join(obj, "metadata.json")
