@@ -39,7 +39,7 @@ class ModelStub(BaseModel):
 
         self.trained = False
 
-    def train(self, sample_list, epochs=20, iterations=None, callbacks=[]):
+    def train(self, sample_list, epochs=20, iterations=None, callbacks=[], class_weight=None):
         self.trained = True
 
     def predict(self, sample_list, activation_output=False):
