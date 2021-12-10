@@ -62,10 +62,12 @@ def del_tree(path):
     
 
 if (args.which == "verify"):
-    if (not args.imagetype in miscnn_data_interfaces.keys())
+    if (not args.imagetype in miscnn_data_interfaces.keys()):
         raise RuntimeError("Unknown Format")
     
-    dataio = Data_IO(miscnn_data_interfaces[args.imagetype], args.data_dir)
+    interface = miscnn_data_interfaces[args.imagetype]()
+    
+    dataio = Data_IO(interface, args.data_dir)
     indices = dataio.get_indiceslist()
     if len(indices) == 0: #or maybe lower than a threshold
         print("[WARNING] Datapath " + str(args.data_path) + " does not seem to contain any samples.")

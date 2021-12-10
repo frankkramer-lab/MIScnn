@@ -18,9 +18,22 @@
 #==============================================================================#
 
 
+#==============================================================================#
+#  Abstract Model Type. The purpose of this class is to define shared          #
+#  properties that a prediction component of MIScnn should expose. It          #
+#  functions as an interface for the the pipeline, separating it from more     #
+#  in depth prediction logic and structure.                                    #
+#==============================================================================#
 class Model():
+    #Static Counter providing a unique identifier for each initialized model. this is to account for multiple models and predictions per run.
+    #Furthermore this allows for models to be moved without issue as the uniqueness is global.
     __CNTR = 0
     
+    """ Initialization function for creating a Model object. This object essentially just wraps the preprocessor.
+
+    Args:
+        preprocessor (Preprocessor):            Preprocessor class instance which provides the Neural Network with batches.
+    """
     def __init__ (self, preprocessor):
         self.preprocessor = preprocessor
         # Identify data parameters
@@ -32,18 +45,22 @@ class Model():
         Model.__CNTR += 1 #technically not thread safe
         
     
-    def train(self, sample_list, epochs=20, iterations=None, callbacks=[]):
+    #train using a collection of samples
+    def train(self, sample_list, epochs=20, iterations=None, callbacks=[], class_weight=None):
         raise NotImplementedError()
     
+    #predict on a collection of samples
     def predict(self, sample_list, activation_output=False):
         raise NotImplementedError()
     # Evaluate the Model using the MIScnn pipeline
     def evaluate(self, training_samples, validation_samples, evaluation_path="evaluation", epochs=20, iterations=None, callbacks=[], store=True):
         raise NotImplementedError()
     
+    #reset model
     def reset(self):
         raise NotImplementedError()
     
+    #clone model. This is assumed to be a deep copy
     def copy(self):
         raise NotImplementedError()
     

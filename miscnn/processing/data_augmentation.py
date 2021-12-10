@@ -24,11 +24,11 @@
 #-----------------------------------------------------#
 # External libraries
 import numpy as np
-from batchgenerators.dataloading import SingleThreadedAugmenter
-from batchgenerators.transforms import Compose
-from batchgenerators.transforms import MirrorTransform, SpatialTransform
-from batchgenerators.transforms import ContrastAugmentationTransform, GaussianNoiseTransform
-from batchgenerators.transforms import BrightnessMultiplicativeTransform, GammaTransform
+from batchgenerators.dataloading.single_threaded_augmenter import SingleThreadedAugmenter
+from batchgenerators.transforms.abstract_transforms import Compose
+from batchgenerators.transforms.spatial_transforms import MirrorTransform, SpatialTransform
+from batchgenerators.transforms.color_transforms import ContrastAugmentationTransform, GammaTransform, BrightnessMultiplicativeTransform
+from batchgenerators.transforms.noise_transforms import GaussianNoiseTransform
 # Internal libraries/scripts
 
 #-----------------------------------------------------#
