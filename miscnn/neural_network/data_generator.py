@@ -23,7 +23,6 @@
 from tensorflow.keras.utils import Sequence as Keras_Sequence
 import math
 import numpy as np
-from miscnn.utils.visualizer import visualize_sample
 
 #-----------------------------------------------------#
 #                 Keras Data Generator                #
