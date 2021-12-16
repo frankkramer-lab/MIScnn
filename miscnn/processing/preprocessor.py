@@ -207,10 +207,10 @@ class Preprocessor:
             # Load cached shape & Concatenate patches into original shape
             seg_shape = self.cache.pop("shape_" + str(sample.index))
             prediction = concat_matrices(patches=prediction,
-                                    image_size=seg_shape,
-                                    window=self.patch_shape,
-                                    overlap=self.patchwise_overlap,
-                                    three_dim=self.data_io.interface.three_dim)
+                                         image_size=seg_shape,
+                                         window=self.patch_shape,
+                                         overlap=self.patchwise_overlap,
+                                         three_dim=self.data_io.interface.three_dim)
         # For fullimages remove the batch axis
         else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
@@ -218,7 +218,7 @@ class Preprocessor:
 
         # Run Subfunction postprocessing on the prediction
         for sf in reversed(self.subfunctions):
-            prediction = sf.postprocessing(sample, prediction)
+            prediction = sf.postprocessing(sample, prediction, activation_output)
         # Return postprocessed prediction
         return prediction
 

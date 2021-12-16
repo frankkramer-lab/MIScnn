@@ -68,19 +68,23 @@ class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         # Access original shape of the last sample and reset it
         original_shape = sample.get_extended_data()["orig_resize_shape"]
         # Transform original shape to one-channel array
-        prediction = np.reshape(prediction, prediction.shape + (1,))
+        if not activation_output:
+            prediction = np.reshape(prediction, prediction.shape + (1,))
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
         # Resize imaging data
-        prediction = resize_segmentation(prediction, original_shape, order=1,
-                                         cval=0)
+        if activation_output:
+            prediction = resize_segmentation(prediction, original_shape, order=0, cval=0)
+        else:
+            prediction = resize_segmentation(prediction, original_shape, order=1, cval=0)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        prediction = np.reshape(prediction, original_shape[1:])
+        if not activation_output:
+            prediction = np.reshape(prediction, original_shape[1:])
         # Return postprocessed prediction
         return prediction

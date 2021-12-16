@@ -79,20 +79,22 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         # Access original shape of the last sample and reset it
         original_shape = sample.get_extended_data()["orig_spacing"]
         # Handle resampling shape for activation output
         if len(prediction.shape) != (len(original_shape) - 1):
-            original_shape = (prediction.shape[-1], ) + original_shape[1:]
+            original_shape = original_shape[1:] + (prediction.shape[-1], )
         # Transform original shape to one-channel array for resampling
         else:
             prediction = np.reshape(prediction, prediction.shape + (1,))
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
         # Resample imaging data
-        prediction = resize_segmentation(prediction, original_shape, order=1,
-                                         cval=0)
+        if activation_output:
+            prediction = resize_segmentation(prediction, original_shape, order=0, cval=0)
+        else:
+            prediction = resize_segmentation(prediction, original_shape, order=1, cval=0)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
