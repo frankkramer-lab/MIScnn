@@ -152,9 +152,8 @@ class Neural_Network:
                                         in the provided Data I/O interface.
         activation_output (boolean):    Parameter which decides, if model output (activation function, normally softmax) will
                                         be saved/outputed (if FALSE) or if the resulting class label (argmax) should be outputed.
-        cls (Integer) :                 Parameter which selects the class to output when activation_output ist true
     """
-    def predict(self, sample_list, return_output=False, activation_output=False, cls=0):
+    def predict(self, sample_list, return_output=False, activation_output=False):
         # Initialize result array for direct output
         if return_output : results = []
         # Iterate over each sample
@@ -171,10 +170,7 @@ class Neural_Network:
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
             sampleObj = self.preprocessor.cache.pop(sample)
-            if activation_output:
-                pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg[..., cls], activation_output)
-            else:
-                pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg, activation_output)
+            pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg, activation_output)
             # Backup predicted segmentation
             if return_output : results.append(pred_seg)
             else :

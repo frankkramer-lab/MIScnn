@@ -92,12 +92,17 @@ class Resampling(Abstract_Subfunction):
         prediction = np.moveaxis(prediction, -1, 0)
         # Resample imaging data
         if activation_output:
-            prediction = resize_segmentation(prediction, original_shape, order=0, cval=0)
+            prediction = np.moveaxis(prediction, -1, 0)
+            prediction, _ = augment_resize(prediction, None, original_shape, order=3)
+            prediction = np.moveaxis(prediction, 0, -1)
+            # prediction = resize_segmentation(prediction, original_shape, order=0, cval=0)
         else:
             prediction = resize_segmentation(prediction, original_shape, order=1, cval=0)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
+        if activation_output:
+            prediction = np.reshape(prediction, original_shape[1:] + (prediction.shape[-2],))
         if prediction.shape[-1] == 1:
             prediction = np.reshape(prediction, original_shape[1:])
         # Return postprocessed prediction
