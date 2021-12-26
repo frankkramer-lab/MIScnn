@@ -464,10 +464,11 @@ class SubfunctionsTEST(unittest.TestCase):
                     self.assertTrue(np.array_equal(sample.seg_data,
                                     getattr(self, varname).seg_data))
                     if param in ["minmax", "grayscale"]:
-                        self.assertEqual(np.min(sample.img_data), 0)
                         if param == "minmax":
-                            self.assertEqual(np.max(sample.img_data), 1)
+                            self.assertTrue(np.min(sample.img_data) >= 0)
+                            self.assertTrue(np.max(sample.img_data) <= 1)
                         else:
+                            self.assertEqual(np.min(sample.img_data), 0)
                             self.assertEqual(np.max(sample.img_data), 255)
                     else:
                         self.assertTrue(np.min(sample.img_data) <= -1.0)
