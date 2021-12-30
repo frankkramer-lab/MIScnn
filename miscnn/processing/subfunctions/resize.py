@@ -51,7 +51,7 @@ class Resize(Abstract_Subfunction):
         img_data = sample.img_data
         seg_data = sample.seg_data
         # Cache current spacing for later postprocessing
-        if not training : sample.extended["orig_resize_shape"] = (1,) + img_data.shape[0:-1]
+        if not training : sample.extended["original_shape"] = img_data.shape[0:-1]
         # Transform data from channel-last to channel-first structure
         img_data = np.moveaxis(img_data, -1, 0)
         if training : seg_data = np.moveaxis(seg_data, -1, 0)
@@ -68,19 +68,24 @@ class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         # Access original shape of the last sample and reset it
-        original_shape = sample.get_extended_data()["orig_resize_shape"]
+        original_shape = sample.get_extended_data()["original_shape"]
         # Transform original shape to one-channel array
-        prediction = np.reshape(prediction, prediction.shape + (1,))
+        if not activation_output:
+            target_shape = (1,) + original_shape
+            prediction = np.reshape(prediction, prediction.shape + (1,))
+        # Handle resampling shape for activation output
+        else : target_shape = (prediction.shape[-1], ) + original_shape
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
         # Resize imaging data
-        prediction = resize_segmentation(prediction, original_shape, order=1,
+        prediction = resize_segmentation(prediction, target_shape, order=1,
                                          cval=0)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        prediction = np.reshape(prediction, original_shape[1:])
+        if not activation_output:
+            prediction = np.reshape(prediction, original_shape)
         # Return postprocessed prediction
         return prediction

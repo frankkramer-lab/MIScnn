@@ -266,6 +266,32 @@ class SubfunctionsTEST(unittest.TestCase):
             else : old_shape = (16,16,16)
             self.assertEqual(pred.shape, old_shape)
 
+    def test_SUBFUNCTIONS_RESIZE_postprocessing_activationOutput(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : new_shape = (7,7)
+            else : new_shape = (7,7,7)
+            sf = Resize(new_shape=new_shape)
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            if dim == "2D":
+                sample_pred.pred_data = np.random.rand(16, 16, 3)
+            else:
+                sample_pred.pred_data = np.random.rand(16, 16, 16, 3)
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data,
+                                     activation_output=True)
+            # Check for correctness
+            if dim == "2D" : old_shape = (16,16,3)
+            else : old_shape = (16,16,16,3)
+            self.assertEqual(pred.shape, old_shape)
+
     #-------------------------------------------------#
     #                   Resampling                    #
     #-------------------------------------------------#
@@ -327,8 +353,6 @@ class SubfunctionsTEST(unittest.TestCase):
     def test_SUBFUNCTIONS_RESAMPLING_postprocessing_activationOutput(self):
         # Test for 2D and 3D
         for dim in ["2D", "3D"]:
-            if dim == "2D" : continue
-
             # Initialize Subfunction
             if dim == "2D" : spacing = (1,1)
             else : spacing = (1,1,1)
@@ -345,11 +369,12 @@ class SubfunctionsTEST(unittest.TestCase):
             sf.preprocessing(sample_pred, training=False)
             # Transform segmentation data to simulate prediction data
             if dim == "2D":
-                sample_pred.pred_data = np.random.rand(16, 16, 3) * 3
+                sample_pred.pred_data = np.random.rand(16, 16, 3)
             else:
-                sample_pred.pred_data = np.random.rand(16, 16, 16, 3) * 3
+                sample_pred.pred_data = np.random.rand(16, 16, 16, 3)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data,
+                                     activation_output=True)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16,3)
             else : old_shape = (16,16,16,3)

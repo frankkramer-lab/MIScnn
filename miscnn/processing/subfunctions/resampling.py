@@ -44,7 +44,6 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     def __init__(self, new_spacing=(1,1,1)):
         self.new_spacing = new_spacing
-        self.original_shape = None
 
     #---------------------------------------------#
     #                Preprocessing                #
@@ -58,7 +57,7 @@ class Resampling(Abstract_Subfunction):
         except AttributeError:
             print("'spacing' is not initialized in sample details!")
         # Cache current spacing for later postprocessing
-        if not training :  sample.extended["orig_spacing"] = (1,) + img_data.shape[0:-1]
+        if not training :  sample.extended["original_shape"] = img_data.shape[0:-1]
         # Calculate spacing ratio
         ratio = current_spacing / np.array(self.new_spacing)
         # Calculate new shape
@@ -79,24 +78,24 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         # Access original shape of the last sample and reset it
-        original_shape = sample.get_extended_data()["orig_spacing"]
-        # Handle resampling shape for activation output
-        if len(prediction.shape) != (len(original_shape) - 1):
-            original_shape = (prediction.shape[-1], ) + original_shape[1:]
+        original_shape = sample.get_extended_data()["original_shape"]
         # Transform original shape to one-channel array for resampling
-        else:
+        if not activation_output:
+            target_shape = (1,) + original_shape
             prediction = np.reshape(prediction, prediction.shape + (1,))
+        # Handle resampling shape for activation output
+        else : target_shape = (prediction.shape[-1], ) + original_shape
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
         # Resample imaging data
-        prediction = resize_segmentation(prediction, original_shape, order=1,
+        prediction = resize_segmentation(prediction, target_shape, order=1,
                                          cval=0)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        if prediction.shape[-1] == 1:
-            prediction = np.reshape(prediction, original_shape[1:])
+        if not activation_output:
+            prediction = np.reshape(prediction, original_shape)
         # Return postprocessed prediction
         return prediction
