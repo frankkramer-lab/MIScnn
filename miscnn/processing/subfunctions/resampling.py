@@ -43,7 +43,7 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, new_spacing=(1,1,1), order_img=3, order_seg=1):
+    def __init__(self, new_spacing=(1,1,1), order_img=3, order_seg=0):
         self.new_spacing = new_spacing
         self.order_img = order_img
         self.order_seg = order_seg
