@@ -41,7 +41,7 @@ class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, new_shape=(128,128,128), order_img=3, order_seg=0):
+    def __init__(self, new_shape=(128,128,128), order_img=3, order_seg=1):
         self.new_shape = new_shape
         self.order_img = order_img
         self.order_seg = order_seg
