@@ -22,6 +22,7 @@
 # External libraries
 from batchgenerators.augmentations.spatial_transformations import augment_resize
 from batchgenerators.augmentations.utils import resize_segmentation
+from skimage.transform import resize as resize_manual
 import numpy as np
 # Internal libraries/scripts
 from miscnn.processing.subfunctions.abstract_subfunction import Abstract_Subfunction
@@ -42,8 +43,10 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, new_spacing=(1,1,1)):
+    def __init__(self, new_spacing=(1,1,1), order_img=3, order_seg=1):
         self.new_spacing = new_spacing
+        self.order_img = order_img
+        self.order_seg = order_seg
 
     #---------------------------------------------#
     #                Preprocessing                #
@@ -67,7 +70,9 @@ class Resampling(Abstract_Subfunction):
         if training : seg_data = np.moveaxis(seg_data, -1, 0)
         # Resample imaging data
         img_data, seg_data = augment_resize(img_data, seg_data, new_shape,
-                                            order=3, order_seg=1, cval_seg=0)
+                                            order=self.order_img,
+                                            order_seg=self.order_seg,
+                                            cval_seg=0)
         # Transform data from channel-first back to channel-last structure
         img_data = np.moveaxis(img_data, 0, -1)
         if training : seg_data = np.moveaxis(seg_data, 0, -1)
@@ -89,9 +94,14 @@ class Resampling(Abstract_Subfunction):
         else : target_shape = (prediction.shape[-1], ) + original_shape
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
-        # Resample imaging data
-        prediction = resize_segmentation(prediction, target_shape, order=1,
-                                         cval=0)
+        # Resize segmentation data
+        if not activation_output:
+            prediction = resize_segmentation(prediction, target_shape,
+                                             order=self.order_seg, cval=0)
+        else:
+            prediction = resize_manual(prediction, target_shape,
+                                       order=self.order_seg, mode="edge",
+                                       clip=True, anti_aliasing=False)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
