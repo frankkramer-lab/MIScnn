@@ -139,8 +139,8 @@ class Neural_Network(BaseModel):
                        workers=self.workers,
                        max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
 
     #---------------------------------------------#
     #                 Prediction                  #
@@ -182,8 +182,8 @@ class Neural_Network(BaseModel):
               sampleObj.add_prediction(pred_seg, activation_output)
               self.preprocessor.data_io.save_prediction(sampleObj)
             # Clean up temporary files if necessary
-            if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-                self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Output predictions results if direct output modus is active
         if return_output : return results
 
@@ -276,8 +276,8 @@ class Neural_Network(BaseModel):
                                  workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Return the training & validation history
         return history
 
