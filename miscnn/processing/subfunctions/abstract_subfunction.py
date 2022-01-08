@@ -77,11 +77,13 @@ class Abstract_Subfunction(ABC):
         It is possible to pass configurations through the initialization function of this class.
 
         Parameter:
-            sample (Sample Object):   The sample object that was segmented. Contains metadata.
-            prediction (numpy array):   Numpy array of the predicted segmentation
+            sample (Sample Object):         The sample object that was segmented. Contains metadata.
+            prediction (numpy array):       Numpy array of the predicted segmentation
+            activation_output (boolean):    Parameter which decides, if model output (activation function, normally softmax) will
+                                            be saved/outputed (if FALSE) or if the resulting class label (argmax) should be outputed.
         Return:
             prediction (numpy array):   Numpy array of processed predicted segmentation
     """
     @abstractmethod
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         return prediction

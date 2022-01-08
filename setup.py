@@ -7,7 +7,7 @@ with open("docs/README.PyPI.md", "r") as fh:
 
 setup(
    name='miscnn',
-   version='1.2.2',
+   version='1.3.0',
    description='Framework for Medical Image Segmentation with Convolutional Neural Networks and Deep Learning',
    url='https://github.com/frankkramer-lab/MIScnn',
    author='Dominik Müller',
@@ -30,7 +30,6 @@ setup(
                      'SimpleITK==2.0.2',
                      'scikit-image==0.18.2'],
    classifiers=["Programming Language :: Python :: 3",
-                "Programming Language :: Python :: 3.6",
                 "Programming Language :: Python :: 3.7",
                 "Programming Language :: Python :: 3.8",
                 "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

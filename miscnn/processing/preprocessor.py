@@ -75,7 +75,7 @@ class Preprocessor:
     def __init__(self, data_io, batch_size, subfunctions=[],
                  data_aug=Data_Augmentation(), prepare_subfunctions=False,
                  prepare_batches=False, analysis="patchwise-crop",
-                 patch_shape=[None, None, None], use_multiprocessing=False):
+                 patch_shape=None, use_multiprocessing=False):
         # Parse Data Augmentation
         if isinstance(data_aug, Data_Augmentation):
             self.data_augmentation = data_aug
@@ -215,10 +215,9 @@ class Preprocessor:
         else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
         if not activation_output : prediction = np.argmax(prediction, axis=-1)
-
         # Run Subfunction postprocessing on the prediction
         for sf in reversed(self.subfunctions):
-            prediction = sf.postprocessing(sample, prediction)
+            prediction = sf.postprocessing(sample, prediction, activation_output)
         # Return postprocessed prediction
         return prediction
 

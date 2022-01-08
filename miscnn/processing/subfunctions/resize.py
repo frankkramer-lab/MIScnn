@@ -22,6 +22,7 @@
 # External libraries
 from batchgenerators.augmentations.spatial_transformations import augment_resize
 from batchgenerators.augmentations.utils import resize_segmentation
+from skimage.transform import resize as resize_manual
 import numpy as np
 # Internal libraries/scripts
 from miscnn.processing.subfunctions.abstract_subfunction import Abstract_Subfunction
@@ -40,8 +41,10 @@ class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, new_shape=(128,128,128)):
+    def __init__(self, new_shape=(128,128,128), order_img=3, order_seg=1):
         self.new_shape = new_shape
+        self.order_img = order_img
+        self.order_seg = order_seg
 
     #---------------------------------------------#
     #                Preprocessing                #
@@ -51,13 +54,15 @@ class Resize(Abstract_Subfunction):
         img_data = sample.img_data
         seg_data = sample.seg_data
         # Cache current spacing for later postprocessing
-        if not training : sample.extended["orig_resize_shape"] = (1,) + img_data.shape[0:-1]
+        if not training : sample.extended["original_shape"] = img_data.shape[0:-1]
         # Transform data from channel-last to channel-first structure
         img_data = np.moveaxis(img_data, -1, 0)
         if training : seg_data = np.moveaxis(seg_data, -1, 0)
         # Resize imaging data
         img_data, seg_data = augment_resize(img_data, seg_data, self.new_shape,
-                                            order=3, order_seg=1, cval_seg=0)
+                                            order=self.order_img,
+                                            order_seg=self.order_seg,
+                                            cval_seg=0)
         # Transform data from channel-first back to channel-last structure
         img_data = np.moveaxis(img_data, 0, -1)
         if training : seg_data = np.moveaxis(seg_data, 0, -1)
@@ -68,19 +73,29 @@ class Resize(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         # Access original shape of the last sample and reset it
-        original_shape = sample.get_extended_data()["orig_resize_shape"]
+        original_shape = sample.get_extended_data()["original_shape"]
         # Transform original shape to one-channel array
-        prediction = np.reshape(prediction, prediction.shape + (1,))
+        if not activation_output:
+            target_shape = (1,) + original_shape
+            prediction = np.reshape(prediction, prediction.shape + (1,))
+        # Handle resampling shape for activation output
+        else : target_shape = (prediction.shape[-1], ) + original_shape
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
-        # Resize imaging data
-        prediction = resize_segmentation(prediction, original_shape, order=1,
-                                         cval=0)
+        # Resize segmentation data
+        if not activation_output:
+            prediction = resize_segmentation(prediction, target_shape,
+                                             order=self.order_seg, cval=0)
+        else:
+            prediction = resize_manual(prediction, target_shape,
+                                       order=self.order_seg, mode="edge",
+                                       clip=True, anti_aliasing=False)
         # Transform data from channel-first back to channel-last structure
         prediction = np.moveaxis(prediction, 0, -1)
         # Transform one-channel array back to original shape
-        prediction = np.reshape(prediction, original_shape[1:])
+        if not activation_output:
+            prediction = np.reshape(prediction, original_shape)
         # Return postprocessed prediction
         return prediction

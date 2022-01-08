@@ -27,9 +27,6 @@ import numpy as np
 import os
 import random
 import functools
-
-from tqdm import tqdm
-
 from miscnn.data_loading.sample import Sample
 
 #-----------------------------------------------------#
@@ -45,43 +42,40 @@ def normalize_volume(sample, to_greyscale=False, normalize=True):
         raise RuntimeError("Expected sample to be a 3 dimensional volume")
     if (to_greyscale and not len(sample.shape) in (3, 4)):
         raise RuntimeError("Sample is not RGB")
-        
+
     img = sample
-    
-    if (to_greyscale and len(sample.shape) == 4):
-        if (sample.shape[-1] == 1):
-            img = np.squeeze(img, axis=-1)
-        elif (sample.shape[-1] == 3): 
-            img[:, :, :] = vec_luminosity(img[:, :, :, 0], img[:, :, :, 1], img[:, :, :, 2])
-    
+    if (to_greyscale):
+        img[:, :, :] = vec_luminosity(img[:, :, :, 0], img[:, :, :, 1], img[:, :, :, 2])
+    elif (len(sample.shape) == 4 and sample.shape[-1] == 1):
+        img = np.squeeze(img, axis=-1)
     if (normalize):
         img = 255 * (img - np.min(img)) / np.ptp(img)
         img = img.astype(int)
-    
+
     return img
-    
+
 def normalize_image(sample, to_greyscale=False, normalize=True):
     if (len(sample.shape) > 3 or len(sample.shape) < 2):
         raise RuntimeError("Expected sample to be a 2 dimensional image")
     if (to_greyscale and not len(sample.shape) == 3):
         raise RuntimeError("Sample is not RGB")
-    
+
     img = sample
-    
+
     if (to_greyscale):
         img[:, :] = vec_luminosity(img[:, :, 0], img[:, :, 1], img[:, :, 2])
     elif (len(sample.shape) == 3 and sample.shape[-1] == 1):
         img = np.squeeze(img, axis=-1)
-    
+
     if (normalize):
         img = 255 * (img - np.min(img)) / np.ptp(img)
         img = img.astype(int)
-    
+
     return img
 
 def detect_dimensionality(sample):
     shape_size = len(sample.shape)
-    
+
     if (shape_size == 1):
         raise RuntimeError("Only has one dimension") #this is just a graph tbh
     elif (shape_size == 2):
@@ -102,7 +96,7 @@ def normalize(sample, to_greyscale=False, normalize=True):
         return normalize_image(sample, to_greyscale, normalize)
     elif dimensionality == 3:
         return normalize_volume(sample, to_greyscale, normalize)
-    
+
 def compute_preprocessed_sample(sample, subfunctions):
     for func in subfunctions:
         func.preprocessing(sample)
@@ -117,14 +111,13 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
         seg = True
     else:
         seg = load_seg
-        
+
     if load_pred is None:
         pred = True
     else:
         pred = load_pred
-    
+
     res = []
-    
     for sample in sample_list:
         if isinstance(sample, Sample):
             if load_seg is None:
@@ -136,12 +129,12 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
         elif isinstance(sample, str):
             res.append(load_samples([sample], data_io, seg, pred))
         elif isinstance(sample, np.ndarray):
-            s = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0))
-            s.img_data = sample
-            res.append(s);
+            sampleObj = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0))
+            sampleObj.img_data = sample
+            res.append(sampleObj);
         else:
             raise ValueError("Cannot interpret an object of type " + str(type(sample)) + " as a sample")
-    
+
     return res
 
 
@@ -149,14 +142,15 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
 def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred = True, data_io = None, preprocessing = None, progress = False):
     #create a homogenous datastructure
     samples = to_samples(sample_list, data_io, mask_seg, mask_pred)
-    
+
     #apply potential preprocessing
     if preprocessing is not None:
         samples = [compute_preprocessed_sample(s, preprocessing) for s in samples]
-    
+
     #normalize images both in data and structure
     
     if progress:
+        from tqdm import tqdm
         it = tqdm(samples, desc="Visualizing: ")
     else:
         it = samples
@@ -172,7 +166,7 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             sample.pred_data = normalize(sample.pred_data, to_greyscale=False, normalize=False)
         elif mask_pred:
             raise RuntimeError("Sample " + sample.index + " lacks the prediction needed for generating the mask")
-    
+
         ani = None
         if mask_seg and mask_pred:
             vol_truth = overlay_segmentation_greyscale(sample.img_data, sample.seg_data)
@@ -237,8 +231,8 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             # Compute the animation (gif)
             ani = animation.FuncAnimation(fig, update, frames=len(sample.img_data), interval=10,
                                           repeat_delay=0, blit=False)
-        
-        
+
+
         # Set up the output path for the gif
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
@@ -254,43 +248,43 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
     fp_color = [153,12,12]
     fn_color = [3,92,135]
     #true negative is blank as it would create confusion
-    
+
     if sample.seg_data is None or sample.pred_data is None:
         raise ValueError("Sample needs to have both a segmentation and a prediction map.")
-    
+
     sample = to_samples([sample])
-    
+
     vol_greyscale = normalize(sample.img_data)
-    
+
     if classes is None:
         classes = np.unique(sample.seg_data)
         sample.seg_data = np.squeeze(sample.seg_data, axis=-1)
-    
+
     # Convert volume to RGB
     vol_rgb = np.stack([vol_greyscale, vol_greyscale, vol_greyscale], axis=-1)
-    
+
     for c in classes:
         seg_rgb = np.zeros((sample.img_data.shape[0], sample.img_data.shape[1], sample.img_data.shape[2], 3), dtype=np.int)
-        
+
         seg_broadcast_arr = np.equal(sample.seg_data, c)
         pred_broadcast_arr = np.equal(sample.pred_data, c)
-        
+
         seg_rgb[ seg_broadcast_arr & pred_broadcast_arr ] = tp_color
         seg_rgb[np.logical_not(seg_broadcast_arr) & pred_broadcast_arr] = fp_color
         seg_rgb[seg_broadcast_arr & np.logical_not(pred_broadcast_arr)] = fn_color
-        
+
         # Get binary array for places where an ROI lives
         segbin = np.greater(sample.seg_data, 0) | np.greater(sample.pred_data, 0)
         repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
-        
+
         # Weighted sum where there's a value to overlay
         vol_overlayed = np.where(
             repeated_segbin,
             np.round(alpha*seg_rgb+(1-alpha)*vol_rgb).astype(np.uint8),
             np.round(vol_rgb).astype(np.uint8)
         )
-        
-        
+
+
         fig, ax = plt.subplots()
         # Initialize the plot with an empty image
         data = np.zeros(vol_overlayed.shape[1:3])
@@ -325,7 +319,6 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     shp = seg.shape
     seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
     
-    
     # Set class to appropriate color
     cmap = matplotlib.cm.get_cmap(cm)
     
@@ -344,7 +337,7 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     segbin = seg > 0
     
     repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
-    
+
     # Weighted sum where there's a value to overlay
     vol_overlayed = np.where(
         repeated_segbin,

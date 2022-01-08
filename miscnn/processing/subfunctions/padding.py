@@ -94,7 +94,7 @@ class Padding(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         # Access original coordinates of the last sample and reset it
         original_coords = sample.extended["orig_crop_coords"]
         # Transform original shape to one-channel array for cropping
