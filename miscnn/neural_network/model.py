@@ -95,17 +95,20 @@ class Neural_Network(BaseModel):
         # Assemble the input shape
         input_shape = (None,)
         # Initialize model for 3D data
+        
+        patch_handler = self.preprocessor.patch_handler
+        
         if self.three_dim:
             input_shape = (None, None, None, self.channels)
-            if not self.preprocessor.analysis == "fullimage":
-                input_shape = self.preprocessor.patch_shape + (self.channels,)
+            if not patch_handler.analysis == "fullimage":
+                input_shape = patch_handler.patch_shape + (self.channels,)
             self.model = architecture.create_model_3D(input_shape=input_shape,
                                                       n_labels=self.classes)
          # Initialize model for 2D data
         else:
             input_shape = (None, None, self.channels)
-            if not self.preprocessor.analysis == "fullimage":
-                input_shape = self.preprocessor.patch_shape + (self.channels,)
+            if not patch_handler.analysis == "fullimage":
+                input_shape = patch_handler.patch_shape + (self.channels,)
             self.model = architecture.create_model_2D(input_shape=input_shape,
                                                        n_labels=self.classes)
         # Compile model
