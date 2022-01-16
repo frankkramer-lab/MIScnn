@@ -81,7 +81,7 @@ class Preprocessor:
         self.prepare_batches = prepare_batches
         self.use_multiprocessing = use_multiprocessing
         
-        self.patch_handler = Patch_Handler(*argv, **kwargs)
+        self.patch_handler = Patch_Handler(three_dim = data_io.interface.three_dim, *argv, **kwargs)
 
     #---------------------------------------------#
     #               Class variables               #
@@ -115,12 +115,12 @@ class Preprocessor:
                                                  num_classes=sample.classes)
             # Decide if data augmentation should be performed on data
             if training and not validation and self.data_augmentation is not None:
-                data_aug = True
+                data_aug = self.data_augmentation
             elif not training and self.data_augmentation is not None and \
                 self.data_augmentation.infaug:
-                data_aug = True
+                data_aug = self.data_augmentation
             else:
-                data_aug = False
+                data_aug = None
             
             ready_data = self.patch_handler.patch(sample, training, data_aug)
             

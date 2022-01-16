@@ -18,7 +18,8 @@
 #==============================================================================#
 
 from .patch_operations import slice_matrix, concat_matrices, pad_patch, crop_patch
-
+import numpy as np
+from ..data_augmentation import Data_Augmentation
 
 
 class Patch_Handler():
@@ -33,7 +34,9 @@ class Patch_Handler():
                                             Be aware that the x-axis represents the number of slices in 3D volumes.
                                             This parameter will be redundant if fullimage or patchwise-crop analysis is selected!!
     """
-    def __init__(self, analysis="patchwise-crop", patch_shape=None, *argv, **kwargs):
+    def __init__(self, three_dim, analysis="patchwise-crop", patch_shape=None, *argv, **kwargs):
+        
+        self.three_dim = three_dim
         
         # Exception: Analysis parameter check
         analysis_types = ["patchwise-crop", "patchwise-grid", "fullimage"]
@@ -46,16 +49,22 @@ class Patch_Handler():
                              "patchwise analysis.")
         self.analysis = analysis
         self.patch_shape = patch_shape
-        patchwise_overlap = (0,0,0)             # In patchwise_analysis, an overlap can be defined between adjuncted patches.
-        patchwise_skip_blanks = False           # In patchwise_analysis, patches, containing only the background annotation,
+        
+        self.patchwise_overlap = (0,0,0)             # In patchwise_analysis, an overlap can be defined between adjuncted patches.
+        self.patchwise_skip_blanks = False           # In patchwise_analysis, patches, containing only the background annotation,
                                                 # can be skipped with this option. This result into only
                                                 # training on relevant patches and ignore patches without any information.
         patchwise_skip_class = 0                # Class, which will be skipped if patchwise_skip_blanks is True
-        cache = dict()                          # Cache additional information and data for patch assembling after patchwise prediction
+        self.cache = dict()                          # Cache additional information and data for patch assembling after patchwise prediction
     
     
     def patch(self, sample, training, data_augmentation):
+        
+        index = sample.index
+        
         if not training : self.cache[index] = sample
+        
+        ready_data = None
         
         # Run Fullimage analysis
         if self.analysis == "fullimage":
@@ -64,7 +73,7 @@ class Patch_Handler():
         elif self.analysis == "patchwise-crop" and training:
             ready_data = self.patch_crop(sample, data_augmentation)
         # Run patchwise grid analysis
-        elif self.analysis == "patchwise-grid":
+        else:
             if not training:
                 self.cache["shape_" + str(index)] = sample.img_data.shape
             ready_data = self.patch_grid(sample, training, data_augmentation)
@@ -84,7 +93,7 @@ class Patch_Handler():
                                     image_size=seg_shape,
                                     window=self.patch_shape,
                                     overlap=self.patchwise_overlap,
-                                    three_dim=self.data_io.interface.three_dim)
+                                    three_dim=self.three_dim)
         # For fullimages remove the batch axis
         else : prediction = np.squeeze(prediction, axis=0)
         
@@ -98,12 +107,12 @@ class Patch_Handler():
         # Slice image into patches
         patches_img = slice_matrix(sample.img_data, self.patch_shape,
                                    self.patchwise_overlap,
-                                   self.data_io.interface.three_dim)
+                                   self.three_dim)
         if training:
             # Slice segmentation into patches
             patches_seg = slice_matrix(sample.seg_data, self.patch_shape,
                                        self.patchwise_overlap,
-                                       self.data_io.interface.three_dim)
+                                       self.three_dim)
         else : patches_seg = None
         # Skip blank patches (only background)
         if training and self.patchwise_skip_blanks:
@@ -126,9 +135,9 @@ class Patch_Handler():
             self.cache["slicer_" + str(sample.index)] = slicer
         # Run data augmentation
         if data_aug and training:
-            img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
+            img_data, seg_data = data_aug.run(img_data, seg_data)
         elif data_aug and not training:
-            img_data = self.data_augmentation.run_infaug(img_data)
+            img_data = data_aug.run_infaug(img_data)
         # Create tuple of preprocessed data
         if training:
             ready_data = list(zip(img_data, seg_data))
@@ -146,10 +155,10 @@ class Patch_Handler():
             # Slice image and segmentation into patches
             patches_img = slice_matrix(sample.img_data, self.patch_shape,
                                        self.patchwise_overlap,
-                                       self.data_io.interface.three_dim)
+                                       self.three_dim)
             patches_seg = slice_matrix(sample.seg_data, self.patch_shape,
                                        self.patchwise_overlap,
-                                       self.data_io.interface.three_dim)
+                                       self.three_dim)
             # Skip blank patches (only background)
             for i in reversed(range(0, len(patches_seg))):
                 # IF patch DON'T contain any non background class -> remove it
@@ -171,7 +180,7 @@ class Patch_Handler():
                                      return_slicer=False)
             # Run data augmentation
             if data_aug:
-                img_data, seg_data = self.data_augmentation.run(img_data,
+                img_data, seg_data = data_aug.run(img_data,
                                                                 seg_data)
         # If skipping blank is not active -> random crop
         else:
@@ -198,6 +207,7 @@ class Patch_Handler():
         # Create tuple of preprocessed data
         ready_data = list(zip(img_data, seg_data))
         # Return preprocessed data tuple
+        
         return ready_data
 
     #---------------------------------------------#
@@ -212,9 +222,9 @@ class Patch_Handler():
         if training : seg_data = np.expand_dims(seg, axis=0)
         # Run data augmentation
         if data_aug and training:
-            img_data, seg_data = self.data_augmentation.run(img_data, seg_data)
+            img_data, seg_data = data_aug.run(img_data, seg_data)
         elif data_aug and not training:
-            img_data = self.data_augmentation.run_infaug(img_data)
+            img_data = data_aug.run_infaug(img_data)
         # Create tuple of preprocessed data
         if training : ready_data = list(zip(img_data, seg_data))
         else : ready_data = list(zip(img_data))
