@@ -140,11 +140,11 @@ def unpatch_3D(A, orig_size, overlap):
                 
                 id = ((x + y) % 2) + 2 * (z % 4)
                 
-                res[x_pos:x_pos + A.shape[4], y_pos:y_pos + A.shape[5], z_pos:z_pos + A.shape[6], ..., id] = A[x, y, z]
+                res[x_pos:x_pos + A.shape[len(orig_size)], y_pos:y_pos + A.shape[len(orig_size) + 1], z_pos:z_pos + A.shape[len(orig_size) + 2], ..., id] = A[x, y, z]
     
     #unpad the image according to the calculated values
     if any([ a[1] > 0 for a in pad_shape]): 
-        unpad = crop(res, orig_size, A.shape[len(overlap) + 1:], overlap)
+        unpad = crop(res, orig_size, A.shape[len(overlap):], overlap)
     else:
         unpad = res
     
@@ -157,13 +157,14 @@ def unpatch_2D(A, orig_size, overlap):
     
     #reconstruct the structure that skimage computed for simplicity
     patch_pattern = tuple([math.floor(sh / st) - 1 if o > 0 else math.floor(sh / st) for sh, st, o in zip(padded_shape, stride, overlap)])
-
+    
     A = np.reshape(A, patch_pattern + tuple([1] * (len(orig_size) - len(patch_pattern))) + A.shape[1:])
     
     res = np.zeros(tuple(padded_shape) + extra + (4,))
     res[True] = np.nan #enter invalid value since not all slots are guaranteed to be used and should be dropped for data merging
     #reassemble the image.
     #this can be done theoretically over every dimension but it doubles the required bitset (id) every time in order to maintain all patches in one array simultaneously.
+    
     for x in range(patch_pattern[0]):
         for y in range(patch_pattern[1]):
                 x_pos = x * stride[0]
@@ -171,12 +172,13 @@ def unpatch_2D(A, orig_size, overlap):
                 
                 id = x % 2 + 2 * (y % 2) #this should generate a pattern that all adjacent patches have different values.
                 
-                res[x_pos:x_pos + A.shape[3], y_pos:y_pos + A.shape[4], ..., id] = A[x, y]
+                res[x_pos:x_pos + A.shape[len(orig_size)], y_pos:y_pos + A.shape[len(orig_size) + 1], ..., id] = A[x, y]
     
     #unpad the image according to the calculated values
     if any([ a[1] > 0 for a in pad_shape]): 
-        unpad = crop(res, orig_size, A.shape[len(overlap) + 1:], overlap)
+        unpad = crop(res, orig_size, A.shape[len(overlap):], overlap)
     else:
         unpad = res
+    
     return np.nanmean(unpad, axis = -1)
     
