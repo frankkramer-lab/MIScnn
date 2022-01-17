@@ -199,7 +199,7 @@ class PreprocessorTEST(unittest.TestCase):
         sample = self.data_io2D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
-        ready_data = pp.patch_handler.patch_crop(sample, data_aug=False)
+        ready_data = pp.patch_handler.patch_crop(sample, data_aug=None)
         self.assertEqual(len(ready_data), 1)
         self.assertEqual(ready_data[0][0].shape, (4,4,1))
         self.assertEqual(ready_data[0][1].shape, (4,4,3))
@@ -215,7 +215,7 @@ class PreprocessorTEST(unittest.TestCase):
         sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
-        ready_data = pp.patch_handler.patch_crop(sample, data_aug=False)
+        ready_data = pp.patch_handler.patch_crop(sample, data_aug=None)
         self.assertEqual(len(ready_data), 1)
         self.assertEqual(ready_data[0][0].shape, (4,4,4,1))
         self.assertEqual(ready_data[0][1].shape, (4,4,4,3))
@@ -229,7 +229,7 @@ class PreprocessorTEST(unittest.TestCase):
         sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
-        ready_data = pp.patch_handler.patch_crop(sample, data_aug=False)
+        ready_data = pp.patch_handler.patch_crop(sample, data_aug=None)
         self.assertEqual(len(ready_data), 1)
         self.assertEqual(ready_data[0][0].shape, (4,4,4,1))
         self.assertEqual(ready_data[0][1].shape, (4,4,4,3))
@@ -248,7 +248,7 @@ class PreprocessorTEST(unittest.TestCase):
                                          num_classes=sample.classes)
         pp = Preprocessor(self.data_io2D, data_aug=None, batch_size=1,
                           analysis="patchwise-grid", patch_shape=(5,5))
-        ready_data = pp.patch_handler.patch_grid(sample, data_aug=False,
+        ready_data = pp.patch_handler.patch_grid(sample, data_aug=None,
                                                 training=True)
         self.assertEqual(len(ready_data), 16)
         self.assertEqual(ready_data[0][0].shape, (5,5,1))
@@ -265,7 +265,7 @@ class PreprocessorTEST(unittest.TestCase):
                                          num_classes=sample.classes)
         pp = Preprocessor(self.data_io3D, data_aug=None, batch_size=1,
                           analysis="patchwise-grid", patch_shape=(5,5,5))
-        ready_data = pp.patch_handler.patch_grid(sample, data_aug=False,
+        ready_data = pp.patch_handler.patch_grid(sample, data_aug=None,
                                                 training=True)
         self.assertEqual(len(ready_data), 64)
         self.assertEqual(ready_data[0][0].shape, (5,5,5,1))
@@ -280,7 +280,7 @@ class PreprocessorTEST(unittest.TestCase):
         sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
-        ready_data = pp.patch_handler.patch_grid(sample, data_aug=False,
+        ready_data = pp.patch_handler.patch_grid(sample, data_aug=None,
                                                 training=True)
         self.assertEqual(len(ready_data), 64)
         self.assertEqual(ready_data[0][0].shape, (4,4,4,1))
@@ -300,7 +300,7 @@ class PreprocessorTEST(unittest.TestCase):
         sample = self.data_io2D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
-        ready_data = pp.patch_handler.full_image(sample, data_aug=False,
+        ready_data = pp.patch_handler.full_image(sample, data_aug=None,
                                            training=True)
         self.assertEqual(len(ready_data), 1)
         self.assertEqual(ready_data[0][0].shape, (16,16,1))
@@ -317,7 +317,7 @@ class PreprocessorTEST(unittest.TestCase):
         sample = self.data_io3D.sample_loader(sample_list[0], load_seg=True)
         sample.seg_data = to_categorical(sample.seg_data,
                                          num_classes=sample.classes)
-        ready_data = pp.patch_handler.full_image(sample, data_aug=False,
+        ready_data = pp.patch_handler.full_image(sample, data_aug=None,
                                            training=True)
         self.assertEqual(len(ready_data), 1)
         self.assertEqual(ready_data[0][0].shape, (16,16,16,1))
