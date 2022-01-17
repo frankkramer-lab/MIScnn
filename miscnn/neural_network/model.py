@@ -80,6 +80,9 @@ class Neural_Network(BaseModel):
         else : self.build_model(architecture)
         # Cache starting weights
         self.initialization_weights = self.model.get_weights()
+        
+        #create for reference. needs to be reexamined
+        self.keep_batches = False
 
 
     #---------------------------------------------#
