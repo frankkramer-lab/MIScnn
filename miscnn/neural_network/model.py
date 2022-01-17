@@ -176,7 +176,7 @@ class Neural_Network(BaseModel):
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.cache.pop(sample)
+            sampleObj = self.preprocessor.patch_handler.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output)
             # Backup predicted segmentation
@@ -229,7 +229,7 @@ class Neural_Network(BaseModel):
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.cache.pop(sample)
+            sampleObj = self.preprocessor.patch_handler.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output=True)
             # Backup predicted segmentation for current augmentation
