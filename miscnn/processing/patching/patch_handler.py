@@ -189,13 +189,13 @@ class Patch_Handler():
             seg = sample.seg_data
             # If no data augmentation should be performed
             # -> create Data Augmentation instance without augmentation methods
-            if not data_aug or self.data_augmentation is None:
+            if data_aug is None:
                 cropping_data_aug = Data_Augmentation(cycles=1,
                                             scaling=False, rotations=False,
                                             elastic_deform=False, mirror=False,
                                             brightness=False, contrast=False,
                                             gamma=False, gaussian_noise=False)
-            else : cropping_data_aug = self.data_augmentation
+            else : cropping_data_aug = data_aug
             # Configure the Data Augmentation instance to cropping
             cropping_data_aug.cropping = True
             cropping_data_aug.cropping_patch_shape = self.patch_shape
