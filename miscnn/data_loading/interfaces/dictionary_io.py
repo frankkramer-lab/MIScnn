@@ -37,7 +37,7 @@ from miscnn.data_loading.interfaces.abstract_io import Abstract_IO
         Value: Tuple containing:    (0) image as numpy array
                                     (1) optional segmentation as numpy array
                                     (2) optional prediction as numpy array
-                                    (3) optional details
+                                    (3) optional details encoded as dictionary
 """
 class Dictionary_interface(Abstract_IO):
     # Class variable initialization
@@ -62,7 +62,7 @@ class Dictionary_interface(Abstract_IO):
     def load_image(self, index):
         # Return image
         if len(self.dictionary[index]) > 3:
-            return self.dictionary[index][0], {"type": "dict", "extra": self.dictionary[index][3]}
+            return self.dictionary[index][0], {"type": "dict", **self.dictionary[index][3]}
         else:
             return self.dictionary[index][0], {"type": "dict", "extra": {}}
 
