@@ -44,7 +44,7 @@ def setup_execution(args):
     data_dir = str(args.data_dir)
     interface = None
     if (args.imagetype in miscnn_data_interfaces.keys()):
-        interface = miscnn_data_interfaces[args.imagetype]
+        interface = miscnn_data_interfaces[args.imagetype]()
     else:
         files = [f[f.find("."):] for dp, dn, filenames in os.walk(data_dir) for f in filenames if os.path.isfile(os.path.join(dp, f)) and ("imaging" in f or "segmentation" in f)]
         unique = list(np.unique(np.asarray(files)))

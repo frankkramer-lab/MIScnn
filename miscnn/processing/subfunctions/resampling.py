@@ -22,6 +22,7 @@
 # External libraries
 from batchgenerators.augmentations.spatial_transformations import augment_resize
 from batchgenerators.augmentations.utils import resize_segmentation
+from skimage.transform import resize as resize_manual
 import numpy as np
 # Internal libraries/scripts
 from miscnn.processing.subfunctions.abstract_subfunction import Abstract_Subfunction
@@ -42,9 +43,10 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, new_spacing=(1,1,1)):
+    def __init__(self, new_spacing=(1,1,1), order_img=3, order_seg=1):
         self.new_spacing = new_spacing
-        self.original_shape = None
+        self.order_img = order_img
+        self.order_seg = order_seg
 
     #---------------------------------------------#
     #                Preprocessing                #
@@ -58,7 +60,7 @@ class Resampling(Abstract_Subfunction):
         except AttributeError:
             print("'spacing' is not initialized in sample details!")
         # Cache current spacing for later postprocessing
-        if not training :  sample.extended["orig_spacing"] = (1,) + img_data.shape[0:-1]
+        if not training :  sample.extended["original_shape"] = img_data.shape[0:-1]
         # Calculate spacing ratio
         ratio = current_spacing / np.array(self.new_spacing)
         # Calculate new shape
@@ -68,7 +70,9 @@ class Resampling(Abstract_Subfunction):
         if training : seg_data = np.moveaxis(seg_data, -1, 0)
         # Resample imaging data
         img_data, seg_data = augment_resize(img_data, seg_data, new_shape,
-                                            order=3, order_seg=1, cval_seg=0)
+                                            order=self.order_img,
+                                            order_seg=self.order_seg,
+                                            cval_seg=0)
         # Transform data from channel-first back to channel-last structure
         img_data = np.moveaxis(img_data, 0, -1)
         if training : seg_data = np.moveaxis(seg_data, 0, -1)
@@ -81,15 +85,21 @@ class Resampling(Abstract_Subfunction):
     #---------------------------------------------#
     def postprocessing(self, sample, prediction, activation_output=False):
         # Access original shape of the last sample and reset it
-        original_shape = sample.get_extended_data()["orig_spacing"]
+        
+        original_shape = sample.get_extended_data()["original_shape"]
         # Handle resampling shape for activation output
         if len(prediction.shape) != (len(original_shape) - 1):
             original_shape = original_shape[1:] + (prediction.shape[-1], )
+            
         # Transform original shape to one-channel array for resampling
-        else:
+        if not activation_output:
+            target_shape = (1,) + original_shape
             prediction = np.reshape(prediction, prediction.shape + (1,))
+        # Handle resampling shape for activation output
+        else : target_shape = (prediction.shape[-1], ) + original_shape
         # Transform prediction from channel-last to channel-first structure
         prediction = np.moveaxis(prediction, -1, 0)
+        
         # Resample imaging data
         if activation_output:
             prediction = np.moveaxis(prediction, -1, 0)
@@ -105,5 +115,6 @@ class Resampling(Abstract_Subfunction):
             prediction = np.reshape(prediction, original_shape[1:] + (prediction.shape[-2],))
         if prediction.shape[-1] == 1:
             prediction = np.reshape(prediction, original_shape[1:])
+            
         # Return postprocessed prediction
         return prediction

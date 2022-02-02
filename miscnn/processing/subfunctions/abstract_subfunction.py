@@ -79,9 +79,8 @@ class Abstract_Subfunction(ABC):
         Parameter:
             sample (Sample Object):         The sample object that was segmented. Contains metadata.
             prediction (numpy array):       Numpy array of the predicted segmentation
-            activation_output (Boolean):    Parameter which decides, if model output (activation function, normally
-                                            softmax) will be saved/outputed (if FALSE) or if the resulting class label
-                                            (argmax) should be outputed 
+            activation_output (boolean):    Parameter which decides, if model output (activation function, normally softmax) will
+                                            be saved/outputed (if FALSE) or if the resulting class label (argmax) should be outputed.
         Return:
             prediction (numpy array):       Numpy array of processed predicted segmentation
     """

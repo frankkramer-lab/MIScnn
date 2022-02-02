@@ -215,7 +215,6 @@ class Preprocessor:
         else : prediction = np.squeeze(prediction, axis=0)
         # Transform probabilities to classes
         if not activation_output : prediction = np.argmax(prediction, axis=-1)
-
         # Run Subfunction postprocessing on the prediction
         for sf in reversed(self.subfunctions):
             prediction = sf.postprocessing(sample, prediction, activation_output)
