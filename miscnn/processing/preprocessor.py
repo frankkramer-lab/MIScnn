@@ -29,10 +29,10 @@ import threading
 import multiprocessing as mp
 from functools import partial
 # Internal libraries/scripts
-from .data_augmentation import Data_Augmentation
-from .batch_creation import create_batches
+from miscnn.processing.data_augmentation import Data_Augmentation
+from miscnn.processing.batch_creation import create_batches
 
-from .patching.patch_handler import Patch_Handler
+from miscnn.processing.patching.patch_handler import Patch_Handler
 
 #-----------------------------------------------------#
 #                 Preprocessor class                  #

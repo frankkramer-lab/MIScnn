@@ -17,9 +17,9 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
 
-from .patch_operations import slice_matrix, concat_matrices, pad_patch, crop_patch
+from miscnn.processing.patching.patch_operations import slice_matrix, concat_matrices, pad_patch, crop_patch
 import numpy as np
-from ..data_augmentation import Data_Augmentation
+from miscnn.processing.data_augmentation import Data_Augmentation
 
 
 class Patch_Handler():
