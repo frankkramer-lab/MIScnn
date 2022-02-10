@@ -99,19 +99,19 @@ class Neural_Network(BaseModel):
         input_shape = (None,)
         # Initialize model for 3D data
         
-        patch_handler = self.preprocessor.patch_handler
+        partitioner = self.preprocessor.partitioner
         
         if self.three_dim:
             input_shape = (None, None, None, self.channels)
-            if not patch_handler.analysis == "fullimage":
-                input_shape = patch_handler.patch_shape + (self.channels,)
+            if not partitioner.analysis == "fullimage":
+                input_shape = partitioner.patch_shape + (self.channels,)
             self.model = architecture.create_model_3D(input_shape=input_shape,
                                                       n_labels=self.classes)
          # Initialize model for 2D data
         else:
             input_shape = (None, None, self.channels)
-            if not patch_handler.analysis == "fullimage":
-                input_shape = patch_handler.patch_shape + (self.channels,)
+            if not partitioner.analysis == "fullimage":
+                input_shape = partitioner.patch_shape + (self.channels,)
             self.model = architecture.create_model_2D(input_shape=input_shape,
                                                        n_labels=self.classes)
         # Compile model
@@ -179,7 +179,7 @@ class Neural_Network(BaseModel):
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.patch_handler.cache.pop(sample)
+            sampleObj = self.preprocessor.partitioner.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output)
             # Backup predicted segmentation
@@ -232,7 +232,7 @@ class Neural_Network(BaseModel):
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.patch_handler.cache.pop(sample)
+            sampleObj = self.preprocessor.partitioner.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output=True)
             # Backup predicted segmentation for current augmentation
