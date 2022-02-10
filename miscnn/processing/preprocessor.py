@@ -64,7 +64,7 @@ class Preprocessor:
         prepare_batches (boolean):              Should all batches be prepared and backup to disk before starting the training (True),
                                                 or should the batches be created during runtime? (False).
         use_multiprocessing (boolean):          Uses multi-threading to prepare subfunctions if True (parallelized).
-        partition_method (string):              One of the following strings:
+        analysis (string):                      One of the following strings:
                                                     "fullimage" - maps the full image for tthe neural network
                                                     "patchwise-crop" - generates crops of the image. 
                                                         Requires: 
@@ -82,7 +82,7 @@ class Preprocessor:
     """
     def __init__(self, data_io, batch_size, subfunctions=[],
                  data_aug=Data_Augmentation(), prepare_subfunctions=False,
-                 prepare_batches=False, use_multiprocessing=False, partition_method="patchwise-crop", *argv, **kwargs):
+                 prepare_batches=False, use_multiprocessing=False, analysis="patchwise-crop", *argv, **kwargs):
         # Parse Data Augmentation
         if isinstance(data_aug, Data_Augmentation):
             self.data_augmentation = data_aug
@@ -96,7 +96,7 @@ class Preprocessor:
         self.prepare_batches = prepare_batches
         self.use_multiprocessing = use_multiprocessing
         
-        self.partitioner = Partitioner(three_dim = data_io.interface.three_dim, analysis = partition_method, *argv, **kwargs)
+        self.partitioner = Partitioner(three_dim = data_io.interface.three_dim, analysis = analysis, *argv, **kwargs)
 
     #---------------------------------------------#
     #               Class variables               #
