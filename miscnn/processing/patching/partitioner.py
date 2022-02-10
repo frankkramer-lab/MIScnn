@@ -22,7 +22,7 @@ import numpy as np
 from miscnn.processing.data_augmentation import Data_Augmentation
 
 
-class Patch_Handler():
+class Partitioner():
     """
     
     analysis (string):                      Modus selection of analysis type. Options:
@@ -34,7 +34,8 @@ class Patch_Handler():
                                             Be aware that the x-axis represents the number of slices in 3D volumes.
                                             This parameter will be redundant if fullimage or patchwise-crop analysis is selected!!
     """
-    def __init__(self, three_dim, analysis="patchwise-crop", patch_shape=None, *argv, **kwargs):
+    def __init__(self, three_dim, analysis, patch_shape=None, patchwise_overlap = (0,0,0), 
+                 patchwise_skip_blanks = False, patchwise_skip_class = 0, *argv, **kwargs):
         
         self.three_dim = three_dim
         
@@ -50,12 +51,12 @@ class Patch_Handler():
         self.analysis = analysis
         self.patch_shape = patch_shape
         
-        self.patchwise_overlap = (0,0,0)             # In patchwise_analysis, an overlap can be defined between adjuncted patches.
-        self.patchwise_skip_blanks = False           # In patchwise_analysis, patches, containing only the background annotation,
-                                                # can be skipped with this option. This result into only
-                                                # training on relevant patches and ignore patches without any information.
-        patchwise_skip_class = 0                # Class, which will be skipped if patchwise_skip_blanks is True
-        self.cache = dict()                          # Cache additional information and data for patch assembling after patchwise prediction
+        self.patchwise_overlap = patchwise_overlap                      # In patchwise_analysis, an overlap can be defined between adjuncted patches.
+        self.patchwise_skip_blanks = patchwise_skip_blanks              # In patchwise_analysis, patches, containing only the background annotation,
+                                                                        # can be skipped with this option. This result into only
+                                                                        # training on relevant patches and ignore patches without any information.
+        self.patchwise_skip_class = patchwise_skip_class                # Class, which will be skipped if patchwise_skip_blanks is True
+        self.cache = dict()                                             # Cache additional information and data for patch assembling after patchwise prediction
     
     
     def patch(self, sample, training, data_augmentation):

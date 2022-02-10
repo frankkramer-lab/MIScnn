@@ -32,7 +32,7 @@ from functools import partial
 from miscnn.processing.data_augmentation import Data_Augmentation
 from miscnn.processing.batch_creation import create_batches
 
-from miscnn.processing.patching.patch_handler import Patch_Handler
+from miscnn.processing.patching.partitioner import Partitioner
 
 #-----------------------------------------------------#
 #                 Preprocessor class                  #
@@ -64,10 +64,25 @@ class Preprocessor:
         prepare_batches (boolean):              Should all batches be prepared and backup to disk before starting the training (True),
                                                 or should the batches be created during runtime? (False).
         use_multiprocessing (boolean):          Uses multi-threading to prepare subfunctions if True (parallelized).
+        partition_method (string):              One of the following strings:
+                                                    "fullimage" - maps the full image for tthe neural network
+                                                    "patchwise-crop" - generates crops of the image. 
+                                                        Requires: 
+                                                            patch_shape (tuple) shape of resulting crops
+                                                        Optional: 
+                                                            patchwise_skip_blanks (boolean) skip crops with only background class
+                                                            patchwise_skip_class (integer) set the value for the background class
+                                                    "patchwise-grid" - generates grid of patches from the image
+                                                        Requires: 
+                                                            patch_shape (tuple) shape of resulting patches
+                                                        Optional: 
+                                                            patchwise_overlap (tuple) specifies the overlap of grrid patches along each axis
+                                                            patchwise_skip_blanks (boolean) skip crops with only background class
+                                                            patchwise_skip_class (integer) set the value for the background class
     """
     def __init__(self, data_io, batch_size, subfunctions=[],
                  data_aug=Data_Augmentation(), prepare_subfunctions=False,
-                 prepare_batches=False, use_multiprocessing=False, *argv, **kwargs):
+                 prepare_batches=False, use_multiprocessing=False, partition_method="patchwise-crop", *argv, **kwargs):
         # Parse Data Augmentation
         if isinstance(data_aug, Data_Augmentation):
             self.data_augmentation = data_aug
@@ -81,7 +96,7 @@ class Preprocessor:
         self.prepare_batches = prepare_batches
         self.use_multiprocessing = use_multiprocessing
         
-        self.patch_handler = Patch_Handler(three_dim = data_io.interface.three_dim, *argv, **kwargs)
+        self.partitioner = Partitioner(three_dim = data_io.interface.three_dim, analysis = partition_method, *argv, **kwargs)
 
     #---------------------------------------------#
     #               Class variables               #
@@ -122,7 +137,7 @@ class Preprocessor:
             else:
                 data_aug = None
             
-            ready_data = self.patch_handler.patch(sample, training, data_aug)
+            ready_data = self.partitioner.patch(sample, training, data_aug)
             
             # Identify if current index is the last one
             if index == indices_list[-1]: last_index = True
@@ -165,7 +180,7 @@ class Preprocessor:
             prediction = self.data_augmentation.run_infaug(prediction)
         # Reassemble patches into original shape for patchwise analysis
         
-        prediction = self.patch_handler.unpatch(sample, prediction)
+        prediction = self.partitioner.unpatch(sample, prediction)
         
         # Transform probabilities to classes
         if not activation_output : prediction = np.argmax(prediction, axis=-1)
