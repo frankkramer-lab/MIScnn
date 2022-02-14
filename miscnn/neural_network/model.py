@@ -80,6 +80,9 @@ class Neural_Network(BaseModel):
         else : self.build_model(architecture)
         # Cache starting weights
         self.initialization_weights = self.model.get_weights()
+        
+        #create for reference. needs to be reexamined
+        self.keep_batches = not(self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions)
 
 
     #---------------------------------------------#
@@ -95,17 +98,20 @@ class Neural_Network(BaseModel):
         # Assemble the input shape
         input_shape = (None,)
         # Initialize model for 3D data
+        
+        partitioner = self.preprocessor.partitioner
+        
         if self.three_dim:
             input_shape = (None, None, None, self.channels)
-            if not self.preprocessor.analysis == "fullimage":
-                input_shape = self.preprocessor.patch_shape + (self.channels,)
+            if not partitioner.analysis == "fullimage":
+                input_shape = partitioner.patch_shape + (self.channels,)
             self.model = architecture.create_model_3D(input_shape=input_shape,
                                                       n_labels=self.classes)
          # Initialize model for 2D data
         else:
             input_shape = (None, None, self.channels)
-            if not self.preprocessor.analysis == "fullimage":
-                input_shape = self.preprocessor.patch_shape + (self.channels,)
+            if not partitioner.analysis == "fullimage":
+                input_shape = partitioner.patch_shape + (self.channels,)
             self.model = architecture.create_model_2D(input_shape=input_shape,
                                                        n_labels=self.classes)
         # Compile model
@@ -139,8 +145,8 @@ class Neural_Network(BaseModel):
                        workers=self.workers,
                        max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
 
     #---------------------------------------------#
     #                 Prediction                  #
@@ -173,7 +179,7 @@ class Neural_Network(BaseModel):
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.cache.pop(sample)
+            sampleObj = self.preprocessor.partitioner.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output)
             # Backup predicted segmentation
@@ -182,8 +188,8 @@ class Neural_Network(BaseModel):
               sampleObj.add_prediction(pred_seg, activation_output)
               self.preprocessor.data_io.save_prediction(sampleObj)
             # Clean up temporary files if necessary
-            if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-                self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Output predictions results if direct output modus is active
         if return_output : return results
 
@@ -226,7 +232,7 @@ class Neural_Network(BaseModel):
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.cache.pop(sample)
+            sampleObj = self.preprocessor.partitioner.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output=True)
             # Backup predicted segmentation for current augmentation
@@ -276,8 +282,8 @@ class Neural_Network(BaseModel):
                                  workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Return the training & validation history
         return history
 
