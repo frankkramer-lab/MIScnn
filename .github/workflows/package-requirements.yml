@@ -1,8 +1,8 @@
 # This workflow will install Python dependencies and run tests with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-# CUSTOM Modifications by Dominik Müller (2021)
+# CUSTOM Modifications by Dominik Müller (2022)
 
-name: Python package
+name: Python Package - Requirements
 
 on:
   push:
