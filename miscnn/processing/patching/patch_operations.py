@@ -21,7 +21,6 @@
 #-----------------------------------------------------#
 #External libraries
 import numpy as np
-from skimage.util import pad as ski_pad
 from skimage.util import view_as_windows
 import math
 
@@ -106,7 +105,7 @@ def calcPadding(orig_size, patch_size, overlap):
 
 def pad(A, size, overlap):
     _, pad_shape, _ = calcPadding(A.shape, size, overlap)
-    return ski_pad(A, tuple(pad_shape) + tuple([(0, 0)] * (len(A.shape) - len(size))), "minimum")
+    return np.pad(A, tuple(pad_shape) + tuple([(0, 0)] * (len(A.shape) - len(size))), "minimum")
 
 def crop(A, size, patch_size, overlap):
     _, pad_shape, _ = calcPadding(size, patch_size, overlap)
