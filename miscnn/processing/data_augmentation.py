@@ -104,7 +104,8 @@ class Data_Augmentation:
         transforms = []
         # Add mirror augmentation
         if self.mirror:
-            aug_mirror = MirrorTransform(axes=self.config_mirror_axes)
+            aug_mirror = MirrorTransform(axes=self.config_mirror_axes,
+                                         p_per_sample=self.config_p_per_sample)
             transforms.append(aug_mirror)
         # Add contrast augmentation
         if self.contrast:
