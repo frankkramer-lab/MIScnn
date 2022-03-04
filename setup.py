@@ -25,7 +25,7 @@ setup(
                      'nibabel>=3.1.0',
                      'matplotlib>=3.3.1',
                      'pillow>=8.3.2',
-                     'batchgenerators==0.21',
+                     'batchgenerators>=0.23',
                      'pydicom>=2.0.0',
                      'SimpleITK>=2.0.2',
                      'scikit-image>=0.18.2'],

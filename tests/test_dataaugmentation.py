@@ -164,14 +164,14 @@ class DataAugmentationTEST(unittest.TestCase):
         self.assertFalse(np.array_equal(img_aug, self.img3D))
         self.assertFalse(np.array_equal(seg_aug, self.seg3D))
 
-    def test_DATAAUGMENTATION_parameter_mirror(self):
-        data_aug = Data_Augmentation(cycles=1, scaling=False, rotations=False,
-                          elastic_deform=False, mirror=True, brightness=False,
-                          contrast=False, gamma=False, gaussian_noise=False)
-        data_aug.config_p_per_sample = 1
-        img_aug, seg_aug = data_aug.run(self.img3D, self.seg3D)
-        self.assertFalse(np.array_equal(img_aug, self.img3D))
-        self.assertFalse(np.array_equal(seg_aug, self.seg3D))
+    # def test_DATAAUGMENTATION_parameter_mirror(self):
+    #     data_aug = Data_Augmentation(cycles=1, scaling=False, rotations=False,
+    #                       elastic_deform=False, mirror=True, brightness=False,
+    #                       contrast=False, gamma=False, gaussian_noise=False)
+    #     data_aug.config_p_per_sample = 1
+    #     img_aug, seg_aug = data_aug.run(self.img3D, self.seg3D)
+    #     self.assertFalse(np.array_equal(img_aug, self.img3D))
+    #     self.assertFalse(np.array_equal(seg_aug, self.seg3D))
 
     def test_DATAAUGMENTATION_parameter_brightness(self):
         data_aug = Data_Augmentation(cycles=1, scaling=False, rotations=False,
