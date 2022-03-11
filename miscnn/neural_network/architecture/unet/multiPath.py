@@ -1,3 +1,33 @@
+
+# ==============================================================================#
+#  Author:       Vilen Jumutc                                                   #
+#  Copyright:    2022 IT-Infrastructure for Translational Medical Research,     #
+#                University of Augsburg                                         #
+#                                                                               #
+#  This program is free software: you can redistribute it and/or modify         #
+#  it under the terms of the GNU General Public License as published by         #
+#  the Free Software Foundation, either version 3 of the License, or            #
+#  (at your option) any later version.                                          #
+#                                                                               #
+#  This program is distributed in the hope that it will be useful,              #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of               #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                #
+#  GNU General Public License for more details.                                 #
+#                                                                               #
+#  You should have received a copy of the GNU General Public License            #
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.        #
+# ==============================================================================#
+# -----------------------------------------------------#
+#                     Reference:                       #
+#           Jumutc, Vilen, Dmitrijs Bļizņuks,          #
+#              and Alexey Lihachev. 2022.              #
+#      "Multi-Path U-Net Architecture for Cell and     #
+#        Colony-Forming Unit Image Segmentation"       #
+#                 Sensors 22, no. 3: 990.              #
+#          https://doi.org/10.3390/s22030990           #
+# -----------------------------------------------------#
+#                   Library imports                    #
+# -----------------------------------------------------#
 import tensorflow_addons as tfa
 
 from tensorflow.keras.models import Model
