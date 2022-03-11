@@ -41,6 +41,10 @@ from miscnn.neural_network.architecture.abstract_architecture import Abstract_Ar
 #           Architecture class: U-Net Multi-Path       #
 # -----------------------------------------------------#
 """ The Multi-Path variant of the popular U-Net architecture.
+All strides defined as keys in self.feature.maps should be coherent
+i.e. resulting in the compatible feature maps which one can concatenate 
+along the kernel/filter axis. The number of paths in self.feature_maps
+is not bound and only is restricted by input dimensions and compute power. 
 Methods:
     __init__                Object creation function
     create_model_2D:        Creating the 2D Multi-Path U-Net model using Keras
@@ -70,7 +74,7 @@ class Architecture(Abstract_Architecture):
         self.layer_norm_params = layer_normalization_params
         # Dropout params
         self.dropout = dropout
-        # Create list of filters
+        # Create list of filters and coherent feature maps
         if feature_maps is None:
             self.feature_maps = {
                 4: [40, 240],
