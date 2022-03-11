@@ -9,13 +9,13 @@ from tensorflow.keras.layers import SpatialDropout2D, SpatialDropout3D, LeakyReL
 from miscnn.neural_network.architecture.abstract_architecture import Abstract_Architecture
 
 # -----------------------------------------------------#
-#           Architecture class: U-Net Plain           #
+#           Architecture class: U-Net Multi-Path       #
 # -----------------------------------------------------#
-""" The Plain variant of the popular U-Net architecture.
+""" The Multi-Path variant of the popular U-Net architecture.
 Methods:
     __init__                Object creation function
-    create_model_2D:        Creating the 2D U-Net plain model using Keras
-    create_model_3D:        Creating the 3D U-Net plain model using Keras
+    create_model_2D:        Creating the 2D Multi-Path U-Net model using Keras
+    create_model_3D:        Creating the 3D Multi-Path U-Net model using Keras
 """
 
 
