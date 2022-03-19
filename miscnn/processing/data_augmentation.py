@@ -79,18 +79,18 @@ class Data_Augmentation:
         self.contrast = contrast
         self.gamma = gamma
         self.gaussian_noise = gaussian_noise
-    
+
     def __eq__(self, other):
-        return (self.cycles == other.cycles and 
-        self.scaling == other.scaling and 
-        self.rotations == other.rotations and 
-        self.elastic_deform == other.elastic_deform and 
-        self.mirror == other.mirror and 
-        self.brightness == other.brightness and 
-        self.contrast == other.contrast and 
-        self.gamma == other.gamma and 
+        return (self.cycles == other.cycles and
+        self.scaling == other.scaling and
+        self.rotations == other.rotations and
+        self.elastic_deform == other.elastic_deform and
+        self.mirror == other.mirror and
+        self.brightness == other.brightness and
+        self.contrast == other.contrast and
+        self.gamma == other.gamma and
         self.gaussian_noise == other.gaussian_noise)
-    
+
     #---------------------------------------------#
     #            Run data augmentation            #
     #---------------------------------------------#
@@ -105,6 +105,7 @@ class Data_Augmentation:
         # Add mirror augmentation
         if self.mirror:
             aug_mirror = MirrorTransform(axes=self.config_mirror_axes)
+                                         # p_per_sample=self.config_p_per_sample) # removed when downgrading to batchgenerators==0.21
             transforms.append(aug_mirror)
         # Add contrast augmentation
         if self.contrast:

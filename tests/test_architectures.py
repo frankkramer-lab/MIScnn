@@ -129,6 +129,15 @@ class architectureTEST(unittest.TestCase):
         model3D.predict(self.sample_list3D)
 
     #-------------------------------------------------#
+    #                  U-Net Multi-Path               #
+    #-------------------------------------------------#
+    def test_ARCHITECTURES_UNET_multipath(self):
+        model2D = Neural_Network(self.pp2D, architecture=UNet_multiPath())
+        model2D.predict(self.sample_list2D)
+        model3D = Neural_Network(self.pp3D, architecture=UNet_multiPath())
+        model3D.predict(self.sample_list3D)
+
+    #-------------------------------------------------#
     #                   U-Net Dense                   #
     #-------------------------------------------------#
     def test_ARCHITECTURES_UNET_dense(self):
