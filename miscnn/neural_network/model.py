@@ -20,11 +20,13 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 # External libraries
-from tensorflow.distribute import MirroredStrategy, HierarchicalCopyAllReduce
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 import numpy as np
+import copy
 # Internal libraries/scripts
+from miscnn.multi_model.model import Model as BaseModel
 from miscnn.neural_network.metrics import dice_soft, tversky_loss
 from miscnn.neural_network.architecture.unet.standard import Architecture
 from miscnn.neural_network.data_generator import DataGenerator
@@ -33,7 +35,7 @@ from miscnn.neural_network.data_generator import DataGenerator
 #            Neural Network (model) class             #
 #-----------------------------------------------------#
 # Class which represents the Neural Network and which run the whole pipeline
-class Neural_Network:
+class Neural_Network(BaseModel):
     """ Initialization function for creating a Neural Network (model) object.
     This class provides functionality for handling all model methods.
     This class runs the whole pipeline and uses a Preprocessor instance to obtain batches.
@@ -59,27 +61,28 @@ class Neural_Network:
     """
     def __init__(self, preprocessor, architecture=Architecture(),
                  loss=tversky_loss, metrics=[dice_soft],
-                 learninig_rate=0.0001, batch_queue_size=2,
+                 learning_rate=0.0001, batch_queue_size=2,
                  workers=1, multi_gpu=False):
-        # Identify data parameters
-        self.three_dim = preprocessor.data_io.interface.three_dim
-        self.channels = preprocessor.data_io.interface.channels
-        self.classes = preprocessor.data_io.interface.classes
+        BaseModel.__init__(self, preprocessor)
         # Cache parameter
-        self.preprocessor = preprocessor
         self.loss = loss
         self.metrics = metrics
-        self.learninig_rate = learninig_rate
+        self.learning_rate = learning_rate
         self.batch_queue_size = batch_queue_size
         self.workers = workers
+        self.architecture = architecture
         # Build model with multiple GPUs (MirroredStrategy)
         if multi_gpu:
-            strategy = MirroredStrategy(cross_device_ops=HierarchicalCopyAllReduce())
+            strategy = tf.distribute.MirroredStrategy(
+                    cross_device_ops=tf.distribute.HierarchicalCopyAllReduce())
             with strategy.scope() : self.build_model(architecture)
         # Build model with single GPU
         else : self.build_model(architecture)
         # Cache starting weights
         self.initialization_weights = self.model.get_weights()
+        
+        #create for reference. needs to be reexamined
+        self.keep_batches = not(self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions)
 
 
     #---------------------------------------------#
@@ -95,21 +98,24 @@ class Neural_Network:
         # Assemble the input shape
         input_shape = (None,)
         # Initialize model for 3D data
+        
+        partitioner = self.preprocessor.partitioner
+        
         if self.three_dim:
             input_shape = (None, None, None, self.channels)
-            if not self.preprocessor.analysis == "fullimage":
-                input_shape = self.preprocessor.patch_shape + (self.channels,)
+            if not partitioner.analysis == "fullimage":
+                input_shape = partitioner.patch_shape + (self.channels,)
             self.model = architecture.create_model_3D(input_shape=input_shape,
                                                       n_labels=self.classes)
          # Initialize model for 2D data
         else:
             input_shape = (None, None, self.channels)
-            if not self.preprocessor.analysis == "fullimage":
-                input_shape = self.preprocessor.patch_shape + (self.channels,)
+            if not partitioner.analysis == "fullimage":
+                input_shape = partitioner.patch_shape + (self.channels,)
             self.model = architecture.create_model_2D(input_shape=input_shape,
                                                        n_labels=self.classes)
         # Compile model
-        self.model.compile(optimizer=Adam(lr=self.learninig_rate),
+        self.model.compile(optimizer=Adam(lr=self.learning_rate),
                            loss=self.loss, metrics=self.metrics)
 
     #---------------------------------------------#
@@ -139,8 +145,8 @@ class Neural_Network:
                        workers=self.workers,
                        max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
 
     #---------------------------------------------#
     #                 Prediction                  #
@@ -173,17 +179,17 @@ class Neural_Network:
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.cache.pop(sample)
+            sampleObj = self.preprocessor.partitioner.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output)
             # Backup predicted segmentation
             if return_output : results.append(pred_seg)
             else :
-              sampleObj.add_prediction(pred_seg)
+              sampleObj.add_prediction(pred_seg, activation_output)
               self.preprocessor.data_io.save_prediction(sampleObj)
             # Clean up temporary files if necessary
-            if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-                self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Output predictions results if direct output modus is active
         if return_output : return results
 
@@ -226,7 +232,7 @@ class Neural_Network:
                 pred_list.append(pred_batch)
             pred_seg = np.concatenate(pred_list, axis=0)
             # Postprocess prediction
-            sampleObj = self.preprocessor.cache.pop(sample)
+            sampleObj = self.preprocessor.partitioner.cache.pop(sample)
             pred_seg = self.preprocessor.postprocessing(sampleObj, pred_seg,
                                                         activation_output=True)
             # Backup predicted segmentation for current augmentation
@@ -266,6 +272,7 @@ class Neural_Network:
                                            self.preprocessor,
                                            training=True, validation=True,
                                            shuffle=self.shuffle_batches)
+        print("constructed data generation")
         # Run training & validation process with the Keras fit
         history = self.model.fit(dataGen_training,
                                  validation_data=dataGen_validation,
@@ -275,14 +282,25 @@ class Neural_Network:
                                  workers=self.workers,
                                  max_queue_size=self.batch_queue_size)
         # Clean up temporary files if necessary
-        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
-            self.preprocessor.data_io.batch_cleanup()
+        if not self.keep_batches:
+            self.preprocessor.batch_cleanup()
         # Return the training & validation history
         return history
 
     #---------------------------------------------#
     #               Model Management              #
     #---------------------------------------------#
+    def reset(self):
+        self.reset_weights()
+        self.model.compile(optimizer=Adam(lr=self.learning_rate),
+                           loss=self.loss, metrics=self.metrics)
+
+    def copy(self):
+        new_model = Neural_Network(self.preprocessor, self.architecture, self.loss, copy.deepcopy(self.metrics),
+            self.learning_rate, self.batch_queue_size, self.workers, False) #assume multi_gpu false because mirroring wqould be expensive with multiple models
+        new_model.model.set_weights(self.model.get_weights())
+        return new_model
+
     # Re-initialize model weights
     def reset_weights(self):
         self.model.set_weights(self.initialization_weights)
@@ -296,5 +314,5 @@ class Neural_Network:
         # Create model input path
         self.model = load_model(file_path, custom_objects, compile=False)
         # Compile model
-        self.model.compile(optimizer=Adam(lr=self.learninig_rate),
+        self.model.compile(optimizer=Adam(lr=self.learning_rate),
                            loss=self.loss, metrics=self.metrics)

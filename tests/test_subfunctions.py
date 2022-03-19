@@ -31,7 +31,8 @@ from miscnn import Data_IO, Preprocessor, Neural_Network
 from miscnn.data_loading.interfaces import Dictionary_interface
 from miscnn.data_loading.sample import Sample
 from miscnn.processing.subfunctions import *
-
+from multiprocessing import freeze_support
+freeze_support()
 #-----------------------------------------------------#
 #                Unittest: Subfunctions               #
 #-----------------------------------------------------#
@@ -114,11 +115,11 @@ class SubfunctionsTEST(unittest.TestCase):
             sample = dataio.sample_loader(index)
             for sf in pp.subfunctions:
                 sf.preprocessing(sample, training=False)
-            pp.cache["shape_" + str(index)] = sample.img_data.shape
+            pp.partitioner.cache["shape_" + str(index)] = sample.img_data.shape
             sample.seg_data = np.random.rand(9, 9, 9) * 3
             sample.seg_data = sample.seg_data.astype(int)
             sample.seg_data = to_categorical(sample.seg_data, num_classes=3)
-            data_patches = pp.analysis_patchwise_grid(sample, training=True,
+            data_patches = pp.partitioner.patch_grid(sample, training=True,
                                                       data_aug=False)
             seg_list = []
             for i in range(0, len(data_patches)):
@@ -266,6 +267,32 @@ class SubfunctionsTEST(unittest.TestCase):
             else : old_shape = (16,16,16)
             self.assertEqual(pred.shape, old_shape)
 
+    def test_SUBFUNCTIONS_RESIZE_postprocessing_activationOutput(self):
+        # Test for 2D and 3D
+        for dim in ["2D", "3D"]:
+            # Initialize Subfunction
+            if dim == "2D" : new_shape = (7,7)
+            else : new_shape = (7,7,7)
+            sf = Resize(new_shape=new_shape)
+            # Create sample objects
+            sample_pred = deepcopy(getattr(self, "sample" + dim))
+            sample_train = deepcopy(getattr(self, "sample" + dim + "seg"))
+            # Run preprocessing of the subfunction
+            sf.preprocessing(sample_train, training=True)
+            sf.preprocessing(sample_pred, training=False)
+            # Transform segmentation data to simulate prediction data
+            if dim == "2D":
+                sample_pred.pred_data = np.random.rand(16, 16, 3)
+            else:
+                sample_pred.pred_data = np.random.rand(16, 16, 16, 3)
+            # Run postprocessing of the subfunction
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data,
+                                     activation_output=True)
+            # Check for correctness
+            if dim == "2D" : old_shape = (16,16,3)
+            else : old_shape = (16,16,16,3)
+            self.assertEqual(pred.shape, old_shape)
+
     #-------------------------------------------------#
     #                   Resampling                    #
     #-------------------------------------------------#
@@ -327,8 +354,6 @@ class SubfunctionsTEST(unittest.TestCase):
     def test_SUBFUNCTIONS_RESAMPLING_postprocessing_activationOutput(self):
         # Test for 2D and 3D
         for dim in ["2D", "3D"]:
-            if dim == "2D" : continue
-
             # Initialize Subfunction
             if dim == "2D" : spacing = (1,1)
             else : spacing = (1,1,1)
@@ -345,11 +370,12 @@ class SubfunctionsTEST(unittest.TestCase):
             sf.preprocessing(sample_pred, training=False)
             # Transform segmentation data to simulate prediction data
             if dim == "2D":
-                sample_pred.pred_data = np.random.rand(16, 16, 3) * 3
+                sample_pred.pred_data = np.random.rand(16, 16, 3)
             else:
-                sample_pred.pred_data = np.random.rand(16, 16, 16, 3) * 3
+                sample_pred.pred_data = np.random.rand(16, 16, 16, 3)
             # Run postprocessing of the subfunction
-            pred = sf.postprocessing(sample_pred, sample_pred.pred_data)
+            pred = sf.postprocessing(sample_pred, sample_pred.pred_data,
+                                     activation_output=True)
             # Check for correctness
             if dim == "2D" : old_shape = (16,16,3)
             else : old_shape = (16,16,16,3)
@@ -464,10 +490,11 @@ class SubfunctionsTEST(unittest.TestCase):
                     self.assertTrue(np.array_equal(sample.seg_data,
                                     getattr(self, varname).seg_data))
                     if param in ["minmax", "grayscale"]:
-                        self.assertEqual(np.min(sample.img_data), 0)
                         if param == "minmax":
-                            self.assertEqual(np.max(sample.img_data), 1)
+                            self.assertTrue(np.min(sample.img_data) >= 0)
+                            self.assertTrue(np.max(sample.img_data) <= 1)
                         else:
+                            self.assertEqual(np.min(sample.img_data), 0)
                             self.assertEqual(np.max(sample.img_data), 255)
                     else:
                         self.assertTrue(np.min(sample.img_data) <= -1.0)

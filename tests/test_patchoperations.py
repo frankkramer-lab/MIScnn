@@ -27,7 +27,7 @@ import numpy as np
 #Internal libraries
 from miscnn import Data_IO
 from miscnn.data_loading.interfaces import Dictionary_interface
-from miscnn.utils.patch_operations import *
+from miscnn.processing.patching.patch_operations import *
 
 #-----------------------------------------------------#
 #              Unittest: Patch Operations             #

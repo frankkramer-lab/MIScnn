@@ -43,8 +43,9 @@ class Normalization(Abstract_Subfunction):
     #---------------------------------------------#
     #                Initialization               #
     #---------------------------------------------#
-    def __init__(self, mode="z-score"):
+    def __init__(self, mode="z-score", smooth=0.000001):
         self.mode = mode
+        self.e = smooth
 
     #---------------------------------------------#
     #                Preprocessing                #
@@ -58,20 +59,22 @@ class Normalization(Abstract_Subfunction):
             mean = np.mean(image)
             std = np.std(image)
             # Scaling
-            image_normalized = (image - mean) / std
+            image_normalized = (image - mean + self.e) / (std  + self.e)
         # Perform MinMax normalization between [0,1]
         elif self.mode == "minmax":
             # Identify minimum and maximum
             max_value = np.max(image)
             min_value = np.min(image)
             # Scaling
-            image_normalized = (image - min_value) / (max_value - min_value)
+            image_normalized = (image - min_value + self.e) / \
+                               (max_value - min_value + self.e)
         elif self.mode == "grayscale":
             # Identify minimum and maximum
             max_value = np.max(image)
             min_value = np.min(image)
             # Scaling
-            image_scaled = (image - min_value) / (max_value - min_value)
+            image_scaled = (image - min_value + self.e) / \
+                           (max_value - min_value + self.e)
             image_normalized = np.around(image_scaled * 255, decimals=0)
         else : raise NameError("Subfunction - Normalization: Unknown modus")
         # Update the sample with the normalized image
@@ -80,5 +83,5 @@ class Normalization(Abstract_Subfunction):
     #---------------------------------------------#
     #               Postprocessing                #
     #---------------------------------------------#
-    def postprocessing(self, sample, prediction):
+    def postprocessing(self, sample, prediction, activation_output=False):
         return prediction

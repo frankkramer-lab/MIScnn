@@ -58,8 +58,8 @@ class Sample:
         self.seg_data = seg
 
     # Add and preprocess a prediction annotation
-    def add_prediction(self, pred):
-        if pred.shape[-1] != 1:
+    def add_prediction(self, pred, activation_output=False):
+        if pred.shape[-1] != 1 and not activation_output:
             pred = numpy.reshape(pred, pred.shape + (1,))
         self.pred_data = pred
 
