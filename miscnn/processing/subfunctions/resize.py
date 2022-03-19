@@ -61,7 +61,8 @@ class Resize(Abstract_Subfunction):
         # Resize imaging data
         img_data, seg_data = augment_resize(img_data, seg_data, self.new_shape,
                                             order=self.order_img,
-                                            order_seg=self.order_seg)
+                                            order_seg=self.order_seg,
+                                            cval_seg=0)
         # Transform data from channel-first back to channel-last structure
         img_data = np.moveaxis(img_data, 0, -1)
         if training : seg_data = np.moveaxis(seg_data, 0, -1)
@@ -86,7 +87,7 @@ class Resize(Abstract_Subfunction):
         # Resize segmentation data
         if not activation_output:
             prediction = resize_segmentation(prediction, target_shape,
-                                             order=self.order_seg)
+                                             order=self.order_seg, cval=0)
         else:
             prediction = resize_manual(prediction, target_shape,
                                        order=self.order_seg, mode="edge",

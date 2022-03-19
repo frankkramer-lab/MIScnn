@@ -62,9 +62,6 @@ def detailed_validation(validation_samples, model, evaluation_path):
         scores.extend(dice_scores)
         backup_evaluation(scores, evaluation_path, start=False)
         # Visualize the truth and prediction segmentation
-        
-        visualize_samples([sample], evaluation_path, True, True, model.preprocessor.data_io, model.preprocessor)
-        #visualize_evaluation(sample_index, img, seg, pred, evaluation_path)
         # visualize_samples([sample], out_dir=evaluation_path, mask_seg=True,
         #                   mask_pred = True)
 
