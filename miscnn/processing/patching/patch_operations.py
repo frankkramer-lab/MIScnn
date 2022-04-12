@@ -109,14 +109,14 @@ def pad(A, size, overlap):
 
 def crop(A, size, patch_size, overlap):
     _, pad_shape, _ = calcPadding(size, patch_size, overlap)
-    
     if (len(pad_shape) >= 3):
         return A[pad_shape[0][0]:-pad_shape[0][1], pad_shape[1][0]:-pad_shape[1][1], pad_shape[2][0]:-pad_shape[2][1]]
     elif (len(pad_shape) >= 2):
         return A[pad_shape[0][0]:-pad_shape[0][1], pad_shape[1][0]:-pad_shape[1][1]]
 
 def unpatch_3D(A, orig_size, overlap):
-    stride, pad_shape, padded_shape = calcPadding(orig_size, A.shape[1:], overlap)
+    patch_shape = A.shape[1:]
+    stride, pad_shape, padded_shape = calcPadding(orig_size, patch_shape, overlap)
     
     extra = A.shape[1 + len(overlap):]
     
@@ -143,14 +143,15 @@ def unpatch_3D(A, orig_size, overlap):
     
     #unpad the image according to the calculated values
     if any([ a[1] > 0 for a in pad_shape]): 
-        unpad = crop(res, orig_size, A.shape[len(overlap):], overlap)
+        unpad = crop(res, orig_size, patch_shape, overlap)
     else:
         unpad = res
     
     return np.nanmean(unpad, axis = -1)
 
 def unpatch_2D(A, orig_size, overlap):
-    stride, pad_shape, padded_shape = calcPadding(orig_size, A.shape[1:], overlap)
+    patch_shape = A.shape[1:]
+    stride, pad_shape, padded_shape = calcPadding(orig_size, patch_shape, overlap)
     
     extra = A.shape[1 + len(overlap):]
     
@@ -175,9 +176,9 @@ def unpatch_2D(A, orig_size, overlap):
     
     #unpad the image according to the calculated values
     if any([ a[1] > 0 for a in pad_shape]): 
-        unpad = crop(res, orig_size, A.shape[len(overlap):], overlap)
+        unpad = crop(res, orig_size, patch_shape, overlap)
     else:
         unpad = res
-    
+        
     return np.nanmean(unpad, axis = -1)
     

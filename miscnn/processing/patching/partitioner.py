@@ -24,20 +24,21 @@ from miscnn.processing.data_augmentation import Data_Augmentation
 
 class Partitioner():
     """
-
+    
     analysis (string):                      Modus selection of analysis type. Options:
                                             - "fullimage":      Analysis of complete image data
                                             - "patchwise-crop": Analysis of random cropped patches from the image
                                             - "patchwise-grid": Analysis of patches by splitting the image into a grid
     patch_shape (integer tuple):            Size and shape of a patch. The variable has to be defined as a tuple.
                                             For Example: (64,128,128) for 64x128x128 patch cubes.
-                                            This parameter will be redundant if fullimage analysis is selected!!
+                                            Be aware that the x-axis represents the number of slices in 3D volumes.
+                                            This parameter will be redundant if fullimage or patchwise-crop analysis is selected!!
     """
-    def __init__(self, three_dim, analysis, patch_shape=None, patchwise_overlap = (0,0,0),
+    def __init__(self, three_dim, analysis, patch_shape=None, patchwise_overlap = (0,0,0), 
                  patchwise_skip_blanks = False, patchwise_skip_class = 0, *argv, **kwargs):
-
+        
         self.three_dim = three_dim
-
+        
         # Exception: Analysis parameter check
         analysis_types = ["patchwise-crop", "patchwise-grid", "fullimage"]
         if not isinstance(analysis, str) or analysis not in analysis_types:
@@ -49,23 +50,23 @@ class Partitioner():
                              "patchwise analysis.")
         self.analysis = analysis
         self.patch_shape = patch_shape
-
+        
         self.patchwise_overlap = patchwise_overlap                      # In patchwise_analysis, an overlap can be defined between adjuncted patches.
         self.patchwise_skip_blanks = patchwise_skip_blanks              # In patchwise_analysis, patches, containing only the background annotation,
                                                                         # can be skipped with this option. This result into only
                                                                         # training on relevant patches and ignore patches without any information.
         self.patchwise_skip_class = patchwise_skip_class                # Class, which will be skipped if patchwise_skip_blanks is True
         self.cache = dict()                                             # Cache additional information and data for patch assembling after patchwise prediction
-
-
+    
+    
     def patch(self, sample, training, data_augmentation):
-
+        
         index = sample.index
-
+        
         if not training : self.cache[index] = sample
-
+        
         ready_data = None
-
+        
         # Run Fullimage analysis
         if self.analysis == "fullimage":
             ready_data = self.full_image(sample, training, data_augmentation)
@@ -77,9 +78,9 @@ class Partitioner():
             if not training:
                 self.cache["shape_" + str(index)] = sample.img_data.shape
             ready_data = self.patch_grid(sample, training, data_augmentation)
-
+        
         return ready_data
-
+    
     def unpatch(self, sample, prediction):
         if self.analysis == "patchwise-crop" or \
             self.analysis == "patchwise-grid":
@@ -96,10 +97,10 @@ class Partitioner():
                                     three_dim=self.three_dim)
         # For fullimages remove the batch axis
         else : prediction = np.squeeze(prediction, axis=0)
-
+        
         return prediction
-
-
+    
+    
     #---------------------------------------------#
     #           Patch-wise grid Analysis          #
     #---------------------------------------------#
@@ -207,7 +208,7 @@ class Partitioner():
         # Create tuple of preprocessed data
         ready_data = list(zip(img_data, seg_data))
         # Return preprocessed data tuple
-
+        
         return ready_data
 
     #---------------------------------------------#
