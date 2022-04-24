@@ -1,6 +1,6 @@
 #==============================================================================#
-#  Author:       Dominik Müller                                                #
-#  Copyright:    2020 IT-Infrastructure for Translational Medical Research,    #
+#  Author:       Dominik Müller, Philip Meyer, Dennis Hartmann                 #
+#  Copyright:    2022 IT-Infrastructure for Translational Medical Research,    #
 #                University of Augsburg                                        #
 #                                                                              #
 #  This program is free software: you can redistribute it and/or modify        #
@@ -148,7 +148,6 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
             raise ValueError("Cannot interpret an object of type " + str(type(sample)) + " as a sample")
     
     return res
-
 
 def display_2D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_overlay=None, colorbar=False):
     grad_overlay = grad_overlay.astype(np.uint8)
