@@ -72,6 +72,7 @@ class VisualizerTEST(unittest.TestCase):
         # Initialize Data IO
         self.data_io3D = Data_IO(io_interface3D, input_path="", output_path="",
                               batch_path=tmp_batches, delete_batchDir=False)
+        self.tmp_dir_out = tempfile.TemporaryDirectory(prefix="tmp.miscnn.")
 
 
     # Delete all temporary files
@@ -79,7 +80,7 @@ class VisualizerTEST(unittest.TestCase):
     def tearDownClass(self):
         self.tmp_dir2D.cleanup()
         self.tmp_dir3D.cleanup()
-
+        self.tmp_dir_out.cleanup()
     def test_VISUALIZER_dimensionality(self):
         sample_list = self.data_io2D.get_indiceslist()
         for s in sample_list:
@@ -98,14 +99,35 @@ class VisualizerTEST(unittest.TestCase):
         sample_list = self.data_io2D.get_indiceslist()
         for s in sample_list:
             sample = self.data_io2D.sample_loader(s, load_seg=True)
-            res = normalize(sample.img_data, to_greyscale = True, normalize = True)
-            self.assertEqual(res, (16,16))
-            res = normalize(sample.seg_data, to_greyscale = True, normalize = True)
-            self.assertEqual(res, (16,16))
+            res = normalize(sample.img_data, to_greyscale = False, normalize = True)
+            self.assertEqual(res.shape, (16,16))
+            res = normalize(sample.seg_data, to_greyscale = False, normalize = False)
+            self.assertEqual(res.shape, (16,16))
         sample_list = self.data_io3D.get_indiceslist()
         for s in sample_list:
             sample = self.data_io3D.sample_loader(s, load_seg=True)
             res = normalize(sample.img_data, to_greyscale = True, normalize = True)
-            self.assertEqual(res, (16, 16, 16))
-            res = normalize(sample.seg_data, to_greyscale = True, normalize = True)
-            self.assertEqual(res, (16, 16, 16))
+            self.assertEqual(res.shape, (16, 16, 16))
+            res = normalize(sample.seg_data, to_greyscale = False, normalize = False)
+            self.assertEqual(res.shape, (16, 16, 16))
+    
+    
+    def test_VISUALIZER_toSamples(self):
+        lst = to_samples([
+            self.data_io3D.sample_loader(self.data_io3D.get_indiceslist()[0], load_seg=True), 
+            self.data_io3D.get_indiceslist()[1], 
+            (np.random.rand(16, 16, 16) * 255).astype(int)
+            ], data_io = self.data_io3D)
+        self.assertTrue(all(isinstance(l, Sample) for l in lst))
+        
+    def test_VISUALIZER_display(self):
+        #visualize_samples(sample_list, out_dir="vis", mask_seg=False, mask_pred=True, data_io=None, preprocessing=None, progress=False, to_grey=True, colorbar=False):
+        
+        sample_list = self.data_io2D.get_indiceslist()
+        visualize_samples(sample_list, out_dir=self.tmp_dir_out.name, mask_seg=True, mask_pred=False, data_io=self.data_io2D)
+        
+        sample_list = self.data_io3D.get_indiceslist()
+        visualize_samples(sample_list, out_dir=self.tmp_dir_out.name, mask_seg=True, mask_pred=False, data_io=self.data_io3D)
+        
+        
+    
