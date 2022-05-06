@@ -304,9 +304,35 @@ class Neural_Network(BaseModel):
         self.model.save(file_path)
 
     # Load model from file
-    def load(self, file_path, custom_objects={}):
+    def load(self, file_path, custom_objects={}, training_samples, validation_samples, epochs=20,
+                 iterations=None, callbacks=[], class_weight=None):
         # Create model input path
         self.model = load_model(file_path, custom_objects, compile=False)
         # Compile model
         self.model.compile(optimizer=Adam(lr=self.learning_rate),
                            loss=self.loss, metrics=self.metrics)
+        
+        # Initialize a Keras Data Generator for generating Training data
+        dataGen_training = DataGenerator(training_samples, self.preprocessor,
+                                         training=True, validation=False,
+                                         shuffle=self.shuffle_batches,
+                                         iterations=iterations)
+        # Initialize a Keras Data Generator for generating Validation data
+        dataGen_validation = DataGenerator(validation_samples,
+                                           self.preprocessor,
+                                           training=True, validation=True,
+                                           shuffle=self.shuffle_batches)
+        print("constructed data generation")
+        # Run training & validation process with the Keras fit
+        history = self.model.fit(dataGen_training,
+                                 validation_data=dataGen_validation,
+                                 callbacks=callbacks,
+                                 epochs=epochs,
+                                 class_weight=class_weight,
+                                 workers=self.workers,
+                                 max_queue_size=self.batch_queue_size)
+        # Clean up temporary files if necessary
+        if self.preprocessor.prepare_batches or self.preprocessor.prepare_subfunctions:
+            self.preprocessor.data_io.batch_cleanup()
+        # Return the training & validation history
+        return history
