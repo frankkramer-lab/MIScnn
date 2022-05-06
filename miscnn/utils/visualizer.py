@@ -1,6 +1,6 @@
 #==============================================================================#
-#  Author:       Dominik Müller                                                #
-#  Copyright:    2020 IT-Infrastructure for Translational Medical Research,    #
+#  Author:       Dominik Müller, Philip Meyer, Dennis Hartmann                 #
+#  Copyright:    2022 IT-Infrastructure for Translational Medical Research,    #
 #                University of Augsburg                                        #
 #                                                                              #
 #  This program is free software: you can redistribute it and/or modify        #
@@ -20,6 +20,7 @@
 #                   Library imports                   #
 #-----------------------------------------------------#
 #External libraries
+from copy import deepcopy
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -27,6 +28,9 @@ import numpy as np
 import os
 import random
 import functools
+
+from tqdm import tqdm
+
 from miscnn.data_loading.sample import Sample
 
 #-----------------------------------------------------#
@@ -42,40 +46,46 @@ def normalize_volume(sample, to_greyscale=False, normalize=True):
         raise RuntimeError("Expected sample to be a 3 dimensional volume")
     if (to_greyscale and not len(sample.shape) in (3, 4)):
         raise RuntimeError("Sample is not RGB")
-
+        
     img = sample
-    if (to_greyscale):
-        img[:, :, :] = vec_luminosity(img[:, :, :, 0], img[:, :, :, 1], img[:, :, :, 2])
-    elif (len(sample.shape) == 4 and sample.shape[-1] == 1):
-        img = np.squeeze(img, axis=-1)
+    
+    if (len(sample.shape) == 4):
+        if (sample.shape[-1] == 1):
+            img = np.squeeze(img, axis=-1)
+        elif (to_greyscale and sample.shape[-1] == 3): 
+            img[:, :, :] = vec_luminosity(img[:, :, :, 0], img[:, :, :, 1], img[:, :, :, 2])
+    
+        
+        
+    
     if (normalize):
         img = 255 * (img - np.min(img)) / np.ptp(img)
         img = img.astype(int)
-
+    
     return img
-
+    
 def normalize_image(sample, to_greyscale=False, normalize=True):
-    if (len(sample.shape) > 3 or len(sample.shape) < 2):
+    if len(sample.shape) > 3 or len(sample.shape) < 2:
         raise RuntimeError("Expected sample to be a 2 dimensional image")
-    if (to_greyscale and not len(sample.shape) == 3):
+    if to_greyscale and not len(sample.shape) == 3:
         raise RuntimeError("Sample is not RGB")
 
     img = sample
 
-    if (to_greyscale):
-        img[:, :] = vec_luminosity(img[:, :, 0], img[:, :, 1], img[:, :, 2])
-    elif (len(sample.shape) == 3 and sample.shape[-1] == 1):
+    if to_greyscale:
+        img = img[..., 0]  # Changed to 2 dim for greyscale conversion in next step
+        img[:, :] = vec_luminosity(sample[:, :, 0], sample[:, :, 1], sample[:, :, 2])
+    elif len(img.shape) == 3 and img.shape[-1] == 1:
         img = np.squeeze(img, axis=-1)
 
-    if (normalize):
-        img = 255 * (img - np.min(img)) / np.ptp(img)
+    if normalize:
+        img = (img - np.min(img)) / np.ptp(img) * 255  # 255 must be at end otherwise false results
         img = img.astype(int)
-
+    
     return img
 
 def detect_dimensionality(sample):
     shape_size = len(sample.shape)
-
     if (shape_size == 1):
         raise RuntimeError("Only has one dimension") #this is just a graph tbh
     elif (shape_size == 2):
@@ -96,7 +106,7 @@ def normalize(sample, to_greyscale=False, normalize=True):
         return normalize_image(sample, to_greyscale, normalize)
     elif dimensionality == 3:
         return normalize_volume(sample, to_greyscale, normalize)
-
+    
 def compute_preprocessed_sample(sample, subfunctions):
     for func in subfunctions:
         func.preprocessing(sample)
@@ -111,13 +121,14 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
         seg = True
     else:
         seg = load_seg
-
+        
     if load_pred is None:
         pred = True
     else:
         pred = load_pred
-
+    
     res = []
+    
     for sample in sample_list:
         if isinstance(sample, Sample):
             if load_seg is None:
@@ -127,37 +138,115 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
             res.append(sample)
             continue
         elif isinstance(sample, str):
-            res.append(load_samples([sample], data_io, seg, pred))
+            res.extend(load_samples([sample], data_io, seg, pred))
         elif isinstance(sample, np.ndarray):
-            sampleObj = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0))
-            sampleObj.img_data = sample
-            res.append(sampleObj);
+            s = Sample("ndarray_" + str(random.choice(range(999999999))), sample, 1, 0)
+            s.img_data = sample
+            res.append(s)
         else:
             raise ValueError("Cannot interpret an object of type " + str(type(sample)) + " as a sample")
-
+    
     return res
 
+def display_2D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_overlay=None, colorbar=False):
+    grad_overlay = grad_overlay.astype(np.uint8)
+    if activation_overlay is not None:
+        activation_overlay = activation_overlay.astype(np.uint8)
+
+    fig.supxlabel(x_name)
+    fig.supylabel(y_name)
+
+    # TODO: img not defined, figure wasn't shown nor saved by the next lines
+    if activation_overlay is not None:
+        imgs = [[img.imshow(activation_overlay[cls]) for cls, img in enumerate(img)] if k == 0 else [img.imshow(grad_overlay[cls]) for cls, img in enumerate(img_1)] for k, img_1 in enumerate(axes)]
+    else:
+        imgs = [img.imshow(grad_overlay[cls]) for cls, img in enumerate(axes)]
+    # Temp fix
+    if colorbar:
+        fig.subplots_adjust(right=0.8)
+        fig.tight_layout(rect=[3, 0, 1, 0.95])
+        if len(imgs) == 1:
+            cbar_ax = fig.add_axes([0.85, 0.071, 0.05, 0.86])
+        else:
+            cbar_ax = fig.add_axes([0.85, 0.25, 0.03, 0.5])
+        fig.colorbar(imgs[-1], cax=cbar_ax)
+    for i in range(len(imgs)):
+        if len(imgs) == 1:
+            fig.savefig(out_path)
+        else:
+            fig.savefig(f'{out_path[:-4]}_{i}{out_path[-4:]}')
 
 
-def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred = True, data_io = None, preprocessing = None, progress = False):
-    #create a homogenous datastructure
+def display_3D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_overlay=None, colorbar=False):
+    grad_overlay = grad_overlay.astype(np.uint8)
+    if activation_overlay is not None:
+        activation_overlay = activation_overlay.astype(np.uint8)
+    
+    fig.supxlabel(x_name)
+    fig.supylabel(y_name)
+    
+    data = np.zeros(grad_overlay.shape[2:4])
+    
+    
+    if activation_overlay is not None:
+        imgs = [[a.imshow(data) for a in _a] for _a in axes] #axes are assumed to be 2D
+        # Update function for both images to show the slice for the current frame
+        def update(imgs, i):
+            for _a in axes:
+                for a in _a:
+                    a.set_title("Slice: " + str(i))
+            imgs = [[im.set_data(activation_overlay[cls, i]) for cls, im in enumerate(img_1)] if k == 0 else [im.set_data(grad_overlay[cls, i]) for cls, im in enumerate(img_1)] for k, img_1 in enumerate(imgs)]
+            return imgs
+    else:
+        imgs = [a.imshow(data) for a in axes] #axes are assumed to be flat
+        # Update function for both images to show the slice for the current frame
+        def update(imgs, i):
+            for a in axes:
+                a.set_title("Slice: " + str(i))
+            imgs = [img.set_data(grad_overlay[cls, i]) for cls, img in enumerate(imgs)]
+            return imgs
+    # Compute the animation (gif)
+    ani = animation.FuncAnimation(fig, functools.partial(update, imgs), frames=len(grad_overlay[0]), interval=10,
+                                  repeat_delay=0, blit=False)
+    
+    # Save the animation (gif)
+    ani.save(out_path, writer='imagemagick', fps=30)
+
+# Everything with threed is new to_grey as new Parameter for greyscale imgs
+def visualize_samples(sample_list, out_dir="vis", mask_seg=False, mask_pred=True, data_io=None,
+                      preprocessing=None, progress=False, to_grey=True, colorbar=False):
+    # create a homogenous datastructure
     samples = to_samples(sample_list, data_io, mask_seg, mask_pred)
-
+    
+    
     #apply potential preprocessing
     if preprocessing is not None:
-        samples = [compute_preprocessed_sample(s, preprocessing) for s in samples]
+        # Needed for overlay_segmentation_greyscale because of different shapes
+        temp = deepcopy(samples)
 
-    #normalize images both in data and structure
+        samples = [compute_preprocessed_sample(s, preprocessing.subfunctions) for s in samples]
+
+        if all([s.pred_data.shape != s.seg_data.shape for s in samples]):
+            for i in range(len(samples)):
+                temp[i].seg_data = temp[i].pred_data[:]
+                temp[i] = compute_preprocessed_sample(temp[i], preprocessing.subfunctions)
+                samples[i].pred_data = temp[i].seg_data[:]
+        del temp
+
+    # normalize images both in data and structure
     
     if progress:
-        from tqdm import tqdm
         it = tqdm(samples, desc="Visualizing: ")
     else:
         it = samples
     
     for sample in it:
+        sample.img_data = normalize(sample.img_data, to_greyscale=(to_grey and sample.img_data.shape[-1] == 3), normalize=True)
         
-        sample.img_data = normalize(sample.img_data, to_greyscale=True, normalize=True)
+        display = display_2D
+        if detect_dimensionality(sample.img_data) == 3:
+            display = display_3D
+            
         if sample.seg_data is not None:
             sample.seg_data = normalize(sample.seg_data, to_greyscale=False, normalize=False)
         elif mask_seg:
@@ -166,80 +255,43 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             sample.pred_data = normalize(sample.pred_data, to_greyscale=False, normalize=False)
         elif mask_pred:
             raise RuntimeError("Sample " + sample.index + " lacks the prediction needed for generating the mask")
+        
+        
+        # Set up the output path for the gif
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
 
-        ani = None
+        if detect_dimensionality(sample.img_data) == 3:
+            file_name = "visualization.case_" + str(sample.index).zfill(5) + ".gif"
+        else:
+            file_name = "visualization.case_" + str(sample.index).zfill(5) + ".png"
+        out_path = os.path.join(out_dir, file_name)
+        
         if mask_seg and mask_pred:
             vol_truth = overlay_segmentation_greyscale(sample.img_data, sample.seg_data)
             vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
             fig, (ax1, ax2) = plt.subplots(1, 2)
-            # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(vol_truth.shape[1:3])
             ax1.set_title("Ground Truth")
             ax2.set_title("Prediction")
-            img1 = ax1.imshow(data)
-            img2 = ax2.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img1.set_data(vol_truth[i])
-                img2.set_data(vol_pred[i])
-                return [img1, img2]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(truth), interval=10,
-                                          repeat_delay=0, blit=False)
+            display(out_path, fig, [ax1, ax2], "", "", np.stack([vol_truth, vol_pred], axis = 0))
+            
+            
         elif mask_seg:
             vol_truth = overlay_segmentation_greyscale(sample.img_data, sample.seg_data)
             fig, ax = plt.subplots()
-            # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(vol_truth.shape[1:3])
             ax.set_title("Segmentation")
-            img = ax.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img.set_data(vol_truth[i])
-                return [img]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(vol_truth), interval=10,
-                                          repeat_delay=0, blit=False)
+            display(out_path, fig, [ax], "", "", np.expand_dims(vol_truth, axis = 0))
         elif mask_pred:
             vol_pred = overlay_segmentation_greyscale(sample.img_data, sample.pred_data)
             fig, ax = plt.subplots()
             # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(vol_pred.shape[1:3])
             ax.set_title("Segmentation")
-            img = ax.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img.set_data(vol_pred[i])
-                return [img]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(vol_pred), interval=10,
-                                          repeat_delay=0, blit=False)
+            display(out_path, fig, [ax], "", "", np.expand_dims(vol_pred, axis=0), colorbar=colorbar)
         else:
             fig, ax = plt.subplots()
-            # Initialize the two subplots (axes) with an empty 512x512 image
-            data = np.zeros(sample.img_data.shape[1:3])
-            ax.set_title("Segmentation")
-            img = ax.imshow(data)
-            # Update function for both images to show the slice for the current frame
-            def update(i):
-                plt.suptitle("Case ID: " + str(sample.index) + " - " + "Slice: " + str(i))
-                img.set_data(sample.img_data[i])
-                return [img]
-            # Compute the animation (gif)
-            ani = animation.FuncAnimation(fig, update, frames=len(sample.img_data), interval=10,
-                                          repeat_delay=0, blit=False)
+            ax.set_title("Image")
+            display(out_path, fig, [ax], "", "", np.expand_dims(sample.img_data, axis = 0))
 
-
-        # Set up the output path for the gif
-        if not os.path.exists(out_dir):
-            os.mkdir(out_dir)
-        file_name = "visualization.case_" + str(sample.index).zfill(5) + ".gif"
-        out_path = os.path.join(out_dir, file_name)
-        # Save the animation (gif)
-        ani.save(out_path, writer='imagemagick', fps=30)
         # Close the matplot
         plt.close()
 
@@ -248,43 +300,43 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
     fp_color = [153,12,12]
     fn_color = [3,92,135]
     #true negative is blank as it would create confusion
-
+    
     if sample.seg_data is None or sample.pred_data is None:
         raise ValueError("Sample needs to have both a segmentation and a prediction map.")
-
+    
     sample = to_samples([sample])
-
+    
     vol_greyscale = normalize(sample.img_data)
-
+    
     if classes is None:
         classes = np.unique(sample.seg_data)
         sample.seg_data = np.squeeze(sample.seg_data, axis=-1)
-
+    
     # Convert volume to RGB
     vol_rgb = np.stack([vol_greyscale, vol_greyscale, vol_greyscale], axis=-1)
-
+    
     for c in classes:
         seg_rgb = np.zeros((sample.img_data.shape[0], sample.img_data.shape[1], sample.img_data.shape[2], 3), dtype=np.int)
-
+        
         seg_broadcast_arr = np.equal(sample.seg_data, c)
         pred_broadcast_arr = np.equal(sample.pred_data, c)
-
+        
         seg_rgb[ seg_broadcast_arr & pred_broadcast_arr ] = tp_color
         seg_rgb[np.logical_not(seg_broadcast_arr) & pred_broadcast_arr] = fp_color
         seg_rgb[seg_broadcast_arr & np.logical_not(pred_broadcast_arr)] = fn_color
-
+        
         # Get binary array for places where an ROI lives
         segbin = np.greater(sample.seg_data, 0) | np.greater(sample.pred_data, 0)
         repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
-
+        
         # Weighted sum where there's a value to overlay
         vol_overlayed = np.where(
             repeated_segbin,
             np.round(alpha*seg_rgb+(1-alpha)*vol_rgb).astype(np.uint8),
             np.round(vol_rgb).astype(np.uint8)
         )
-
-
+        
+        
         fig, ax = plt.subplots()
         # Initialize the plot with an empty image
         data = np.zeros(vol_overlayed.shape[1:3])
@@ -313,11 +365,16 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
 #-----------------------------------------------------#
 # Based on: https://github.com/neheller/kits19/blob/master/starter_code/visualize.py
 def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolerance = -0.1):
+    
+    vol = np.squeeze(vol)
+    seg = np.squeeze(seg)
+    
     # Convert volume to RGB
     vol_rgb = np.stack([vol, vol, vol], axis=-1)
     # Initialize segmentation in RGB
     shp = seg.shape
-    seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
+    
+    seg_rgb = np.zeros((shp + (3,)), dtype=np.int)
     
     # Set class to appropriate color
     cmap = matplotlib.cm.get_cmap(cm)
@@ -325,19 +382,19 @@ def overlay_segmentation_greyscale(vol, seg, cm="viridis", alpha=0.3, min_tolera
     if np.issubdtype(seg.dtype, np.integer):
         uniques = np.unique(seg)
         for u in uniques:
-            seg_rgb[np.equal(seg, u)] = cmap(u / len(uniques))[0:3] * 255
+            seg_rgb[np.equal(seg, u)] = np.asarray(cmap(u / len(uniques))[:3]) * 255
     else:
         seg = (seg-np.min(seg)) / np.ptp(seg)
-        seg_rgb = cmap(seg)[..., 0:3] * 255
+        seg_rgb = cmap(seg)[..., :3] * 255
     
     seg_rgb = seg_rgb.astype(np.uint8)
     
     # Get binary array for places where an ROI lives
     
-    segbin = seg > 0
+    segbin = seg >= min_tolerance
     
     repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
-
+    
     # Weighted sum where there's a value to overlay
     vol_overlayed = np.where(
         repeated_segbin,

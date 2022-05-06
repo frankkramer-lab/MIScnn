@@ -23,7 +23,7 @@ setup(
                      'pandas>=1.1.4',
                      'tqdm>=4.51.0',
                      'nibabel>=3.1.0',
-                     'matplotlib>=3.3.1',
+                     'matplotlib>=3.5.0',
                      'pillow>=8.3.2',
                      'batchgenerators==0.21',
                      'pydicom>=2.0.0',
