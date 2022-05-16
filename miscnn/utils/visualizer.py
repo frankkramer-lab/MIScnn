@@ -215,6 +215,7 @@ def display_3D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_ove
 # Everything with threed is new to_grey as new Parameter for greyscale imgs
 def visualize_samples(sample_list, out_dir="vis", mask_seg=False, mask_pred=True, data_io=None,
                       preprocessing=None, progress=False, to_grey=True, colorbar=False):
+                      
     # create a homogenous datastructure
     samples = to_samples(sample_list, data_io, mask_seg, mask_pred)
     
@@ -225,14 +226,12 @@ def visualize_samples(sample_list, out_dir="vis", mask_seg=False, mask_pred=True
         temp = deepcopy(samples)
 
         samples = [compute_preprocessed_sample(s, preprocessing.subfunctions) for s in samples]
-
         if all([s.pred_data.shape != s.seg_data.shape for s in samples]):
             for i in range(len(samples)):
                 temp[i].seg_data = temp[i].pred_data[:]
                 temp[i] = compute_preprocessed_sample(temp[i], preprocessing.subfunctions)
                 samples[i].pred_data = temp[i].seg_data[:]
         del temp
-
     # normalize images both in data and structure
     
     if progress:
