@@ -28,7 +28,7 @@
 #-----------------------------------------------------#
 # External libraries
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, concatenate
+from tensorflow.keras.layers import Input, concatenate, Activation
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv3DTranspose
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Conv2DTranspose
 from tensorflow.keras.layers import BatchNormalization
@@ -92,8 +92,8 @@ class Architecture(Abstract_Architecture):
                                            self.ba_norm_momentum)
 
         # Output Layer
-        conv_out = Conv2D(n_labels, (1, 1),
-                   activation=self.activation)(cnn_chain)
+        end = Conv2D(n_labels, (1, 1))(cnn_chain)
+        conv_out = Activation(self.activation)(end)
         # Create Model with associated input and output layers
         model = Model(inputs=[inputs], outputs=[conv_out])
         # Return model
@@ -132,8 +132,8 @@ class Architecture(Abstract_Architecture):
                                            self.ba_norm_momentum)
 
         # Output Layer
-        conv_out = Conv3D(n_labels, (1, 1, 1),
-                   activation=self.activation)(cnn_chain)
+        end = Conv3D(n_labels, (1, 1, 1))(cnn_chain)
+        conv_out = Activation(self.activation)(end)
         # Create Model with associated input and output layers
         model = Model(inputs=[inputs], outputs=[conv_out])
         # Return model
