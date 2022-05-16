@@ -1,6 +1,6 @@
 #==============================================================================#
 #  Author:       Philip Meyer, Dennis Hartmann                                 #
-#  Copyright:    2020 IT-Infrastructure for Translational Medical Research,    #
+#  Copyright:    2022 IT-Infrastructure for Translational Medical Research,    #
 #                University of Augsburg                                        #
 #                                                                              #
 #  This program is free software: you can redistribute it and/or modify        #
