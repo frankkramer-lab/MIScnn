@@ -1,6 +1,6 @@
 #==============================================================================#
-#  Author:       Dominik Müller                                                #
-#  Copyright:    2020 IT-Infrastructure for Translational Medical Research,    #
+#  Author:       Dominik Müller, Philip Meyer, Dennis Hartmann                 #
+#  Copyright:    2022 IT-Infrastructure for Translational Medical Research,    #
 #                University of Augsburg                                        #
 #                                                                              #
 #  This program is free software: you can redistribute it and/or modify        #
@@ -86,7 +86,6 @@ def normalize_image(sample, to_greyscale=False, normalize=True):
 
 def detect_dimensionality(sample):
     shape_size = len(sample.shape)
-    
     if (shape_size == 1):
         raise RuntimeError("Only has one dimension") #this is just a graph tbh
     elif (shape_size == 2):
@@ -139,16 +138,15 @@ def to_samples(sample_list, data_io = None, load_seg = None, load_pred = None):
             res.append(sample)
             continue
         elif isinstance(sample, str):
-            res.append(load_samples([sample], data_io, seg, pred))
+            res.extend(load_samples([sample], data_io, seg, pred))
         elif isinstance(sample, np.ndarray):
-            s = Sample("ndarray_" + str(random.choice(range(999999999)), sample, 1, 0))
+            s = Sample("ndarray_" + str(random.choice(range(999999999))), sample, 1, 0)
             s.img_data = sample
             res.append(s)
         else:
             raise ValueError("Cannot interpret an object of type " + str(type(sample)) + " as a sample")
     
     return res
-
 
 def display_2D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_overlay=None, colorbar=False):
     grad_overlay = grad_overlay.astype(np.uint8)
@@ -173,7 +171,6 @@ def display_2D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_ove
             cbar_ax = fig.add_axes([0.85, 0.25, 0.03, 0.5])
         fig.colorbar(imgs[-1], cax=cbar_ax)
     for i in range(len(imgs)):
-        fig.show()
         if len(imgs) == 1:
             fig.savefig(out_path)
         else:
@@ -217,7 +214,8 @@ def display_3D(out_path, fig, axes, x_name, y_name, grad_overlay, activation_ove
 
 # Everything with threed is new to_grey as new Parameter for greyscale imgs
 def visualize_samples(sample_list, out_dir="vis", mask_seg=False, mask_pred=True, data_io=None,
-                      preprocessing=None, progress=False, threed=True, to_grey=True, colorbar=False):
+                      preprocessing=None, progress=False, to_grey=True, colorbar=False):
+                      
     # create a homogenous datastructure
     samples = to_samples(sample_list, data_io, mask_seg, mask_pred)
     
@@ -228,14 +226,12 @@ def visualize_samples(sample_list, out_dir="vis", mask_seg=False, mask_pred=True
         temp = deepcopy(samples)
 
         samples = [compute_preprocessed_sample(s, preprocessing.subfunctions) for s in samples]
-
         if all([s.pred_data.shape != s.seg_data.shape for s in samples]):
             for i in range(len(samples)):
                 temp[i].seg_data = temp[i].pred_data[:]
                 temp[i] = compute_preprocessed_sample(temp[i], preprocessing.subfunctions)
                 samples[i].pred_data = temp[i].seg_data[:]
         del temp
-
     # normalize images both in data and structure
     
     if progress:
@@ -244,7 +240,7 @@ def visualize_samples(sample_list, out_dir="vis", mask_seg=False, mask_pred=True
         it = samples
     
     for sample in it:
-        sample.img_data = normalize(sample.img_data, to_greyscale=to_grey, normalize=True)
+        sample.img_data = normalize(sample.img_data, to_greyscale=(to_grey and sample.img_data.shape[-1] == 3), normalize=True)
         
         display = display_2D
         if detect_dimensionality(sample.img_data) == 3:
