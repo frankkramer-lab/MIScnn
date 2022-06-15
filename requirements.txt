@@ -10,3 +10,4 @@ pydicom==2.0.0
 SimpleITK==2.0.2
 scikit-image==0.18.2
 tqdm==4.51.0
+seaborn==0.11.2

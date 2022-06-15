@@ -23,6 +23,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import seaborn as sns
 import numpy as np
 import os
 import random
@@ -163,8 +164,8 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
 
         ani = None
         if mask_seg and mask_pred:
-            vol_truth = overlay_segmentation(sample.img_data, sample.seg_data)
-            vol_pred = overlay_segmentation(sample.img_data, sample.pred_data)
+            vol_truth = overlay_segmentation(sample.img_data, sample.seg_data, sample.classes)
+            vol_pred = overlay_segmentation(sample.img_data, sample.pred_data, sample.classes)
             fig, (ax1, ax2) = plt.subplots(1, 2)
             # Initialize the two subplots (axes) with an empty 512x512 image
             data = np.zeros(vol_truth.shape[1:3])
@@ -182,7 +183,7 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             ani = animation.FuncAnimation(fig, update, frames=len(truth), interval=10,
                                           repeat_delay=0, blit=False)
         elif mask_seg:
-            vol_truth = overlay_segmentation(sample.img_data, sample.seg_data)
+            vol_truth = overlay_segmentation(sample.img_data, sample.seg_data, sample.classes)
             fig, ax = plt.subplots()
             # Initialize the two subplots (axes) with an empty 512x512 image
             data = np.zeros(vol_truth.shape[1:3])
@@ -197,7 +198,7 @@ def visualize_samples(sample_list, out_dir = "vis", mask_seg = False, mask_pred 
             ani = animation.FuncAnimation(fig, update, frames=len(vol_truth), interval=10,
                                           repeat_delay=0, blit=False)
         elif mask_pred:
-            vol_pred = overlay_segmentation(sample.img_data, sample.pred_data)
+            vol_pred = overlay_segmentation(sample.img_data, sample.pred_data, sample.classes)
             fig, ax = plt.subplots()
             # Initialize the two subplots (axes) with an empty 512x512 image
             data = np.zeros(vol_pred.shape[1:3])
@@ -305,6 +306,35 @@ def visualize_prediction_overlap_3D(sample, classes=None, visualization_path = "
 #-----------------------------------------------------#
 #                     Subroutines                     #
 #-----------------------------------------------------#
+
+def overlay_segmentation(vol, seg, num_classes, cm="hls", alpha=0.3):
+    # Convert volume to RGB
+    vol_rgb = np.stack([vol, vol, vol], axis=-1)
+    # Initialize segmentation in RGB
+    shp = seg.shape
+    seg_rgb = np.zeros((shp[0], shp[1], shp[2], 3), dtype=np.int)
+
+    # Get unique classes from the sample
+    unique_classes, tmp = np.unique(seg, return_counts=True)
+    # Get color palette for all classes
+    color_palette = sns.color_palette(cm, num_classes)
+    for i, label in np.ndenumerate(unique_classes):
+        label = int(label)
+        seg_rgb[np.equal(seg, label)] = (color_palette[label][0]*255, color_palette[label][1]*255, color_palette[label][2]*255)
+
+    # Get binary array for places where an ROI lives
+    segbin = np.greater(seg, 0)
+    repeated_segbin = np.stack((segbin, segbin, segbin), axis=-1)
+
+    # Weighted sum where there's a value to overlay
+    vol_overlayed = np.where(
+        repeated_segbin,
+        np.round(alpha*seg_rgb+(1-alpha)*vol_rgb).astype(np.uint8),
+        np.round(vol_rgb).astype(np.uint8)
+    )
+    # Return final volume with segmentation overlay
+    return vol_overlayed
+
 # Based on: https://github.com/neheller/kits19/blob/master/starter_code/visualize.py
 def overlay_segmentation_greyscale(vol, seg, cm="hsv", alpha=0.3):
     # Convert volume to RGB
