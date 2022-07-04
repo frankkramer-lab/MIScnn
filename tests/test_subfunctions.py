@@ -31,7 +31,8 @@ from miscnn import Data_IO, Preprocessor, Neural_Network
 from miscnn.data_loading.interfaces import Dictionary_interface
 from miscnn.data_loading.sample import Sample
 from miscnn.processing.subfunctions import *
-
+from multiprocessing import freeze_support
+freeze_support()
 #-----------------------------------------------------#
 #                Unittest: Subfunctions               #
 #-----------------------------------------------------#
@@ -114,11 +115,11 @@ class SubfunctionsTEST(unittest.TestCase):
             sample = dataio.sample_loader(index)
             for sf in pp.subfunctions:
                 sf.preprocessing(sample, training=False)
-            pp.cache["shape_" + str(index)] = sample.img_data.shape
+            pp.partitioner.cache["shape_" + str(index)] = sample.img_data.shape
             sample.seg_data = np.random.rand(9, 9, 9) * 3
             sample.seg_data = sample.seg_data.astype(int)
             sample.seg_data = to_categorical(sample.seg_data, num_classes=3)
-            data_patches = pp.analysis_patchwise_grid(sample, training=True,
+            data_patches = pp.partitioner.patch_grid(sample, training=True,
                                                       data_aug=False)
             seg_list = []
             for i in range(0, len(data_patches)):

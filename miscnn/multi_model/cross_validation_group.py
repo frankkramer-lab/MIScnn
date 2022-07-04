@@ -74,7 +74,7 @@ class CrossValidationGroup(Model_Group):
                                       axis=0)
             validation = folds[i]
             print(training, validation)
-            out_dir = create_directories(evaluation_path, "group_" + str(model.id))
+            out_dir = create_directories(evaluation_path, "group_" + str(i))
             model.preprocessor.data_io.output_path = out_dir
             cb_list = []
             if (not isinstance(model, Model_Group)):

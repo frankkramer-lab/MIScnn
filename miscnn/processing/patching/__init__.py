@@ -1,6 +1,6 @@
 #==============================================================================#
-#  Author:       Dominik Müller                                                #
-#  Copyright:    2020 IT-Infrastructure for Translational Medical Research,    #
+#  Author:       Philip Meyer                                                  #
+#  Copyright:    2022 IT-Infrastructure for Translational Medical Research,    #
 #                University of Augsburg                                        #
 #                                                                              #
 #  This program is free software: you can redistribute it and/or modify        #
@@ -16,9 +16,3 @@
 #  You should have received a copy of the GNU General Public License           #
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.       #
 #==============================================================================#
-# Core classes
-from miscnn.data_loading.data_io import Data_IO
-from miscnn.processing.preprocessor import Preprocessor
-from miscnn.processing.data_augmentation import Data_Augmentation
-from miscnn.neural_network.model import Neural_Network
-from miscnn.xai import gradcam

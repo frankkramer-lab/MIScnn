@@ -27,7 +27,7 @@ import numpy as np
 #Internal libraries
 from miscnn import Data_IO
 from miscnn.data_loading.interfaces import Dictionary_interface
-from miscnn.utils.patch_operations import *
+from miscnn.processing.patching.patch_operations import *
 
 #-----------------------------------------------------#
 #              Unittest: Patch Operations             #
@@ -107,7 +107,7 @@ class PatchOperationsTEST(unittest.TestCase):
             patches = slice_matrix(sample.img_data, window=(5,5),
                                    overlap=(2,2), three_dim=False)
             concat = concat_matrices(patches=patches,
-                                     image_size=(16,16),
+                                     image_size=(16,16, 1),
                                      window=(5,5),
                                      overlap=(2,2),
                                      three_dim=False)
@@ -118,7 +118,7 @@ class PatchOperationsTEST(unittest.TestCase):
             patches = slice_matrix(sample.img_data, window=(5,5,5),
                                    overlap=(2,2,2), three_dim=True)
             concat = concat_matrices(patches=patches,
-                                     image_size=(16,16,16),
+                                     image_size=(16,16,16, 1),
                                      window=(5,5,5),
                                      overlap=(2,2,2),
                                      three_dim=True)
