@@ -146,6 +146,16 @@ Article{miscnn21,
 
 Thank you for citing our work.
 
+### Other Frameworks from our Lab
+
+![AUCMEDI_LOGO](https://github.com/frankkramer-lab/aucmedi/raw/master/docs/images/aucmedi.logo.description.png)
+
+The open-source software AUCMEDI allows fast setup of medical image classification pipelines with state-of-the-art methods via an intuitive, high-level Python API or via an AutoML deployment through Docker/CLI.
+
+Check out our framework for medical image classification, as well!
+
+[https://github.com/frankkramer-lab/aucmedi](https://github.com/frankkramer-lab/aucmedi)
+
 ## License
 
 This project is licensed under the GNU GENERAL PUBLIC LICENSE Version 3.\
