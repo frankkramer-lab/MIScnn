@@ -77,41 +77,15 @@ def concat_matrices(patches, image_size, window, overlap, three_dim):
 #-----------------------------------------------------#
 # Slice a 2D matrix
 def slice_2Dmatrix(array, window, overlap):
-    # Calculate steps
-    steps_x = int(math.ceil((len(array) - overlap[0]) /
-                            float(window[0] - overlap[0])))
-    steps_y = int(math.ceil((len(array[0]) - overlap[1]) /
-                            float(window[1] - overlap[1])))
-    # Exception Handling: patch overlap smaller than patches
-    if steps_x < 1 : steps_x = 1
-    if steps_y < 1 : steps_y = 1
-    
-    # Iterate over it x,y
-    patches = []
-    for x in range(0, steps_x):
-        for y in range(0, steps_y):
-            # Define window edges
-            x_start = x*window[0] - x*overlap[0]
-            x_end = x_start + window[0]
-            y_start = y*window[1] - y*overlap[1]
-            y_end = y_start + window[1]
-            # Adjust ends
-            if(x_end > len(array)):
-                # Create an overlapping patch for the last images / edges
-                # to ensure the fixed patch/window sizes
-                x_start = len(array) - window[0]
-                x_end = len(array)
-                # Fix for MRIs which are smaller than patch size
-                if x_start < 0 : x_start = 0
-            if(y_end > len(array[0])):
-                y_start = len(array[0]) - window[1]
-                y_end = len(array[0])
-                # Fix for MRIs which are smaller than patch size
-                if y_start < 0 : y_start = 0
-            # Cut window
-            window_cut = array[x_start:x_end,y_start:y_end]
-            # Add to result list
-            patches.append(window_cut)
+    # Calculate strides
+    strides = array.strides
+    shape = ((array.shape[0] - window[0]) // (window[0] - overlap[0])) + 1, \
+            ((array.shape[1] - window[1]) // (window[1] - overlap[1])) + 1, \
+            window[0], window[1]
+    strides = strides[0] * (window[0] - overlap[0]), strides[1] * (window[1] - overlap[1]), \
+              strides[0], strides[1]
+    # Slice array
+    patches = np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
     return patches
 
 # Concatenate a list of patches together to a numpy matrix
@@ -165,53 +139,17 @@ def concat_2Dmatrices(patches, image_size, window, overlap):
 #-----------------------------------------------------#
 # Slice a 3D matrix
 def slice_3Dmatrix(array, window, overlap):
-    # Calculate steps
-    steps_x = int(math.ceil((len(array) - overlap[0]) /
-                            float(window[0] - overlap[0])))
-    steps_y = int(math.ceil((len(array[0]) - overlap[1]) /
-                            float(window[1] - overlap[1])))
-    steps_z = int(math.ceil((len(array[0][0]) - overlap[2]) /
-                            float(window[2] - overlap[2])))
-    # Exception Handling: patch overlap smaller than patches
-    if steps_x < 1 : steps_x = 1
-    if steps_y < 1 : steps_y = 1
-    if steps_z < 1 : steps_z = 1
+    strides = array.itemsize * np.array([array.shape[1]*array.shape[2], array.shape[2], 1])
+    shape = np.array([(array.shape[0] - window[0]) // (window[0] - overlap[0]) + 1,
+                      (array.shape[1] - window[1]) // (window[1] - overlap[1]) + 1,
+                      (array.shape[2] - window[2]) // (window[2] - overlap[2]) + 1,
+                      window[0], window[1], window[2]])
+    strides = np.concatenate((strides, strides[-2:] * np.array([window[1], 1])))
+    strides[-3:] = array.itemsize
 
-    # Iterate over it x,y,z
-    patches = []
-    for x in range(0, steps_x):
-        for y in range(0, steps_y):
-            for z in range(0, steps_z):
-                # Define window edges
-                x_start = x*window[0] - x*overlap[0]
-                x_end = x_start + window[0]
-                y_start = y*window[1] - y*overlap[1]
-                y_end = y_start + window[1]
-                z_start = z*window[2] - z*overlap[2]
-                z_end = z_start + window[2]
-                # Adjust ends
-                if(x_end > len(array)):
-                    # Create an overlapping patch for the last images / edges
-                    # to ensure the fixed patch/window sizes
-                    x_start = len(array) - window[0]
-                    x_end = len(array)
-                    # Fix for MRIs which are smaller than patch size
-                    if x_start < 0 : x_start = 0
-                if(y_end > len(array[0])):
-                    y_start = len(array[0]) - window[1]
-                    y_end = len(array[0])
-                    # Fix for MRIs which are smaller than patch size
-                    if y_start < 0 : y_start = 0
-                if(z_end > len(array[0][0])):
-                    z_start = len(array[0][0]) - window[2]
-                    z_end = len(array[0][0])
-                    # Fix for MRIs which are smaller than patch size
-                    if z_start < 0 : z_start = 0
-                # Cut window
-                window_cut = array[x_start:x_end,y_start:y_end,z_start:z_end]
-                # Add to result list
-                patches.append(window_cut)
-    return patches
+    patches = np.lib.stride_tricks.as_strided(array, shape=shape, strides=strides)
+
+    return patches.reshape([-1, window[0], window[1], window[2]])
 
 # Concatenate a list of patches together to a numpy matrix
 def concat_3Dmatrices(patches, image_size, window, overlap):
