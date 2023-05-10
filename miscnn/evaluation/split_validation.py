@@ -74,7 +74,7 @@ def split_validation(sample_list, model, percentage=0.2, epochs=20,
     else : cb_list = callbacks
     # Run training & validation
     history = model.evaluate(training, validation, epochs=epochs,
-                             iterations=iterations, callbacks=callbacks)
+                             iterations=iterations, callbacks=cb_list)
     # Initialize evaluation directory
     create_directories(evaluation_path)
     # Draw plots for the training & validation
